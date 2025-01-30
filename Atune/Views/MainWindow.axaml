@@ -10,8 +10,5 @@
         Title="Atune"
         MinWidth="400"
         MinHeight="300">
-    
-        
-        <!-- Основной контент -->
         <views:MainView />
 </Window>

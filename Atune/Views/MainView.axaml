@@ -6,35 +6,152 @@
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
              x:Class="Atune.Views.MainView"
              x:DataType="vm:MainViewModel">
+    
     <Design.DataContext>
         <vm:MainViewModel />
     </Design.DataContext>
-    <DockPanel>
+
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <!-- Общие ресурсы -->
+            <!-- Ресурсы будут управляться через FluentTheme -->
+            <SolidColorBrush x:Key="AccentBrush" Color="{DynamicResource SystemAccentColor}"/>
+            <SolidColorBrush x:Key="SubtleBorderBrush" Color="{DynamicResource SystemAltHighColor}"/>
+            
+            <!-- Светлая и тёмная темы через ThemeVariant -->
+            <ResourceDictionary.ThemeDictionaries>
+                <!-- Светлая тема -->
+                <ResourceDictionary x:Key="Light">
+                    <SolidColorBrush x:Key="HeaderBackground" Color="LightGray"/>
+                    <SolidColorBrush x:Key="BarBackground" Color="LightGray"/>
+                    <SolidColorBrush x:Key="BackgroundBrush" Color="White"/>
+                    <SolidColorBrush x:Key="ForegroundBrush" Color="Black"/>
+                    <SolidColorBrush x:Key="ButtonForeground" Color="Black"/>
+                </ResourceDictionary>
+
+                <!-- Тёмная тема -->
+                <ResourceDictionary x:Key="Dark">
+                    <SolidColorBrush x:Key="HeaderBackground" Color="DarkGray"/>
+                    <SolidColorBrush x:Key="BarBackground" Color="DarkGray"/>
+                    <SolidColorBrush x:Key="BackgroundBrush" Color="Black"/>
+                    <SolidColorBrush x:Key="ForegroundBrush" Color="White"/>
+                    <SolidColorBrush x:Key="ButtonForeground" Color="White"/>
+                </ResourceDictionary>
+            </ResourceDictionary.ThemeDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <UserControl.Styles>
+        <Style Selector="Button.theme-toggle">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{DynamicResource ButtonForeground}"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Padding" Value="10"/>
+        </Style>
+
+        <Style Selector="Button.nav-button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{DynamicResource ButtonForeground}"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Padding" Value="10,5"/>
+        </Style>
+    </UserControl.Styles>
+
+    <DockPanel Background="{DynamicResource BackgroundBrush}">
         <!-- Верхняя шапка -->
-        <TextBlock DockPanel.Dock="Top"
-                   Text="Atune"
-                   FontSize="20"
-                   Margin="10"
-                   HorizontalAlignment="Left"
-                   VerticalAlignment="Center"/>
-        
+        <Border DockPanel.Dock="Top"
+                Background="{DynamicResource HeaderBackground}"
+                Height="50">
+            <Grid Margin="10,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Grid.Column="0"
+                           Text="Atune"
+                           Foreground="{DynamicResource ForegroundBrush}"
+                           FontSize="20"
+                           VerticalAlignment="Center"/>
+
+                <Button Grid.Column="2"
+                        Classes="theme-toggle"
+                        Click="ToggleTheme"
+                        VerticalAlignment="Center">
+                <PathIcon Data="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c0-.46-.04-.92-.1-1.36-.65.24-1.37.36-2.1.36-3.31 0-6-2.69-6-6 0-.73.12-1.45.36-2.1C12.92 3.04 12.46 3 12 3z"
+                          Foreground="{DynamicResource ButtonForeground}"
+                          Width="24"
+                          Height="24"/>
+                </Button>
+            </Grid>
+        </Border>
+
         <!-- Нижняя панель навигации -->
         <Border DockPanel.Dock="Bottom"
                 Height="60"
-                Padding="10,5">
-            <StackPanel Orientation="Horizontal"
-                        HorizontalAlignment="Center"
-                        VerticalAlignment="Center"
-                        Spacing="15">
-                <Button Padding="20,5">Главная</Button>
-                <Button Padding="20,5">Медиатека</Button>
-                <Button Padding="20,5">История</Button>
-                <Button Padding="20,5">Настройки</Button>
-            </StackPanel>
+                Background="{DynamicResource BarBackground}"
+                Padding="0">
+            <Grid HorizontalAlignment="Stretch"
+                  VerticalAlignment="Stretch">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Кнопки -->
+                <Button Grid.Column="0" 
+                        Classes="nav-button"
+                        HorizontalAlignment="Stretch">Главная</Button>
+                
+                <Button Grid.Column="2" 
+                        Classes="nav-button"
+                        HorizontalAlignment="Stretch">Медиатека</Button>
+                
+                <Button Grid.Column="4" 
+                        Classes="nav-button"
+                        HorizontalAlignment="Stretch">История</Button>
+                
+                <Button Grid.Column="6" 
+                        Name="SettingsButton"
+                        Classes="nav-button"
+                        Click="OnSettingsClicked"
+                        HorizontalAlignment="Stretch">Настройки</Button>
+
+                <!-- Разделители -->
+                <Rectangle Grid.Column="1" 
+                           Width="1" 
+                           Fill="{DynamicResource SubtleBorderBrush}"
+                           Margin="0 8"
+                           VerticalAlignment="Stretch"/>
+                
+                <Rectangle Grid.Column="3" 
+                           Width="1" 
+                           Fill="{DynamicResource SubtleBorderBrush}"
+                           Margin="0 8"
+                           VerticalAlignment="Stretch"/>
+                
+                <Rectangle Grid.Column="5" 
+                           Width="1" 
+                           Fill="{DynamicResource SubtleBorderBrush}"
+                           Margin="0 8"
+                           VerticalAlignment="Stretch"/>
+            </Grid>
         </Border>
 
         <!-- Основной контент -->
         <TextBlock Text="{Binding Greeting}" 
+                   Foreground="{DynamicResource ForegroundBrush}"
                    HorizontalAlignment="Center" 
                    VerticalAlignment="Center"/>
     </DockPanel>
