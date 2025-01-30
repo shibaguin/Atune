@@ -3,6 +3,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:Atune.ViewModels"
+             xmlns:sys="clr-namespace:System;assembly=mscorlib"
              mc:Ignorable="d" 
              d:DesignWidth="800" 
              d:DesignHeight="450"
@@ -15,6 +16,11 @@
 
     <UserControl.Resources>
         <ResourceDictionary>
+            <sys:Double x:Key="HeaderFontSize">20</sys:Double>
+            <sys:Double x:Key="NavigationDividerWidth">3</sys:Double>
+            <sys:Double x:Key="NavigationDividerHeight">60</sys:Double>
+            <sys:Double x:Key="TopDockHeight">50</sys:Double>
+            
             <SolidColorBrush x:Key="AccentBrush" Color="{DynamicResource SystemAccentColor}"/>
             <SolidColorBrush x:Key="SubtleBorderBrush" Color="{DynamicResource SystemAltHighColor}"/>
 
@@ -89,7 +95,7 @@
     <DockPanel Background="{DynamicResource BackgroundBrush}">
         <Border DockPanel.Dock="Top"
                 Background="{DynamicResource HeaderBackground}"
-                Height="50">
+                Height="{DynamicResource TopDockHeight}">
             <Grid Margin="10,0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
@@ -100,7 +106,7 @@
                 <TextBlock Grid.Column="0"
                            Text="Atune"
                            Foreground="{DynamicResource ForegroundBrush}"
-                           FontSize="20"
+                           FontSize="{DynamicResource HeaderFontSize}"
                            FontWeight="Bold"
                            VerticalAlignment="Center"/>
 
@@ -167,22 +173,22 @@
 
                 <!-- Разделители навигации -->
                 <Rectangle Grid.Column="1" 
-                         Width="3" 
+                           Width="{DynamicResource NavigationDividerWidth}"
+                           Height="{DynamicResource NavigationDividerHeight}"
                          Fill="{DynamicResource DividerBrush}"
-                         VerticalAlignment="Stretch"
-                         Height="60"/>
+                         VerticalAlignment="Stretch"/>
                 
                 <Rectangle Grid.Column="3" 
-                         Width="3" 
+                           Width="{DynamicResource NavigationDividerWidth}"
+                           Height="{DynamicResource NavigationDividerHeight}"
                          Fill="{DynamicResource DividerBrush}"
-                         VerticalAlignment="Stretch"
-                         Height="60"/>
+                         VerticalAlignment="Stretch"/>
                 
                 <Rectangle Grid.Column="5" 
-                         Width="3" 
+                           Width="{DynamicResource NavigationDividerWidth}"
+                           Height="{DynamicResource NavigationDividerHeight}"
                          Fill="{DynamicResource DividerBrush}"
-                         VerticalAlignment="Stretch"
-                         Height="60"/>
+                         VerticalAlignment="Stretch"/>
             </Grid>
         </Border>
 
