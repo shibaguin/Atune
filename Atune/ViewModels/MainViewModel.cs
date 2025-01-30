@@ -1,9 +1,43 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using Avalonia;
+using Avalonia.Styling;
+using Atune.Views;
 
 namespace Atune.ViewModels;
-
 public partial class MainViewModel : ViewModelBase
 {
     [ObservableProperty]
-    private string _greeting = "Welcome to Avalonia!";
+    private string _headerText = "Atune";
+    
+    [ObservableProperty]
+    private object _currentContent;
+    
+    public MainViewModel()
+    {
+        CurrentContent = "Welcome to Avalonia!";
+    }
+    [RelayCommand]
+    private void ToggleTheme()
+    {
+        if (Application.Current is null) return;
+        Application.Current.RequestedThemeVariant = 
+            Application.Current.ActualThemeVariant == ThemeVariant.Dark 
+                ? ThemeVariant.Light 
+                : ThemeVariant.Dark;
+    }
+
+    [RelayCommand]
+    private void ShowSettings()
+    {
+        HeaderText = "Settings";
+        CurrentContent = new SettingsView();
+    }
+
+    [RelayCommand]
+    private void GoHome()
+    {
+        HeaderText = "Atune";
+        CurrentContent = "Welcome to Avalonia!";
+    }
 }

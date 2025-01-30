@@ -7,6 +7,11 @@ namespace Atune;
 
 public class ViewLocator : IDataTemplate
 {
+    public class ViewModelLocator
+    {
+        public MainViewModel MainViewModel => new MainViewModel();
+    }
+    public MainViewModel MainViewModel => new MainViewModel();
     public Control? Build(object? param)
     {
         if (param is null)
