@@ -31,6 +31,7 @@ public partial class MainView : UserControl
         // Resources.Add("SecondaryColor", Color.Parse(DesignSettings.Colors.SecondaryColor));
     }
     
+    /*
     private void ToggleTheme(object sender, RoutedEventArgs e)
     {
         if (Application.Current is null) return;
@@ -41,4 +42,5 @@ public partial class MainView : UserControl
         
         Application.Current.RequestedThemeVariant = newTheme;
     }
+    */
 }

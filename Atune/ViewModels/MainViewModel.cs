@@ -15,9 +15,10 @@ public partial class MainViewModel : ViewModelBase
     
     public MainViewModel()
     {
-        CurrentContent = "Welcome to Avalonia!";
+        CurrentContent = new HomeView();
     }
     [RelayCommand]
+    /*
     private void ToggleTheme()
     {
         if (Application.Current is null) return;
@@ -26,8 +27,8 @@ public partial class MainViewModel : ViewModelBase
                 ? ThemeVariant.Light 
                 : ThemeVariant.Dark;
     }
+    */
 
-    [RelayCommand]
     private void ShowSettings()
     {
         HeaderText = "Настройки";
@@ -38,22 +39,14 @@ public partial class MainViewModel : ViewModelBase
     private void GoHome()
     {
         HeaderText = "Atune";
-        // 
-        CurrentContent = "Welcome to Avalonia!";
-        
-        //
+        CurrentContent = "Главная!";
         CurrentContent = new HomeView();
-        //
     }
     
     [RelayCommand]
     private void GoMedia()
     {
         HeaderText = "Медиатека";
-        //
-        CurrentContent = "Welcome to Avalonia!";
-        
-        //
         CurrentContent = new MediaView();
         //
     }
@@ -62,6 +55,6 @@ public partial class MainViewModel : ViewModelBase
     private void GoHistory()
     {
         HeaderText = "История";
-        CurrentContent = "Welcome to Avalonia!";
+        CurrentContent = new HistoryView();
     }
 }

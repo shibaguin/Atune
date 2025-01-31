@@ -7,4 +7,12 @@
              d:DesignHeight="450"
              xmlns:vm="clr-namespace:Atune.ViewModels"
              x:Class="Atune.Views.HomeView">
+    <Grid>
+        <!-- Устанавливаем выравнивание содержимого по центру -->
+        <TextBlock Text="Это главная страница"
+                   HorizontalAlignment="Center"
+                   VerticalAlignment="Center"
+                   FontSize="24"
+                   FontWeight="Bold" />
+    </Grid>
 </UserControl>

@@ -7,4 +7,12 @@
              d:DesignHeight="450"
              xmlns:vm="clr-namespace:Atune.ViewModels"
              x:Class="Atune.Views.MediaView">
+    <Grid>
+        <!-- Устанавливаем выравнивание содержимого по центру -->
+        <TextBlock Text="Это страница медиатеки"
+                   HorizontalAlignment="Center"
+                   VerticalAlignment="Center"
+                   FontSize="24"
+                   FontWeight="Bold" />
+    </Grid>
 </UserControl>
