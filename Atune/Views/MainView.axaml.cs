@@ -41,9 +41,4 @@ public partial class MainView : UserControl
         
         Application.Current.RequestedThemeVariant = newTheme;
     }
-    
-    private void OnSettingsClicked(object? sender, RoutedEventArgs e)
-    {
-        // Реализация метода
-    }
 }

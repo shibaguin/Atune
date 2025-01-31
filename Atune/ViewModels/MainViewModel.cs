@@ -30,7 +30,7 @@ public partial class MainViewModel : ViewModelBase
     [RelayCommand]
     private void ShowSettings()
     {
-        HeaderText = "Settings";
+        HeaderText = "Настройки";
         CurrentContent = new SettingsView();
     }
 
@@ -38,6 +38,30 @@ public partial class MainViewModel : ViewModelBase
     private void GoHome()
     {
         HeaderText = "Atune";
+        // 
+        CurrentContent = "Welcome to Avalonia!";
+        
+        //
+        CurrentContent = new HomeView();
+        //
+    }
+    
+    [RelayCommand]
+    private void GoMedia()
+    {
+        HeaderText = "Медиатека";
+        //
+        CurrentContent = "Welcome to Avalonia!";
+        
+        //
+        CurrentContent = new MediaView();
+        //
+    }
+    
+    [RelayCommand]
+    private void GoHistory()
+    {
+        HeaderText = "История";
         CurrentContent = "Welcome to Avalonia!";
     }
 }

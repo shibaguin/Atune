@@ -16,16 +16,6 @@
 
     <UserControl.Resources>
         <ResourceDictionary>
-            <!-- Данные параметры будут браться из appsettings.json -->
-            <!--
-            <sys:Double x:Key="HeaderFontSize">20</sys:Double>
-            <sys:Double x:Key="NavigationDividerWidth">3</sys:Double>
-            <sys:Double x:Key="NavigationDividerHeight">60</sys:Double>
-            <sys:Double x:Key="TopDockHeight">50</sys:Double>
-            <sys:Double x:Key="BarHeight">60</sys:Double>
-            <sys:Double x:Key="NavigationFontSize">14</sys:Double>
-            -->
-            
             <SolidColorBrush x:Key="AccentBrush" Color="{DynamicResource SystemAccentColor}"/>
             <SolidColorBrush x:Key="SubtleBorderBrush" Color="{DynamicResource SystemAltHighColor}"/>
 
@@ -152,6 +142,7 @@
                 </Button>
 
                 <Button Grid.Column="2" Classes="nav-button"
+                        Command="{Binding GoMediaCommand}"
                         HorizontalAlignment="Stretch">
                     <StackPanel HorizontalAlignment="Center">
                         <PathIcon Data="M5.5 3C6.328 3 7 3.672 7 4.5V19.5C7 20.328 6.328 21 5.5 21H3.5C2.672 21 2 20.328 2 19.5V4.5C2 3.672 2.672 3 3.5 3H5.5ZM11.5 3C12.328 3 13 3.672 13 4.5V19.5C13 20.328 12.328 21 11.5 21H9.5C8.672 21 8 20.328 8 19.5V4.5C8 3.672 8.672 3 9.5 3H11.5ZM18.781 6.1238L21.995 18.6428C22.201 19.4448 21.718 20.2628 20.915 20.4688L19.039 20.9498C18.236 21.1558 17.419 20.6728 17.213 19.8698L13.999 7.3528C13.793 6.5498 14.276 5.7328 15.079 5.5268L16.955 5.0438C17.758 4.8388 18.575 5.3228 18.781 6.1238Z"/>
@@ -160,6 +151,7 @@
                 </Button>
 
                 <Button Grid.Column="4" Classes="nav-button"
+                        Command="{Binding GoHistoryCommand}"
                         HorizontalAlignment="Stretch">
                     <StackPanel HorizontalAlignment="Center">
                         <PathIcon Data="M12 5C15.866 5 19 8.13401 19 12C19 15.866 15.866 19 12 19C8.13401 19 5 15.866 5 12C5 11.7028 5.01846 11.4104 5.05421 11.1237C5.12255 10.5757 4.73367 10.076 4.18563 10.0077C3.63759 9.93935 3.13792 10.3282 3.06958 10.8763C3.02362 11.2448 3 11.6199 3 12C3 16.9706 7.02944 21 12 21C16.9706 21 21 16.9706 21 12C21 7.02944 16.9706 3 12 3C10.15 3 8.42985 3.5588 7 4.51575V4C7 3.44772 6.55228 3 6 3C5.44772 3 5 3.44772 5 4V7C5 7.55228 5.44772 8 6 8H9C9.55228 8 10 7.55228 10 7C10 6.44772 9.55228 6 9 6H8.39202C9.4458 5.36484 10.68 5 12 5ZM13 8C13 7.44772 12.5523 7 12 7C11.4477 7 11 7.44772 11 8V12C11 12.5523 11.4477 13 12 13H14.5C15.0523 13 15.5 12.5523 15.5 12C15.5 11.4477 15.0523 11 14.5 11H13V8Z"/>
