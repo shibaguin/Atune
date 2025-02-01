@@ -2,6 +2,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:sys="clr-namespace:System;assembly=mscorlib"
              mc:Ignorable="d"
              d:DesignWidth="800"
              d:DesignHeight="450"
@@ -9,37 +10,116 @@
              x:DataType="vm:SettingsViewModel"
              x:Class="Atune.Views.SettingsView">
     
-    <TabControl HorizontalAlignment="Center">
+    <TabControl HorizontalAlignment="Center" 
+                HorizontalContentAlignment="Center"
+                Margin="0"
+                MinWidth="420">
+                
         <TabItem Header="Основные"
-                 HorizontalAlignment="Center">
-            <ScrollViewer HorizontalAlignment="Stretch" VerticalScrollBarVisibility="Auto">
-                <Grid HorizontalAlignment="Stretch" Margin="20">
-                    <Grid HorizontalAlignment="Center" MaxWidth="600" MinWidth="400">
-                        <StackPanel Margin="20" Spacing="10">
-                            <TextBlock Text="Персонализация" FontSize="24" FontWeight="Bold"/>
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto"/> <!-- Ширина подстраивается под содержимое -->
-                                    <ColumnDefinition Width="*"/>   <!-- Занимает оставшееся пространство -->
-                                </Grid.ColumnDefinitions>
+                 HorizontalAlignment="Center"
+                 HorizontalContentAlignment="Center">
+            <TabItem.Header>
+                <TextBlock Text="Основные" FontSize="24" FontWeight="Bold"/>
+            </TabItem.Header>
+            <ScrollViewer HorizontalAlignment="Stretch" 
+                          VerticalScrollBarVisibility="Auto"
+                          MaxWidth="800">
+                <Grid Margin="0" 
+                      MinWidth="300" 
+                      MaxWidth="600"
+                      HorizontalAlignment="Stretch">
+                    
+                    <StackPanel Margin="0" Spacing="10" HorizontalAlignment="Stretch">
+                        <Grid HorizontalAlignment="Stretch">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
 
-                                <TextBlock Text="Тема приложения:" 
-                                           VerticalAlignment="Center"
-                                           Margin="0,0,10,0"/> <!-- Отступ справа для разделения элементов -->
+                            <TextBlock Text="Тема приложения:" 
+                                       FontSize="16"
+                                       VerticalAlignment="Center"
+                                       Margin="0,0,10,0"/>
 
-                                <ComboBox x:Name="ThemeComboBox" 
-                                          Grid.Column="1"
-                                          SelectedIndex="{Binding SelectedThemeIndex}"
-                                          Width="200"
-                                          MaxDropDownHeight="300"
-                                          SelectionChanged="ThemeComboBox_SelectionChanged">
-                                    <ComboBoxItem Content="Системная"/>
-                                    <ComboBoxItem Content="Светлая"/>
-                                    <ComboBoxItem Content="Тёмная"/>
-                                </ComboBox>
-                            </Grid>
-                        </StackPanel>
-                    </Grid>
+                            <ComboBox x:Name="ThemeComboBox" 
+                                      Grid.Column="1"
+                                      SelectedIndex="{Binding SelectedThemeIndex}"
+                                      Width="200"
+                                      MaxDropDownHeight="300"
+                                      HorizontalAlignment="Right"
+                                      SelectionChanged="ThemeComboBox_SelectionChanged">
+                                <ComboBoxItem Content="Системная"/>
+                                <ComboBoxItem Content="Светлая"/>
+                                <ComboBoxItem Content="Тёмная"/>
+                            </ComboBox>
+                        </Grid>
+                    </StackPanel>
+                </Grid>
+            </ScrollViewer>
+        </TabItem>
+
+        <TabItem Header="Вид"
+                 HorizontalAlignment="Center"
+                 HorizontalContentAlignment="Center">
+            <TabItem.Header>
+                <TextBlock Text="Вид" FontSize="24" FontWeight="Bold"/>
+            </TabItem.Header>
+            <ScrollViewer HorizontalAlignment="Stretch" 
+                          VerticalScrollBarVisibility="Auto"
+                          MaxWidth="800">
+                <Grid Margin="0" 
+                      MinWidth="300" 
+                      MaxWidth="600"
+                      HorizontalAlignment="Stretch">
+                    <TextBlock Text="Настройки внешнего вида" 
+                               FontSize="20"
+                               FontWeight="Bold"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"/>
+                </Grid>
+            </ScrollViewer>
+        </TabItem>
+
+        <TabItem Header="Звук"
+                 HorizontalAlignment="Center"
+                 HorizontalContentAlignment="Center">
+            <TabItem.Header>
+                <TextBlock Text="Звук" FontSize="24" FontWeight="Bold"/>
+            </TabItem.Header>
+            <ScrollViewer HorizontalAlignment="Stretch" 
+                          VerticalScrollBarVisibility="Auto"
+                          MaxWidth="800">
+                <Grid Margin="0" 
+                      MinWidth="300" 
+                      MaxWidth="600"
+                      HorizontalAlignment="Stretch">
+                    <TextBlock Text="Настройки звука" 
+                               FontSize="20"
+                               FontWeight="Bold"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"/>
+                </Grid>
+            </ScrollViewer>
+        </TabItem>
+
+        <TabItem Header="Прочие"
+                 HorizontalAlignment="Center"
+                 HorizontalContentAlignment="Center">
+            <TabItem.Header>
+                <TextBlock Text="Прочие" FontSize="24" FontWeight="Bold"/>
+            </TabItem.Header>
+            <ScrollViewer HorizontalAlignment="Stretch" 
+                          VerticalScrollBarVisibility="Auto"
+                          MaxWidth="800">
+                <Grid Margin="0" 
+                      MinWidth="300" 
+                      MaxWidth="600"
+                      HorizontalAlignment="Stretch">
+                    <TextBlock Text="Дополнительные настройки" 
+                               FontSize="20"
+                               FontWeight="Bold"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"/>
                 </Grid>
             </ScrollViewer>
         </TabItem>

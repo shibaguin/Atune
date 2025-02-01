@@ -14,11 +14,11 @@ namespace Atune.Models
             static Dimensions()
             {
                 // Инициализация значений
-                HeaderFontSize = 30;
+                HeaderFontSize = 24;
                 NavigationDividerWidth = 3;
-                NavigationDividerHeight = 60;
-                TopDockHeight = 50;
-                BarHeight = 60;
+                NavigationDividerHeight = BarHeight = 50;
+                TopDockHeight = 50; 
+                // BarHeight = 60; // Задаётся => разделителя NavigationDividerHeight
                 NavigationFontSize = 14;
 
                 // Валидация значений

@@ -8,7 +8,7 @@
         x:Class="Atune.Views.MainWindow"
         Icon="/Assets/avalonia-logo.ico"
         Title="Atune"
-        MinWidth="400"
+        MinWidth="420"
         MinHeight="300">
         <views:MainView DataContext="{x:Static vm:ViewModelLocator.MainViewModel}"/>
 </Window>
