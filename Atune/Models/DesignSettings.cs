@@ -10,16 +10,18 @@ namespace Atune.Models
             public static double TopDockHeight { get; }
             public static double BarHeight { get; }
             public static double NavigationFontSize { get; }
+            public static double BarPadding { get; }
             
             static Dimensions()
             {
                 // Инициализация значений
                 HeaderFontSize = 24;
                 NavigationDividerWidth = 3;
-                NavigationDividerHeight = BarHeight = 50;
+                BarHeight = 50;
+                NavigationDividerHeight = BarHeight;
                 TopDockHeight = 50; 
-                // BarHeight = 60; // Задаётся => разделителя NavigationDividerHeight
                 NavigationFontSize = 14;
+                BarPadding = 8;
 
                 // Валидация значений
                 ValidateValues();

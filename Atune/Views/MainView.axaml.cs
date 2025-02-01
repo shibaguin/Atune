@@ -25,22 +25,6 @@ public partial class MainView : UserControl
         Resources.Add("TopDockHeight", DesignSettings.Dimensions.TopDockHeight);
         Resources.Add("BarHeight", DesignSettings.Dimensions.BarHeight);
         Resources.Add("NavigationFontSize", DesignSettings.Dimensions.NavigationFontSize);
-        
-        // Пример добавления цветов
-        // Resources.Add("PrimaryColor", Color.Parse(DesignSettings.Colors.PrimaryColor));
-        // Resources.Add("SecondaryColor", Color.Parse(DesignSettings.Colors.SecondaryColor));
+        Resources.Add("BarPadding", DesignSettings.Dimensions.BarPadding);
     }
-    
-    /*
-    private void ToggleTheme(object sender, RoutedEventArgs e)
-    {
-        if (Application.Current is null) return;
-        
-        var newTheme = Application.Current.RequestedThemeVariant == ThemeVariant.Dark 
-            ? ThemeVariant.Light 
-            : ThemeVariant.Dark;
-        
-        Application.Current.RequestedThemeVariant = newTheme;
-    }
-    */
 }

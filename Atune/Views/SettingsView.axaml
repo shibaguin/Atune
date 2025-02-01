@@ -37,9 +37,9 @@
                             </Grid.ColumnDefinitions>
 
                             <TextBlock Text="Тема приложения:" 
-                                       FontSize="16"
+                                       FontSize="20"
                                        VerticalAlignment="Center"
-                                       Margin="0,0,10,0"/>
+                                       Margin="0,10,0,0"/>
 
                             <ComboBox x:Name="ThemeComboBox" 
                                       Grid.Column="1"
@@ -47,6 +47,7 @@
                                       Width="200"
                                       MaxDropDownHeight="300"
                                       HorizontalAlignment="Right"
+                                      Margin="0,10,0,0"
                                       SelectionChanged="ThemeComboBox_SelectionChanged">
                                 <ComboBoxItem Content="Системная"/>
                                 <ComboBoxItem Content="Светлая"/>
