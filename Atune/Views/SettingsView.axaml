@@ -6,6 +6,7 @@
              d:DesignWidth="800"
              d:DesignHeight="450"
              xmlns:vm="clr-namespace:Atune.ViewModels"
+             x:DataType="vm:SettingsViewModel"
              x:Class="Atune.Views.SettingsView">
     
     <TabControl HorizontalAlignment="Center">
@@ -28,7 +29,7 @@
 
                                 <ComboBox x:Name="ThemeComboBox" 
                                           Grid.Column="1"
-                                          SelectedIndex="0"
+                                          SelectedIndex="{Binding SelectedThemeIndex}"
                                           Width="200"
                                           MaxDropDownHeight="300"
                                           SelectionChanged="ThemeComboBox_SelectionChanged">
@@ -37,6 +38,11 @@
                                     <ComboBoxItem Content="Тёмная"/>
                                 </ComboBox>
                             </Grid>
+                            <Button Content="Сохранить настройки" 
+                                    HorizontalAlignment="Center"
+                                    Margin="0,20"
+                                    Padding="15,5"
+                                    Command="{Binding SaveSettingsCommand}"/>
                         </StackPanel>
                     </Grid>
                 </Grid>

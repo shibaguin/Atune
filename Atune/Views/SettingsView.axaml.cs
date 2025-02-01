@@ -1,8 +1,10 @@
-using Avalonia.Controls;
 using Avalonia;
-using Avalonia.Interactivity;
+using Avalonia.Controls;
 using Avalonia.Styling;
 using Atune.ViewModels;
+using Atune.Services;
+using Atune.Models;
+using ThemeVariant = Atune.Models.ThemeVariant;
 
 namespace Atune.Views
 {
@@ -11,56 +13,38 @@ namespace Atune.Views
         public SettingsView()
         {
             InitializeComponent();
-            ApplyTheme(ThemeVariant.System);
+            DataContext = new SettingsViewModel();
+            LoadSettings();
         }
+
+        private void LoadSettings()
+        {
+            var settings = SettingsManager.LoadSettings();
+            ApplyTheme(settings.ThemeVariant);
+            ThemeComboBox.SelectedIndex = (int)settings.ThemeVariant;
+        }
+
         private void ThemeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (ThemeComboBox == null) return;
-            if (ThemeComboBox.SelectedIndex == 0)
-            {
-                // Системная тема
-                ApplyTheme(ThemeVariant.System);
-            }
-            else if (ThemeComboBox.SelectedIndex == 1)
-            {
-                // Светлая тема
-                ApplyTheme(ThemeVariant.Light);
-            }
-            else if (ThemeComboBox.SelectedIndex == 2)
-            {
-                // Тёмная тема
-                ApplyTheme(ThemeVariant.Dark);
-            }
+            
+            var settings = new AppSettings { ThemeVariant = (ThemeVariant)ThemeComboBox.SelectedIndex };
+            SettingsManager.SaveSettings(settings);
+            ApplyTheme(settings.ThemeVariant);
         }
 
-        private void ApplyTheme(Atune.Views.ThemeVariant theme)
+        private void ApplyTheme(ThemeVariant theme)
         {
-            // Устанавливаем выбранную тему
             var app = Application.Current as App;
             if (app != null)
             {
-                switch (theme)
+                app.RequestedThemeVariant = theme switch
                 {
-                    case Atune.Views.ThemeVariant.Light:
-                        app.RequestedThemeVariant = Avalonia.Styling.ThemeVariant.Light;
-                        break;
-                    case Atune.Views.ThemeVariant.Dark:
-                        app.RequestedThemeVariant = Avalonia.Styling.ThemeVariant.Dark;
-                        break;
-                    default:
-                        // Если выбрана системная тема, используем текущую системную тему
-                        app.RequestedThemeVariant = Avalonia.Styling.ThemeVariant.Default;
-                        break;
-                }
+                    ThemeVariant.Light => Avalonia.Styling.ThemeVariant.Light,
+                    ThemeVariant.Dark => Avalonia.Styling.ThemeVariant.Dark,
+                    _ => Avalonia.Styling.ThemeVariant.Default
+                };
             }
         }
-    }
-
-    // Перечисление для удобства работы с темами
-    public enum ThemeVariant
-    {
-        System,
-        Light,
-        Dark
     }
 }

@@ -6,6 +6,7 @@ using System.Linq;
 using Avalonia.Markup.Xaml;
 using Atune.ViewModels;
 using Atune.Views;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Atune;
 
@@ -39,6 +40,7 @@ public partial class App : Application
         base.OnFrameworkInitializationCompleted();
     }
 
+    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "Disabled for Avalonia compatibility")]
     private void DisableAvaloniaDataAnnotationValidation()
     {
         // Get an array of plugins to remove
