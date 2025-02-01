@@ -30,6 +30,13 @@ public static class SettingsManager
     {
         var settings = new AppSettings();
         
+        // Для Android используем системную тему по умолчанию
+        if (OperatingSystem.IsAndroid() && !File.Exists(SettingsPath))
+        {
+            settings.ThemeVariant = ThemeVariant.System;
+            return settings;
+        }
+
         if (!File.Exists(SettingsPath))
             return settings;
 

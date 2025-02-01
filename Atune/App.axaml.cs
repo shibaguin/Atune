@@ -10,11 +10,38 @@ using System.Diagnostics.CodeAnalysis;
 using Atune.Services;
 using Atune.Models;
 using ThemeVariant = Atune.Models.ThemeVariant;
+using Avalonia.Platform;
+using Avalonia.Media;
 
 namespace Atune;
 
 public partial class App : Application
 {
+    public App()
+    {
+        try 
+        {
+            // Добавляем проверки на null
+            if (Application.Current?.PlatformSettings != null)
+            {
+                Application.Current.PlatformSettings.ColorValuesChanged += OnSystemThemeChanged;
+            }
+        }
+        catch 
+        {
+            // Игнорируем ошибки на платформах где нет PlatformSettings
+        }
+    }
+
+    private void OnSystemThemeChanged(object? sender, PlatformColorValues e)
+    {
+        var settings = SettingsManager.LoadSettings();
+        if (settings.ThemeVariant == ThemeVariant.System)
+        {
+            UpdateTheme(settings.ThemeVariant);
+        }
+    }
+
     public override void Initialize()
     {
         AvaloniaXamlLoader.Load(this);
@@ -22,15 +49,10 @@ public partial class App : Application
 
     public override void OnFrameworkInitializationCompleted()
     {
-        // Загружаем настройки перед инициализацией интерфейса
         var settings = SettingsManager.LoadSettings();
-        this.RequestedThemeVariant = settings.ThemeVariant switch
-        {
-            ThemeVariant.Light => Avalonia.Styling.ThemeVariant.Light,
-            ThemeVariant.Dark => Avalonia.Styling.ThemeVariant.Dark,
-            _ => Avalonia.Styling.ThemeVariant.Default
-        };
+        UpdateTheme(settings.ThemeVariant);
 
+        // Загружаем настройки перед инициализацией интерфейса
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             // Avoid duplicate validations from both Avalonia and the CommunityToolkit. 
@@ -64,5 +86,15 @@ public partial class App : Application
         {
             BindingPlugins.DataValidators.Remove(plugin);
         }
+    }
+
+    public void UpdateTheme(ThemeVariant theme)
+    {
+        this.RequestedThemeVariant = theme switch
+        {
+            ThemeVariant.Light => Avalonia.Styling.ThemeVariant.Light,
+            ThemeVariant.Dark => Avalonia.Styling.ThemeVariant.Dark,
+            _ => Avalonia.Styling.ThemeVariant.Default
+        };
     }
 }

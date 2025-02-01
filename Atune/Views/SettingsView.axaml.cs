@@ -1,3 +1,4 @@
+using System;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Styling;
@@ -5,6 +6,7 @@ using Atune.ViewModels;
 using Atune.Services;
 using Atune.Models;
 using ThemeVariant = Atune.Models.ThemeVariant;
+using Avalonia.Platform;
 
 namespace Atune.Views
 {
@@ -38,17 +40,17 @@ namespace Atune.Views
         {
             if (Application.Current is App app)
             {
-                app.RequestedThemeVariant = theme switch
-                {
-                    ThemeVariant.Light => Avalonia.Styling.ThemeVariant.Light,
-                    ThemeVariant.Dark => Avalonia.Styling.ThemeVariant.Dark,
-                    _ => Avalonia.Styling.ThemeVariant.Default
-                };
+                app.UpdateTheme(theme);
                 
-                // Сохраняем настройки сразу после изменения
-                var settings = SettingsManager.LoadSettings();
-                settings.ThemeVariant = theme;
-                SettingsManager.SaveSettings(settings);
+                // Для Android используем условную компиляцию
+#if ANDROID
+                var window = TopLevel.GetTopLevel(this) as Window;
+                if (window?.PlatformImpl != null)
+                {
+                    // Используем правильный метод для Android
+                    (window.PlatformImpl as Avalonia.Android.AndroidWindow)?.UpdateSystemTheme();
+                }
+#endif
             }
         }
     }
