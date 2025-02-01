@@ -38,11 +38,6 @@
                                     <ComboBoxItem Content="Тёмная"/>
                                 </ComboBox>
                             </Grid>
-                            <Button Content="Сохранить настройки" 
-                                    HorizontalAlignment="Center"
-                                    Margin="0,20"
-                                    Padding="15,5"
-                                    Command="{Binding SaveSettingsCommand}"/>
                         </StackPanel>
                     </Grid>
                 </Grid>

@@ -41,7 +41,9 @@ public static class SettingsManager
             switch (parts[0])
             {
                 case "ThemeVariant" when int.TryParse(parts[1], out var theme):
-                    settings.ThemeVariant = (ThemeVariant)theme;
+                    settings.ThemeVariant = theme >= 0 && theme <= 2 
+                        ? (ThemeVariant)theme 
+                        : ThemeVariant.System;
                     break;
             }
         }

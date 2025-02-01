@@ -28,15 +28,15 @@ namespace Atune.Views
         {
             if (ThemeComboBox == null) return;
             
-            var settings = new AppSettings { ThemeVariant = (ThemeVariant)ThemeComboBox.SelectedIndex };
+            var settings = SettingsManager.LoadSettings();
+            settings.ThemeVariant = (ThemeVariant)ThemeComboBox.SelectedIndex;
             SettingsManager.SaveSettings(settings);
             ApplyTheme(settings.ThemeVariant);
         }
 
         private void ApplyTheme(ThemeVariant theme)
         {
-            var app = Application.Current as App;
-            if (app != null)
+            if (Application.Current is App app)
             {
                 app.RequestedThemeVariant = theme switch
                 {
@@ -44,6 +44,11 @@ namespace Atune.Views
                     ThemeVariant.Dark => Avalonia.Styling.ThemeVariant.Dark,
                     _ => Avalonia.Styling.ThemeVariant.Default
                 };
+                
+                // Сохраняем настройки сразу после изменения
+                var settings = SettingsManager.LoadSettings();
+                settings.ThemeVariant = theme;
+                SettingsManager.SaveSettings(settings);
             }
         }
     }

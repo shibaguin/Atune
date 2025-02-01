@@ -7,6 +7,9 @@ using Avalonia.Markup.Xaml;
 using Atune.ViewModels;
 using Atune.Views;
 using System.Diagnostics.CodeAnalysis;
+using Atune.Services;
+using Atune.Models;
+using ThemeVariant = Atune.Models.ThemeVariant;
 
 namespace Atune;
 
@@ -19,6 +22,15 @@ public partial class App : Application
 
     public override void OnFrameworkInitializationCompleted()
     {
+        // Загружаем настройки перед инициализацией интерфейса
+        var settings = SettingsManager.LoadSettings();
+        this.RequestedThemeVariant = settings.ThemeVariant switch
+        {
+            ThemeVariant.Light => Avalonia.Styling.ThemeVariant.Light,
+            ThemeVariant.Dark => Avalonia.Styling.ThemeVariant.Dark,
+            _ => Avalonia.Styling.ThemeVariant.Default
+        };
+
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             // Avoid duplicate validations from both Avalonia and the CommunityToolkit. 
