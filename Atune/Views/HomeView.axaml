@@ -9,10 +9,11 @@
              x:Class="Atune.Views.HomeView">
     <Grid>
         <!-- Устанавливаем выравнивание содержимого по центру -->
-        <TextBlock Text="Это главная страница"
+        <TextBlock Text="Добро пожаловать в Atune!" 
                    HorizontalAlignment="Center"
                    VerticalAlignment="Center"
                    FontSize="24"
+                   Foreground="{DynamicResource TextBrush}"
                    FontWeight="Bold" />
     </Grid>
 </UserControl>

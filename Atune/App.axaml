@@ -8,6 +8,12 @@
              
     <Application.Styles>
         <FluentTheme />
+        <Style Selector="TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+        </Style>
+        <Style Selector="Button">
+            <Setter Property="Foreground" Value="{DynamicResource ButtonForeground}"/>
+        </Style>
     </Application.Styles>
              
              <Application.Resources>

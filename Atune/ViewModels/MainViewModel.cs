@@ -3,6 +3,8 @@ using CommunityToolkit.Mvvm.Input;
 using Avalonia;
 using Avalonia.Styling;
 using Atune.Views;
+using Atune.Services;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Atune.ViewModels;
 public partial class MainViewModel : ViewModelBase
@@ -16,32 +18,47 @@ public partial class MainViewModel : ViewModelBase
     private string _headerText = "Atune";
     
     [ObservableProperty]
-    private object _currentContent = new HomeView();
+    private object? _currentView;
+
+    private readonly ISettingsService _settingsService;
+
+    public MainViewModel(ISettingsService settingsService)
+    {
+        _settingsService = settingsService;
+        CurrentView = ServiceLocator.GetService<HomeView>();
+        LoadInitialSettings();
+    }
+
+    private void LoadInitialSettings()
+    {
+        var settings = _settingsService.LoadSettings();
+        // Применяем настройки
+    }
 
     [RelayCommand]
     private void GoHome()
     {
         HeaderText = "Atune";
-        CurrentContent = new HomeView();
+        CurrentView = ServiceLocator.GetService<HomeView>();
     }
 
     [RelayCommand]
     private void GoMedia()
     {
         HeaderText = "Медиатека";
-        CurrentContent = new MediaView();
+        CurrentView = ServiceLocator.GetService<MediaView>();
     }
 
     [RelayCommand]
     private void GoHistory()
     {
         HeaderText = "История";
-        CurrentContent = new HistoryView();
+        CurrentView = ServiceLocator.GetService<HistoryView>();
     }
     [RelayCommand]
     private void GoSettings()
     {
-        HeaderText = "История";
-        CurrentContent = new SettingsView();
+        HeaderText = "Настройки";
+        CurrentView = ServiceLocator.GetService<SettingsView>();
     }
 }

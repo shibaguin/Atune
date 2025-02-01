@@ -9,7 +9,7 @@
              x:Class="Atune.Views.HistoryView">
     <Grid>
         <!-- Устанавливаем выравнивание содержимого по центру -->
-        <TextBlock Text="Это страница истории прослушиваний"
+        <TextBlock Text="История запросов будет здесь"
                    HorizontalAlignment="Center"
                    VerticalAlignment="Center"
                    FontSize="24"

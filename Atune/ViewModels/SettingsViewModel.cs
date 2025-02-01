@@ -12,20 +12,21 @@ public partial class SettingsViewModel : ViewModelBase
     [ObservableProperty]
     private int _selectedThemeIndex;
 
-    public SettingsViewModel()
+    private readonly ISettingsService _settingsService;
+
+    public SettingsViewModel(ISettingsService settingsService)
     {
+        _settingsService = settingsService;
         // Загрузка сохранённых настроек
-        var settings = SettingsManager.LoadSettings();
+        var settings = _settingsService.LoadSettings();
         SelectedThemeIndex = (int)settings.ThemeVariant;
     }
 
     [RelayCommand]
     private void SaveSettings()
     {
-        var settings = new AppSettings
-        {
-            ThemeVariant = (ThemeVariant)SelectedThemeIndex
-        };
-        SettingsManager.SaveSettings(settings);
+        _settingsService.SaveSettings(new AppSettings { 
+            ThemeVariant = (ThemeVariant)SelectedThemeIndex 
+        });
     }
 } 

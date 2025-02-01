@@ -12,6 +12,11 @@ using Atune.Models;
 using ThemeVariant = Atune.Models.ThemeVariant;
 using Avalonia.Platform;
 using Avalonia.Media;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using System;
+using Avalonia.Controls.Templates;
+using Avalonia.Styling;
 
 namespace Atune;
 
@@ -47,31 +52,50 @@ public partial class App : Application
         AvaloniaXamlLoader.Load(this);
     }
 
+    public new static App? Current => Application.Current as App;
+    public IServiceProvider? Services { get; private set; }
+
     public override void OnFrameworkInitializationCompleted()
     {
+        var services = new ServiceCollection();
+        ConfigureServices(services);
+        var serviceProvider = services.BuildServiceProvider();
+        ServiceLocator.Initialize(serviceProvider);
+        
+        // Убираем дублирующийся код
+        if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+        {
+            DisableAvaloniaDataAnnotationValidation();
+            desktop.MainWindow = new MainWindow();
+        }
+        else if (ApplicationLifetime is ISingleViewApplicationLifetime singleView)
+        {
+            singleView.MainView = new MainView
+            {
+                DataContext = serviceProvider.GetRequiredService<MainViewModel>()
+            };
+        }
+
         var settings = SettingsManager.LoadSettings();
         UpdateTheme(settings.ThemeVariant);
 
-        // Загружаем настройки перед инициализацией интерфейса
-        if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
-        {
-            // Avoid duplicate validations from both Avalonia and the CommunityToolkit. 
-            // More info: https://docs.avaloniaui.net/docs/guides/development-guides/data-validation#manage-validationplugins
-            DisableAvaloniaDataAnnotationValidation();
-            desktop.MainWindow = new MainWindow
-            {
-                DataContext = new MainViewModel()
-            };
-        }
-        else if (ApplicationLifetime is ISingleViewApplicationLifetime singleViewPlatform)
-        {
-            singleViewPlatform.MainView = new MainView
-            {
-                DataContext = new MainViewModel()
-            };
-        }
-
         base.OnFrameworkInitializationCompleted();
+    }
+
+    private void ConfigureServices(IServiceCollection services)
+    {
+        services.AddSingleton<ISettingsService, SettingsService>();
+        services.AddTransient<MainViewModel>();
+        services.AddTransient<SettingsViewModel>();
+        services.AddTransient<HomeViewModel>();
+        services.AddTransient<MediaViewModel>();
+        services.AddTransient<HistoryViewModel>();
+        
+        services.AddTransient<MainView>();
+        services.AddTransient<SettingsView>();
+        services.AddTransient<HomeView>();
+        services.AddTransient<MediaView>();
+        services.AddTransient<HistoryView>();
     }
 
     [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "Disabled for Avalonia compatibility")]
@@ -90,11 +114,28 @@ public partial class App : Application
 
     public void UpdateTheme(ThemeVariant theme)
     {
-        this.RequestedThemeVariant = theme switch
+        // Определяем актуальную тему
+        var actualTheme = theme switch
+        {
+            ThemeVariant.System => Application.Current?.PlatformSettings?.GetColorValues()?.ThemeVariant 
+                == PlatformThemeVariant.Dark 
+                ? ThemeVariant.Dark 
+                : ThemeVariant.Light,
+            _ => theme
+        };
+
+        // Устанавливаем тему для всего приложения
+        this.RequestedThemeVariant = actualTheme switch
         {
             ThemeVariant.Light => Avalonia.Styling.ThemeVariant.Light,
             ThemeVariant.Dark => Avalonia.Styling.ThemeVariant.Dark,
             _ => Avalonia.Styling.ThemeVariant.Default
         };
+
+        // Принудительно обновляем все элементы интерфейса
+        if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+        {
+            desktop.MainWindow?.InvalidateVisual();
+        }
     }
 }

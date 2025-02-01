@@ -4,6 +4,7 @@ using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Styling;
 using Atune.Models;
+using Atune.ViewModels;
 
 namespace Atune.Views;
 
@@ -14,11 +15,11 @@ public partial class MainView : UserControl
     {
         InitializeComponent();
         InitializeDesignResources();
+        DataContext = ServiceLocator.GetService<MainViewModel>();
     }
-    
+
     private void InitializeDesignResources()
     {
-        // Инициализация ресурсов из статического класса
         Resources.Add("HeaderFontSize", DesignSettings.Dimensions.HeaderFontSize);
         Resources.Add("NavigationDividerWidth", DesignSettings.Dimensions.NavigationDividerWidth);
         Resources.Add("NavigationDividerHeight", DesignSettings.Dimensions.NavigationDividerHeight);

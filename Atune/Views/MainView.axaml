@@ -27,15 +27,17 @@
                     <SolidColorBrush x:Key="BackgroundBrush" Color="White"/>
                     <SolidColorBrush x:Key="ForegroundBrush" Color="Black"/>
                     <SolidColorBrush x:Key="ButtonForeground" Color="Black"/>
+                    <StaticResource x:Key="TextBrush" ResourceKey="SystemControlForegroundBaseHighBrush"/>
                 </ResourceDictionary>
 
                 <ResourceDictionary x:Key="Dark">
                     <SolidColorBrush x:Key="HeaderBackground" Color="#FF303030"/>
                     <SolidColorBrush x:Key="BarBackground" Color="#FF303030"/>
                     <SolidColorBrush x:Key="DividerBrush" Color="#FF202020"/>
-                    <SolidColorBrush x:Key="BackgroundBrush" Color="Black"/>
+                    <SolidColorBrush x:Key="BackgroundBrush" Color="#FF202020"/>
                     <SolidColorBrush x:Key="ForegroundBrush" Color="White"/>
                     <SolidColorBrush x:Key="ButtonForeground" Color="White"/>
+                    <StaticResource x:Key="TextBrush" ResourceKey="SystemControlForegroundBaseHighBrush"/>
                 </ResourceDictionary>
             </ResourceDictionary.ThemeDictionaries>
         </ResourceDictionary>
@@ -105,7 +107,7 @@
                 <!-- Заголовок Header -->
                 <TextBlock Grid.Column="0"
                            Text="{Binding HeaderText}"
-                           Foreground="{DynamicResource ForegroundBrush}"
+                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                            FontSize="{DynamicResource HeaderFontSize}"
                            FontWeight="Bold"
                            VerticalAlignment="Center"/>
@@ -190,9 +192,10 @@
                          VerticalAlignment="Stretch"/>
             </Grid>
         </Border>
-        <ContentControl Content="{Binding CurrentContent}"
+        <ContentControl Content="{Binding CurrentView}"
                         HorizontalAlignment="Stretch"
                         VerticalAlignment="Stretch"
+                        Background="{DynamicResource BackgroundBrush}"
                         Foreground="{DynamicResource ForegroundBrush}"/>
     </DockPanel>
 </UserControl>

@@ -8,7 +8,8 @@
              d:DesignHeight="450"
              xmlns:vm="clr-namespace:Atune.ViewModels"
              x:DataType="vm:SettingsViewModel"
-             x:Class="Atune.Views.SettingsView">
+             x:Class="Atune.Views.SettingsView"
+>
     
     <TabControl HorizontalAlignment="Center" 
                 HorizontalContentAlignment="Center"

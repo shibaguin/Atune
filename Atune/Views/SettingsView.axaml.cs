@@ -7,6 +7,7 @@ using Atune.Services;
 using Atune.Models;
 using ThemeVariant = Atune.Models.ThemeVariant;
 using Avalonia.Platform;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Atune.Views
 {
@@ -15,7 +16,7 @@ namespace Atune.Views
         public SettingsView()
         {
             InitializeComponent();
-            DataContext = new SettingsViewModel();
+            DataContext = ServiceLocator.GetService<SettingsViewModel>();
             LoadSettings();
         }
 
