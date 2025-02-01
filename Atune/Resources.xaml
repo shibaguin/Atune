@@ -1,0 +1,19 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:vm="clr-namespace:Atune.ViewModels"
+                    xmlns:views="clr-namespace:Atune.Views">
+    
+    <DataTemplate DataType="vm:HomeViewModel">
+        <views:HomeView />
+    </DataTemplate>
+    <DataTemplate DataType="vm:MediaViewModel">
+        <views:MediaView />
+    </DataTemplate>
+    <DataTemplate DataType="vm:HistoryViewModel">
+        <views:HistoryView />
+    </DataTemplate>
+    <DataTemplate DataType="vm:SettingsViewModel">
+        <views:SettingsView />
+    </DataTemplate>
+    
+</ResourceDictionary> 

@@ -4,11 +4,13 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:Atune.ViewModels"
              xmlns:sys="clr-namespace:System;assembly=mscorlib"
+             xmlns:views="clr-namespace:Atune.Views"
              mc:Ignorable="d" 
              d:DesignWidth="800" 
              d:DesignHeight="450"
              x:Class="Atune.Views.MainView"
-             x:DataType="vm:MainViewModel">
+             x:DataType="vm:MainViewModel"
+             vm:ViewModelLocator.AutoHookedUpViewModel="True">
 
     <Design.DataContext>
         <vm:MainViewModel />
@@ -194,8 +196,6 @@
         </Border>
         <ContentControl Content="{Binding CurrentView}"
                         HorizontalAlignment="Stretch"
-                        VerticalAlignment="Stretch"
-                        Background="{DynamicResource BackgroundBrush}"
-                        Foreground="{DynamicResource ForegroundBrush}"/>
+                        VerticalAlignment="Stretch"/>
     </DockPanel>
 </UserControl>

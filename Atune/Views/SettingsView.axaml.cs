@@ -1,40 +1,59 @@
 using System;
 using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Styling;
+using Avalonia.Controls.Documents;
 using Atune.ViewModels;
 using Atune.Services;
-using Atune.Models;
 using ThemeVariant = Atune.Models.ThemeVariant;
-using Avalonia.Platform;
-using Microsoft.Extensions.DependencyInjection;
+using Atune.Models;
 
 namespace Atune.Views
 {
     public partial class SettingsView : UserControl
     {
-        public SettingsView()
+        private readonly ISettingsService? _settingsService;
+
+        // Конструктор для DI
+        public SettingsView(SettingsViewModel viewModel, ISettingsService settingsService)
         {
             InitializeComponent();
-            DataContext = ServiceLocator.GetService<SettingsViewModel>();
+            DataContext = viewModel;
+            _settingsService = settingsService ?? throw new ArgumentNullException(nameof(settingsService));
+            InitializePlatformSpecificSettings();
+        }
+
+        // Конструктор для XAML (только для дизайнера)
+        public SettingsView()
+        {
+            if (!Design.IsDesignMode)
+                throw new InvalidOperationException("Constructor for design mode only!");
+            
+            InitializeComponent();
+        }
+
+        private void InitializePlatformSpecificSettings()
+        {
             LoadSettings();
         }
 
         private void LoadSettings()
         {
-            var settings = SettingsManager.LoadSettings();
+            if (_settingsService == null) return;
+            
+            var settings = _settingsService.LoadSettings();
             ApplyTheme(settings.ThemeVariant);
             ThemeComboBox.SelectedIndex = (int)settings.ThemeVariant;
         }
 
         private void ThemeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (ThemeComboBox == null) return;
+            if (_settingsService == null || ThemeComboBox == null) return;
             
-            var settings = SettingsManager.LoadSettings();
-            settings.ThemeVariant = (ThemeVariant)ThemeComboBox.SelectedIndex;
-            SettingsManager.SaveSettings(settings);
-            ApplyTheme(settings.ThemeVariant);
+            var vm = (DataContext as SettingsViewModel)!;
+            _settingsService.SaveSettings(new AppSettings { 
+                ThemeVariant = (ThemeVariant)ThemeComboBox.SelectedIndex 
+            });
+            ApplyTheme((ThemeVariant)ThemeComboBox.SelectedIndex);
         }
 
         private void ApplyTheme(ThemeVariant theme)
@@ -53,6 +72,26 @@ namespace Atune.Views
                 }
 #endif
             }
+        }
+
+        private void ApplyTheme_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+        {
+            if (_settingsService == null) return;
+            
+            var vm = (DataContext as SettingsViewModel)!;
+            _settingsService.SaveSettings(new AppSettings { 
+                ThemeVariant = (ThemeVariant)vm.SelectedThemeIndex 
+            });
+        }
+
+        private void ApplySettings_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+        {
+            if (_settingsService == null) return;
+            
+            var vm = (DataContext as SettingsViewModel)!;
+            _settingsService.SaveSettings(new AppSettings { 
+                ThemeVariant = (ThemeVariant)vm.SelectedThemeIndex 
+            });
         }
     }
 }

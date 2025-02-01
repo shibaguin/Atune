@@ -1,15 +1,19 @@
-using Avalonia;
 using Atune.ViewModels;
-using Microsoft.Extensions.DependencyInjection;
 using Avalonia.Controls;
 
 namespace Atune.Views;
 
 public partial class MainWindow : Window
 {
+    // Конструктор для XAML
     public MainWindow()
     {
         InitializeComponent();
-        DataContext = ServiceLocator.GetService<MainViewModel>();
+    }
+    
+    // Конструктор для DI
+    public MainWindow(MainViewModel vm) : this()
+    {
+        DataContext = vm;
     }
 }

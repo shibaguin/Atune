@@ -4,6 +4,6 @@ namespace Atune.Services;
 
 public interface ISettingsService
 {
-    AppSettings LoadSettings();
     void SaveSettings(AppSettings settings);
+    AppSettings LoadSettings();
 } 

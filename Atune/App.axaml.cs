@@ -1,6 +1,5 @@
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
-using Avalonia.Data.Core;
 using Avalonia.Data.Core.Plugins;
 using System.Linq;
 using Avalonia.Markup.Xaml;
@@ -8,15 +7,13 @@ using Atune.ViewModels;
 using Atune.Views;
 using System.Diagnostics.CodeAnalysis;
 using Atune.Services;
-using Atune.Models;
 using ThemeVariant = Atune.Models.ThemeVariant;
 using Avalonia.Platform;
-using Avalonia.Media;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using System;
-using Avalonia.Controls.Templates;
 using Avalonia.Styling;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Avalonia.Controls;
 
 namespace Atune;
 
@@ -38,9 +35,20 @@ public partial class App : Application
         }
     }
 
+    ~App()
+    {
+        if (Application.Current?.PlatformSettings != null)
+        {
+            Application.Current.PlatformSettings.ColorValuesChanged -= OnSystemThemeChanged;
+        }
+    }
+
     private void OnSystemThemeChanged(object? sender, PlatformColorValues e)
     {
-        var settings = SettingsManager.LoadSettings();
+        var settingsService = Services?.GetRequiredService<ISettingsService>();
+        if (settingsService == null) return;
+        
+        var settings = settingsService.LoadSettings();
         if (settings.ThemeVariant == ThemeVariant.System)
         {
             UpdateTheme(settings.ThemeVariant);
@@ -60,13 +68,12 @@ public partial class App : Application
         var services = new ServiceCollection();
         ConfigureServices(services);
         var serviceProvider = services.BuildServiceProvider();
-        ServiceLocator.Initialize(serviceProvider);
+        Services = serviceProvider;
         
-        // Убираем дублирующийся код
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             DisableAvaloniaDataAnnotationValidation();
-            desktop.MainWindow = new MainWindow();
+            desktop.MainWindow = serviceProvider.GetRequiredService<MainWindow>();
         }
         else if (ApplicationLifetime is ISingleViewApplicationLifetime singleView)
         {
@@ -76,26 +83,49 @@ public partial class App : Application
             };
         }
 
-        var settings = SettingsManager.LoadSettings();
-        UpdateTheme(settings.ThemeVariant);
+        var settingsService = Services?.GetRequiredService<ISettingsService>();
+        if (settingsService != null)
+        {
+            var settings = settingsService.LoadSettings();
+            UpdateTheme(settings.ThemeVariant);
+        }
 
+        DataTemplates.Add(new ViewLocator(serviceProvider));
+        
         base.OnFrameworkInitializationCompleted();
     }
 
     private void ConfigureServices(IServiceCollection services)
     {
+        services.AddSingleton<ViewLocator>();
+        // Сервисы
         services.AddSingleton<ISettingsService, SettingsService>();
+        
+        // ViewModels
         services.AddTransient<MainViewModel>();
-        services.AddTransient<SettingsViewModel>();
         services.AddTransient<HomeViewModel>();
         services.AddTransient<MediaViewModel>();
         services.AddTransient<HistoryViewModel>();
+        services.AddTransient<SettingsViewModel>();
         
+        // Views
         services.AddTransient<MainView>();
-        services.AddTransient<SettingsView>();
         services.AddTransient<HomeView>();
         services.AddTransient<MediaView>();
         services.AddTransient<HistoryView>();
+        services.AddTransient<SettingsView>();
+        
+        // Добавляем окна
+        services.AddTransient<MainWindow>();
+        services.AddTransient<SettingsView>();
+        services.AddTransient<HomeView>();
+        
+        // Фабрика для создания View
+        services.AddSingleton<Func<Type, ViewModelBase>>(provider => type => 
+            (ViewModelBase)provider.GetRequiredService(type));
+
+        services.AddTransient<Func<Type, Control>>(provider => type =>
+            (Control)ActivatorUtilities.CreateInstance(provider, type));
     }
 
     [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "Disabled for Avalonia compatibility")]

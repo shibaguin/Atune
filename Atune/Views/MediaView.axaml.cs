@@ -1,16 +1,14 @@
 using Avalonia.Controls;
-using Avalonia;
-using Avalonia.Interactivity;
-using Avalonia.Styling;
 using Atune.ViewModels;
 
 namespace Atune.Views;
 
 public partial class MediaView : UserControl
 {
-    public MediaView()
+    public MediaView() => InitializeComponent();
+    
+    public MediaView(MediaViewModel vm) : this()
     {
-        InitializeComponent();
-        DataContext = ServiceLocator.GetService<MediaViewModel>();
+        DataContext = vm;
     }
 }

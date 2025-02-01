@@ -42,14 +42,5 @@ namespace Atune.Models
                 }
             }
         }
-
-        // Пример использования цветов
-        /*
-        public static class Colors
-        {
-            public const string PrimaryColor = "#2C3E50";
-            public const string SecondaryColor = "#3498DB";
-        }
-        */
     }
 }

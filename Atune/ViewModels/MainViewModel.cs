@@ -1,10 +1,10 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+﻿using System;
+using System.Collections.Generic;
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using Avalonia;
-using Avalonia.Styling;
 using Atune.Views;
 using Atune.Services;
-using Microsoft.Extensions.DependencyInjection;
+using Avalonia.Controls;
 
 namespace Atune.ViewModels;
 public partial class MainViewModel : ViewModelBase
@@ -18,15 +18,31 @@ public partial class MainViewModel : ViewModelBase
     private string _headerText = "Atune";
     
     [ObservableProperty]
-    private object? _currentView;
+    private Control? _currentView;
 
     private readonly ISettingsService _settingsService;
+    private readonly Dictionary<SectionType, Control> _views;
+    private readonly Func<Type, ViewModelBase> _viewModelFactory;
+    private readonly Func<Type, Control> _viewFactory;
 
-    public MainViewModel(ISettingsService settingsService)
+    public MainViewModel(
+        ISettingsService settingsService,
+        Func<Type, ViewModelBase> viewModelFactory,
+        Func<Type, Control> viewFactory)
     {
-        _settingsService = settingsService;
-        CurrentView = ServiceLocator.GetService<HomeView>();
-        LoadInitialSettings();
+        _settingsService = settingsService ?? throw new ArgumentNullException(nameof(settingsService));
+        _viewModelFactory = viewModelFactory ?? throw new ArgumentNullException(nameof(viewModelFactory));
+        _viewFactory = viewFactory ?? throw new ArgumentNullException(nameof(viewFactory));
+        
+        _views = new Dictionary<SectionType, Control>
+        {
+            [SectionType.Home] = viewFactory(typeof(HomeView)),
+            [SectionType.Media] = viewFactory(typeof(MediaView)),
+            [SectionType.History] = viewFactory(typeof(HistoryView)),
+            [SectionType.Settings] = viewFactory(typeof(SettingsView))
+        };
+        
+        CurrentView = _views[SectionType.Home];
     }
 
     private void LoadInitialSettings()
@@ -39,26 +55,29 @@ public partial class MainViewModel : ViewModelBase
     private void GoHome()
     {
         HeaderText = "Atune";
-        CurrentView = ServiceLocator.GetService<HomeView>();
+        CurrentView = _views[SectionType.Home];
     }
 
     [RelayCommand]
     private void GoMedia()
     {
         HeaderText = "Медиатека";
-        CurrentView = ServiceLocator.GetService<MediaView>();
+        CurrentView = _views[SectionType.Media];
     }
 
     [RelayCommand]
     private void GoHistory()
     {
         HeaderText = "История";
-        CurrentView = ServiceLocator.GetService<HistoryView>();
+        CurrentView = _views[SectionType.History];
     }
     [RelayCommand]
     private void GoSettings()
     {
-        HeaderText = "Настройки";
-        CurrentView = ServiceLocator.GetService<SettingsView>();
+        if (_views.TryGetValue(SectionType.Settings, out var vm))
+        {
+            HeaderText = "Настройки";
+            CurrentView = vm;
+        }
     }
 }

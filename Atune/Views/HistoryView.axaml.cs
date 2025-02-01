@@ -1,7 +1,4 @@
 using Avalonia.Controls;
-using Avalonia;
-using Avalonia.Interactivity;
-using Avalonia.Styling;
 using Atune.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 

@@ -11,6 +11,5 @@
         Title="Atune"
         MinWidth="420"
         MinHeight="300">
-    
     <views:MainView DataContext="{Binding}"/>
 </Window>

@@ -1,8 +1,4 @@
-using System.IO;
-using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Interactivity;
-using Avalonia.Styling;
 using Atune.Models;
 using Atune.ViewModels;
 
@@ -15,7 +11,6 @@ public partial class MainView : UserControl
     {
         InitializeComponent();
         InitializeDesignResources();
-        DataContext = ServiceLocator.GetService<MainViewModel>();
     }
 
     private void InitializeDesignResources()
