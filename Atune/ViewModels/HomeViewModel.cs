@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Threading.Tasks;
 
@@ -8,20 +9,31 @@ namespace Atune.ViewModels;
 public partial class HomeViewModel : ViewModelBase
 {
     private readonly IMemoryCache _cache;
+    private readonly ILogger<HomeViewModel> _logger;
     
     [ObservableProperty]
     private string _welcomeMessage = string.Empty;
     
-    public HomeViewModel(IMemoryCache cache)
+    public HomeViewModel(
+        IMemoryCache cache,
+        ILogger<HomeViewModel> logger)
     {
         _cache = cache;
-        Title = "Главная страница";
+        _logger = logger;
+        _logger.LogInformation("Инициализация HomeViewModel");
         
-        WelcomeMessage = _cache.GetOrCreate("WelcomeMessage", entry => 
-        {
-            entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(1);
-            return GenerateWelcomeMessage() ?? string.Empty;
-        })!; // Явное указание non-null
+        try {
+            Title = "Главная страница";
+            
+            WelcomeMessage = _cache.GetOrCreate("WelcomeMessage", entry => 
+            {
+                entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(1);
+                return GenerateWelcomeMessage() ?? string.Empty;
+            })!; // Явное указание non-null
+        }
+        catch (Exception ex) {
+            _logger.LogError(ex, "Ошибка загрузки приветствия");
+        }
     }
 
     private string GenerateWelcomeMessage()

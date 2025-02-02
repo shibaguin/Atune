@@ -17,6 +17,9 @@ using Avalonia.Controls;
 using System.Threading.Tasks;
 using Avalonia.Threading;
 using Microsoft.Extensions.Caching.Memory;
+using Serilog;
+using Serilog.Sinks.File;
+using Serilog.Extensions.Logging;
 
 namespace Atune;
 
@@ -60,7 +63,18 @@ public partial class App : Application
 
     public override void Initialize()
     {
+        Log.Logger = new LoggerConfiguration()
+            .MinimumLevel.Debug()
+            .WriteTo.Console()
+            .WriteTo.File("logs/atune-.log", 
+                rollingInterval: RollingInterval.Day,
+                retainedFileCountLimit: 7)
+            .CreateLogger();
+
+        Log.Information("Инициализация приложения");
+        
         AvaloniaXamlLoader.Load(this);
+        base.Initialize();
     }
 
     public new static App? Current => Application.Current as App;
@@ -68,31 +82,40 @@ public partial class App : Application
 
     public override void OnFrameworkInitializationCompleted()
     {
-        var services = new ServiceCollection();
-        ConfigureServices(services);
-        var serviceProvider = services.BuildServiceProvider();
-        Services = serviceProvider;
-        
-        if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
-        {
-            DisableAvaloniaDataAnnotationValidation();
-            desktop.MainWindow = serviceProvider.GetRequiredService<MainWindow>();
-        }
-        else if (ApplicationLifetime is ISingleViewApplicationLifetime singleView)
-        {
-            singleView.MainView = new MainView
+        try {
+            var services = new ServiceCollection();
+            ConfigureServices(services);
+            var serviceProvider = services.BuildServiceProvider();
+            Services = serviceProvider;
+            
+            if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
             {
-                DataContext = serviceProvider.GetRequiredService<MainViewModel>()
-            };
-        }
+                DisableAvaloniaDataAnnotationValidation();
+                desktop.MainWindow = serviceProvider.GetRequiredService<MainWindow>();
+            }
+            else if (ApplicationLifetime is ISingleViewApplicationLifetime singleView)
+            {
+                singleView.MainView = new MainView
+                {
+                    DataContext = serviceProvider.GetRequiredService<MainViewModel>()
+                };
+            }
 
-        base.OnFrameworkInitializationCompleted();
-        
-        var settingsService = Services?.GetRequiredService<ISettingsService>();
-        if (settingsService != null)
-        {
-            var settings = settingsService.LoadSettings();
-            UpdateTheme(settings.ThemeVariant);
+            base.OnFrameworkInitializationCompleted();
+            
+            var settingsService = Services?.GetRequiredService<ISettingsService>();
+            if (settingsService != null)
+            {
+                var settings = settingsService.LoadSettings();
+                UpdateTheme(settings.ThemeVariant);
+            }
+        }
+        catch (Exception ex) {
+            Log.Fatal(ex, "Ошибка инициализации приложения");
+            throw;
+        }
+        finally {
+            Log.CloseAndFlush();
         }
     }
 
@@ -132,6 +155,10 @@ public partial class App : Application
         services.AddTransient<Func<Type, Control>>(provider => 
             ([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] Type type) =>
                 (Control)ActivatorUtilities.CreateInstance(provider, type));
+
+        services.AddLogging(builder => {
+            builder.AddSerilog(dispose: true);
+        });
     }
 
     [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "Disabled for Avalonia compatibility")]
