@@ -5,6 +5,8 @@
     <LangVersion>latest</LangVersion>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
     <PublishTrimmed>false</PublishTrimmed>
+    <IsTrimmable>true</IsTrimmable>
+    <TrimMode>partial</TrimMode>
   </PropertyGroup>
   
   <ItemGroup>

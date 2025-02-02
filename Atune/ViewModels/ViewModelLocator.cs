@@ -4,6 +4,8 @@ using Avalonia.Data;
 using System;
 using Avalonia.Controls.Templates;
 using System.Linq;
+using System.Diagnostics.CodeAnalysis;
+using System.Collections.Generic;
 
 namespace Atune.ViewModels;
 
@@ -30,6 +32,7 @@ public class ViewModelLocator
             new ActionObserver<AvaloniaPropertyChangedEventArgs<bool>>(OnAutoHookedUpViewModelChanged));
     }
 
+    [UnconditionalSuppressMessage("Trimming", "IL2057", Justification = "View models are explicitly registered")]
     private static void OnAutoHookedUpViewModelChanged(AvaloniaPropertyChangedEventArgs<bool> e)
     {
         if (e.Sender is Control control && 
@@ -46,13 +49,27 @@ public class ViewModelLocator
             
             var viewModelType = Type.GetType(viewModelTypeName) 
                 ?? AppDomain.CurrentDomain.GetAssemblies()
-                    .SelectMany(a => a.GetTypes())
+                    .SelectMany(a => GetAssemblyTypes(a))
                     .FirstOrDefault(t => t.FullName == viewModelTypeName);
 
             if (viewModelType != null)
             {
                 control.DataContext = services.GetService(viewModelType);
             }
+        }
+    }
+
+    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "Using GetTypes is required for design-time")]
+    [UnconditionalSuppressMessage("Trimming", "IL2057", Justification = "Type name is constructed from known view types")]
+    private static IEnumerable<Type> GetAssemblyTypes(System.Reflection.Assembly assembly)
+    {
+        try 
+        {
+            return assembly.GetTypes();
+        }
+        catch
+        {
+            return Array.Empty<Type>();
         }
     }
 }

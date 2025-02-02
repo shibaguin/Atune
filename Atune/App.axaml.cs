@@ -95,6 +95,7 @@ public partial class App : Application
         }
     }
 
+    [UnconditionalSuppressMessage("Trimming", "IL2111", Justification = "All views are explicitly registered in DI")]
     private void ConfigureServices(IServiceCollection services)
     {
         services.AddSingleton<ViewLocator>();
@@ -124,7 +125,7 @@ public partial class App : Application
         services.AddSingleton<Func<Type, ViewModelBase>>(provider => type => 
             (ViewModelBase)provider.GetRequiredService(type));
 
-        services.AddTransient<Func<Type, Control>>(provider => type =>
+        services.AddTransient<Func<Type, Control>>(provider => ([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] Type type) =>
             (Control)ActivatorUtilities.CreateInstance(provider, type));
     }
 

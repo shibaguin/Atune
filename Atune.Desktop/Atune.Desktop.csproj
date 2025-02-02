@@ -12,6 +12,9 @@
     <PublishSingleFile>true</PublishSingleFile>
     <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
     <SelfContained>true</SelfContained>
+    <RuntimeIdentifiers>linux-x64;win-x64</RuntimeIdentifiers>
+    <!-- Подавляем предупреждения о COM-активации для Windows -->
+    <SuppressTrimAnalysisWarnings>IL2026</SuppressTrimAnalysisWarnings>
   </PropertyGroup>
 
   <PropertyGroup>
