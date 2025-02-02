@@ -27,9 +27,10 @@ public partial class HomeViewModel : ViewModelBase
             
             WelcomeMessage = _cache.GetOrCreate("WelcomeMessage", entry => 
             {
-                entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(1);
+                entry.SetSize(1024)
+                     .SetAbsoluteExpiration(TimeSpan.FromHours(1));
                 return GenerateWelcomeMessage() ?? string.Empty;
-            })!; // Явное указание non-null
+            })!;
         }
         catch (Exception ex) {
             _logger.LogError(ex, "Ошибка загрузки приветствия");
@@ -46,7 +47,7 @@ public partial class HomeViewModel : ViewModelBase
     {
         var message = await _cache.GetOrCreateAsync("WelcomeMessage", async entry =>
         {
-            entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(1);
+            entry.SetAbsoluteExpiration(TimeSpan.FromHours(1));
             return await GenerateWelcomeMessageAsync();
         });
         WelcomeMessage = message ?? string.Empty;

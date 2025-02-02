@@ -24,7 +24,11 @@ public partial class MediaViewModel : ViewModelBase
         if (!_cache.TryGetValue("MediaContent", out List<MediaItem>? content))
         {
             content = LoadFromDataSource();
-            _cache.Set("MediaContent", content, TimeSpan.FromMinutes(30));
+            var cacheOptions = new MemoryCacheEntryOptions()
+                .SetSize(content.Count * 500 + 1024) // Базовый размер + 1KB на служебные данные
+                .SetPriority(CacheItemPriority.Normal)
+                .SetSlidingExpiration(TimeSpan.FromMinutes(15));
+            _cache.Set("MediaContent", content, cacheOptions);
         }
         MediaContent = content ?? new List<MediaItem>();
     }

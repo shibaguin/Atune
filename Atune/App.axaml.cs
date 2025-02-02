@@ -92,6 +92,7 @@ public partial class App : Application
             {
                 DisableAvaloniaDataAnnotationValidation();
                 desktop.MainWindow = serviceProvider.GetRequiredService<MainWindow>();
+                desktop.Exit += OnAppExit;
             }
             else if (ApplicationLifetime is ISingleViewApplicationLifetime singleView)
             {
@@ -114,15 +115,17 @@ public partial class App : Application
             Log.Fatal(ex, "Ошибка инициализации приложения");
             throw;
         }
-        finally {
-            Log.CloseAndFlush();
-        }
     }
 
     [UnconditionalSuppressMessage("Trimming", "IL2072", Justification = "DynamicallyAccessedMembers handled in registration")]
     private void ConfigureServices(IServiceCollection services)
     {
-        services.AddMemoryCache();
+        services.AddMemoryCache(options =>
+        {
+            options.SizeLimit = 100 * 1024 * 1024; // 100 MB лимит
+            options.CompactionPercentage = 0.25; // Освобождаем 25% места при достижении лимита
+            options.ExpirationScanFrequency = TimeSpan.FromMinutes(5); // Частота проверки экспирации
+        });
         services.AddSingleton<ViewLocator>();
         
         // Сервисы
@@ -202,5 +205,20 @@ public partial class App : Application
                 desktop.MainWindow?.Activate();
             }
         }, DispatcherPriority.Background);
+    }
+
+    private void ConfigureCachePolicies()
+    {
+        if (Services?.GetService<IMemoryCache>() is MemoryCache memoryCache)
+        {
+            // Используем стандартный метод очистки кэша
+            memoryCache.Compact(percentage: 0.25);
+        }
+    }
+    
+    private void OnAppExit(object? sender, ControlledApplicationLifetimeExitEventArgs e)
+    {
+        ConfigureCachePolicies();
+        Log.CloseAndFlush();
     }
 }

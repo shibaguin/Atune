@@ -21,7 +21,9 @@ public class SettingsService : ISettingsService
     {
         _cache = cache;
         _cacheOptions = new MemoryCacheEntryOptions()
-            .SetAbsoluteExpiration(TimeSpan.FromMinutes(5));
+            .SetSize(1024) // Размер записи в байтах (~1KB на настройки)
+            .SetPriority(CacheItemPriority.High)
+            .SetSlidingExpiration(TimeSpan.FromMinutes(30));
     }
 
     private static string GetSettingsPath()
@@ -43,13 +45,27 @@ public class SettingsService : ISettingsService
             fileName);
     }
 
+    private static long GetPlatformCacheLimit()
+    {
+        if (OperatingSystem.IsAndroid() || OperatingSystem.IsIOS())
+        {
+            return 50 * 1024 * 1024; // 50 MB для мобильных устройств
+        }
+        return 100 * 1024 * 1024; // 100 MB для десктопа
+    }
+
     public void SaveSettings(AppSettings settings)
     {
         lock (_fileLock)
         {
             try
             {
-                _cache.Set("AppSettings", settings, _cacheOptions);
+                var cacheOptions = new MemoryCacheEntryOptions()
+                    .SetSize(1024)
+                    .SetPriority(CacheItemPriority.High)
+                    .SetSlidingExpiration(TimeSpan.FromMinutes(30));
+                
+                _cache.Set("AppSettings", settings, cacheOptions);
                 
                 var directory = Path.GetDirectoryName(_settingsPath);
                 if (!Directory.Exists(directory) && directory != null)
@@ -144,5 +160,14 @@ public class SettingsService : ISettingsService
     {
         public SettingsException(string message, Exception inner) 
             : base(message, inner) {}
+    }
+
+    public string GetCacheStatistics()
+    {
+        if (_cache is MemoryCache memoryCache)
+        {
+            return $"Кэш настроек: {memoryCache.Count} записей";
+        }
+        return "Статистика кэша недоступна";
     }
 } 
