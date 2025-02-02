@@ -95,38 +95,52 @@ public partial class App : Application
         }
     }
 
-    [UnconditionalSuppressMessage("Trimming", "IL2111", Justification = "All views are explicitly registered in DI")]
+    [UnconditionalSuppressMessage("Trimming", "IL2072", Justification = "DynamicallyAccessedMembers handled in registration")]
     private void ConfigureServices(IServiceCollection services)
     {
         services.AddSingleton<ViewLocator>();
+        
         // Сервисы
         services.AddSingleton<ISettingsService, SettingsService>();
         
-        // ViewModels
-        services.AddTransient<MainViewModel>();
-        services.AddTransient<HomeViewModel>();
-        services.AddTransient<MediaViewModel>();
-        services.AddTransient<HistoryViewModel>();
-        services.AddTransient<SettingsViewModel>();
+        // Автоматическая регистрация ViewModels и Views
+        var viewModels = new[] {
+            typeof(MainViewModel),
+            typeof(HomeViewModel),
+            typeof(MediaViewModel),
+            typeof(HistoryViewModel),
+            typeof(SettingsViewModel)
+        };
         
-        // Views
-        services.AddTransient<MainView>();
-        services.AddTransient<HomeView>();
-        services.AddTransient<MediaView>();
-        services.AddTransient<HistoryView>();
-        services.AddTransient<SettingsView>();
+        var views = new[] {
+            typeof(MainView),
+            typeof(HomeView),
+            typeof(MediaView),
+            typeof(HistoryView),
+            typeof(SettingsView),
+            typeof(MainWindow)
+        };
+
+        // Регистрируем все ViewModels и Views как Transient
+        foreach (var vmType in viewModels)
+        {
+            services.AddTransient(vmType);
+        }
         
-        // Добавляем окна
-        services.AddTransient<MainWindow>();
-        services.AddTransient<SettingsView>();
-        services.AddTransient<HomeView>();
+        foreach (var viewType in views)
+        {
+            services.AddTransient(
+                serviceType: viewType,
+                implementationType: viewType);
+        }
         
-        // Фабрика для создания View
+        // Фабрики
         services.AddSingleton<Func<Type, ViewModelBase>>(provider => type => 
             (ViewModelBase)provider.GetRequiredService(type));
 
-        services.AddTransient<Func<Type, Control>>(provider => ([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] Type type) =>
-            (Control)ActivatorUtilities.CreateInstance(provider, type));
+        services.AddTransient<Func<Type, Control>>(provider => 
+            ([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] Type type) =>
+                (Control)ActivatorUtilities.CreateInstance(provider, type));
     }
 
     [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "Disabled for Avalonia compatibility")]
