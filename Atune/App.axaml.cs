@@ -16,6 +16,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Avalonia.Controls;
 using System.Threading.Tasks;
 using Avalonia.Threading;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace Atune;
 
@@ -98,6 +99,7 @@ public partial class App : Application
     [UnconditionalSuppressMessage("Trimming", "IL2072", Justification = "DynamicallyAccessedMembers handled in registration")]
     private void ConfigureServices(IServiceCollection services)
     {
+        services.AddMemoryCache();
         services.AddSingleton<ViewLocator>();
         
         // Сервисы

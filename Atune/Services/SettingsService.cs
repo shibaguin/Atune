@@ -2,18 +2,27 @@ using System;
 using System.IO;
 using System.Collections.Generic;
 using System.Diagnostics;
+using Microsoft.Extensions.Caching.Memory;
 using Atune.Models;
 using Avalonia;
 using Avalonia.Platform;
+using Microsoft.Extensions.Options;
 
 namespace Atune.Services;
 
 public class SettingsService : ISettingsService
 {
+    private readonly IMemoryCache _cache;
+    private readonly MemoryCacheEntryOptions _cacheOptions;
     private static readonly string _settingsPath = GetSettingsPath();
-    
-    private static AppSettings? _cachedSettings;
     private static readonly object _fileLock = new object();
+
+    public SettingsService(IMemoryCache cache)
+    {
+        _cache = cache;
+        _cacheOptions = new MemoryCacheEntryOptions()
+            .SetAbsoluteExpiration(TimeSpan.FromMinutes(5));
+    }
 
     private static string GetSettingsPath()
     {
@@ -40,7 +49,7 @@ public class SettingsService : ISettingsService
         {
             try
             {
-                _cachedSettings = settings;
+                _cache.Set("AppSettings", settings, _cacheOptions);
                 
                 var directory = Path.GetDirectoryName(_settingsPath);
                 if (!Directory.Exists(directory) && directory != null)
@@ -67,7 +76,7 @@ public class SettingsService : ISettingsService
             }
             catch (Exception ex)
             {
-                // Логирование ошибки (позже можно добавить ILogger)
+                _cache.Remove("AppSettings");
                 Debug.WriteLine($"Ошибка сохранения настроек: {ex.Message}");
                 throw new SettingsException("Не удалось сохранить настройки", ex);
             }
@@ -76,49 +85,58 @@ public class SettingsService : ISettingsService
 
     public AppSettings LoadSettings()
     {
-        return _cachedSettings ??= LoadSettingsInternal();
+        if (_cache.TryGetValue("AppSettings", out AppSettings? cachedSettings) && cachedSettings != null)
+        {
+            return cachedSettings;
+        }
+        return LoadSettingsInternal();
     }
     
-    private static AppSettings LoadSettingsInternal()
+    private AppSettings LoadSettingsInternal()
     {
-        var settings = new AppSettings();
-        
-        if (!File.Exists(_settingsPath))
-            return settings;
-
-        try
+        lock (_fileLock)
         {
-            foreach (var line in File.ReadAllLines(_settingsPath))
+            try
             {
-                var parts = line.Split('=', 2);
-                if (parts.Length != 2) continue;
+                if (!File.Exists(_settingsPath))
+                    return new AppSettings();
 
-                switch (parts[0])
+                var settings = new AppSettings();
+                
+                foreach (var line in File.ReadAllLines(_settingsPath))
                 {
-                    case "ThemeVariant" when int.TryParse(parts[1], out var theme):
-                        settings.ThemeVariant = theme switch
-                        {
-                            0 => ThemeVariant.System,
-                            1 => ThemeVariant.Light,
-                            2 => ThemeVariant.Dark,
-                            _ => ThemeVariant.System
-                        };
-                        break;
-                    case "LastUsedProfile":
-                        settings.LastUsedProfile = parts[1];
-                        break;
-                    case "LastUpdated" when DateTimeOffset.TryParse(parts[1], out var date):
-                        settings.LastUpdated = date;
-                        break;
+                    var parts = line.Split('=', 2);
+                    if (parts.Length != 2) continue;
+
+                    switch (parts[0])
+                    {
+                        case "ThemeVariant" when int.TryParse(parts[1], out var theme):
+                            settings.ThemeVariant = theme switch
+                            {
+                                0 => ThemeVariant.System,
+                                1 => ThemeVariant.Light,
+                                2 => ThemeVariant.Dark,
+                                _ => ThemeVariant.System
+                            };
+                            break;
+                        case "LastUsedProfile":
+                            settings.LastUsedProfile = parts[1];
+                            break;
+                        case "LastUpdated" when DateTimeOffset.TryParse(parts[1], out var date):
+                            settings.LastUpdated = date;
+                            break;
+                    }
                 }
+
+                _cache.Set("AppSettings", settings, _cacheOptions);
+                return settings;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Ошибка загрузки настроек: {ex.Message}");
+                return new AppSettings();
             }
         }
-        catch (Exception ex)
-        {
-            Debug.WriteLine($"Ошибка загрузки настроек: {ex.Message}");
-        }
-        
-        return settings;
     }
 
     // Добавим кастомное исключение
