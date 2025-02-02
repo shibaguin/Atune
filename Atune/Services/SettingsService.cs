@@ -10,12 +10,29 @@ namespace Atune.Services;
 
 public class SettingsService : ISettingsService
 {
-    private static readonly string _settingsPath = 
-        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), 
-        "Atune", "settings.ini");
+    private static readonly string _settingsPath = GetSettingsPath();
     
     private static AppSettings? _cachedSettings;
     private static readonly object _fileLock = new object();
+
+    private static string GetSettingsPath()
+    {
+        const string fileName = "settings.ini";
+        
+        if (OperatingSystem.IsAndroid())
+        {
+            // Для внешнего хранилища
+            return Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
+                fileName);
+        }
+        
+        // Для десктопных ОС
+        return Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+            "Atune",
+            fileName);
+    }
 
     public void SaveSettings(AppSettings settings)
     {
@@ -39,10 +56,9 @@ public class SettingsService : ISettingsService
                 // Для Android используем специальное хранилище
                 if (OperatingSystem.IsAndroid())
                 {
-                    using var stream = File.OpenWrite(_settingsPath);
+                    using var stream = File.Create(_settingsPath);
                     using var writer = new StreamWriter(stream);
                     lines.ForEach(writer.WriteLine);
-                    stream.SetLength(stream.Position); // Обрезаем лишнее если файл был больше
                 }
                 else
                 {
@@ -67,12 +83,6 @@ public class SettingsService : ISettingsService
     {
         var settings = new AppSettings();
         
-        if (OperatingSystem.IsAndroid() && !File.Exists(_settingsPath))
-        {
-            settings.ThemeVariant = ThemeVariant.System;
-            return settings;
-        }
-
         if (!File.Exists(_settingsPath))
             return settings;
 
