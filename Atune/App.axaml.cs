@@ -103,37 +103,26 @@ public partial class App : Application
         // Сервисы
         services.AddSingleton<ISettingsService, SettingsService>();
         
-        // Автоматическая регистрация ViewModels и Views
-        var viewModels = new[] {
-            typeof(MainViewModel),
-            typeof(HomeViewModel),
-            typeof(MediaViewModel),
-            typeof(HistoryViewModel),
-            typeof(SettingsViewModel)
-        };
-        
-        var views = new[] {
-            typeof(MainView),
-            typeof(HomeView),
-            typeof(MediaView),
-            typeof(HistoryView),
-            typeof(SettingsView),
-            typeof(MainWindow)
-        };
+        // Явная регистрация ViewModels
+        services.AddTransient<MainViewModel>();
+        services.AddTransient<HomeViewModel>();
+        services.AddTransient<MediaViewModel>();
+        services.AddTransient<HistoryViewModel>();
+        services.AddTransient<SettingsViewModel>();
 
-        // Регистрируем все ViewModels и Views как Transient
-        foreach (var vmType in viewModels)
-        {
-            services.AddTransient(vmType);
-        }
-        
-        foreach (var viewType in views)
-        {
-            services.AddTransient(
-                serviceType: viewType,
-                implementationType: viewType);
-        }
-        
+        // Явная регистрация Views с конструкторами
+        services.AddTransient<MainView>(sp => new MainView());
+        services.AddTransient<HomeView>(sp => new HomeView(sp.GetRequiredService<HomeViewModel>()));
+        services.AddTransient<MediaView>(sp => new MediaView(sp.GetRequiredService<MediaViewModel>()));
+        services.AddTransient<HistoryView>(sp => new HistoryView());
+        services.AddTransient<SettingsView>(sp => 
+            new SettingsView(
+                sp.GetRequiredService<SettingsViewModel>(),
+                sp.GetRequiredService<ISettingsService>()
+            )
+        );
+        services.AddTransient<MainWindow>();
+
         // Фабрики
         services.AddSingleton<Func<Type, ViewModelBase>>(provider => type => 
             (ViewModelBase)provider.GetRequiredService(type));
