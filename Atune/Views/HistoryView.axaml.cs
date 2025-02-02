@@ -9,6 +9,5 @@ public partial class HistoryView : UserControl
     public HistoryView()
     {
         InitializeComponent();
-        DataContext = App.Current?.Services?.GetService<HistoryViewModel>();
     }
 }

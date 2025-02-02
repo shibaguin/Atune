@@ -74,16 +74,6 @@ namespace Atune.Views
             }
         }
 
-        private void ApplyTheme_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
-        {
-            if (_settingsService == null) return;
-            
-            var vm = (DataContext as SettingsViewModel)!;
-            _settingsService.SaveSettings(new AppSettings { 
-                ThemeVariant = (ThemeVariant)vm.SelectedThemeIndex 
-            });
-        }
-
         private void ApplySettings_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
         {
             if (_settingsService == null) return;
