@@ -1,6 +1,8 @@
 using System;
 using System.IO;
 using Atune.Models;
+using Avalonia;
+using Avalonia.Platform;
 
 namespace Atune.Services;
 

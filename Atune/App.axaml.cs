@@ -14,6 +14,8 @@ using System;
 using Avalonia.Styling;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Avalonia.Controls;
+using System.Threading.Tasks;
+using Avalonia.Threading;
 
 namespace Atune;
 
@@ -83,16 +85,14 @@ public partial class App : Application
             };
         }
 
+        base.OnFrameworkInitializationCompleted();
+        
         var settingsService = Services?.GetRequiredService<ISettingsService>();
         if (settingsService != null)
         {
             var settings = settingsService.LoadSettings();
             UpdateTheme(settings.ThemeVariant);
         }
-
-        DataTemplates.Add(new ViewLocator(serviceProvider));
-        
-        base.OnFrameworkInitializationCompleted();
     }
 
     private void ConfigureServices(IServiceCollection services)
@@ -144,28 +144,30 @@ public partial class App : Application
 
     public void UpdateTheme(ThemeVariant theme)
     {
-        // Определяем актуальную тему
-        var actualTheme = theme switch
+        // Добавляем отложенное выполнение для корректного определения системной темы
+        Dispatcher.UIThread.Post(() =>
         {
-            ThemeVariant.System => Application.Current?.PlatformSettings?.GetColorValues()?.ThemeVariant 
-                == PlatformThemeVariant.Dark 
-                ? ThemeVariant.Dark 
-                : ThemeVariant.Light,
-            _ => theme
-        };
+            var actualTheme = theme switch
+            {
+                ThemeVariant.System => Application.Current?.PlatformSettings?.GetColorValues()?.ThemeVariant 
+                    == PlatformThemeVariant.Dark 
+                    ? ThemeVariant.Dark 
+                    : ThemeVariant.Light,
+                _ => theme
+            };
 
-        // Устанавливаем тему для всего приложения
-        this.RequestedThemeVariant = actualTheme switch
-        {
-            ThemeVariant.Light => Avalonia.Styling.ThemeVariant.Light,
-            ThemeVariant.Dark => Avalonia.Styling.ThemeVariant.Dark,
-            _ => Avalonia.Styling.ThemeVariant.Default
-        };
+            this.RequestedThemeVariant = actualTheme switch
+            {
+                ThemeVariant.Light => Avalonia.Styling.ThemeVariant.Light,
+                ThemeVariant.Dark => Avalonia.Styling.ThemeVariant.Dark,
+                _ => Avalonia.Styling.ThemeVariant.Default
+            };
 
-        // Принудительно обновляем все элементы интерфейса
-        if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
-        {
-            desktop.MainWindow?.InvalidateVisual();
-        }
+            if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+            {
+                desktop.MainWindow?.InvalidateVisual();
+                desktop.MainWindow?.Activate();
+            }
+        }, DispatcherPriority.Background);
     }
 }
