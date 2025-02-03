@@ -128,7 +128,7 @@ public partial class MediaView : UserControl
                             var fileNameWithoutExtension = Path.GetFileNameWithoutExtension(sourcePath);
                             var duration = TimeSpan.Zero; // По умолчанию
 
-                            var mediaItem = new MediaItem(
+                        var mediaItem = new MediaItem(
                                 fileNameWithoutExtension, 
                                 "N/A", // Заглушка для артиста
                                 sourcePath, 

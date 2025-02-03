@@ -9,7 +9,12 @@
              x:Class="Atune.Views.MediaView"
              x:DataType="vm:MediaViewModel">
     <Grid>
-        <ListBox ItemsSource="{Binding MediaItems}" Grid.Column="0">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <ListBox ItemsSource="{Binding MediaItems}" Grid.Row="1">
             <ListBox.ItemTemplate>
                 <DataTemplate>
                     <StackPanel Margin="5">
@@ -20,7 +25,7 @@
             </ListBox.ItemTemplate>
         </ListBox>
 
-        <Grid Margin="20" VerticalAlignment="Top">
+        <Grid Margin="10" Grid.Row="0">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
@@ -31,19 +36,21 @@
                     Click="AddToLibrary_Click"
                     Padding="15 5"
                     FontSize="16"
-                    HorizontalAlignment="Right"
-                    Margin="0 0 0 10"/>
+                    HorizontalAlignment="Right"/>
             
             <TextBlock Grid.Column="1"
                        Text="{Binding StatusMessage}"
-                       Margin="0 40 0 0"
+                       Margin="10 0 0 0"
                        Foreground="Green"
                        HorizontalAlignment="Right"/>
-            
-            <Button Content="Test DB" 
-                    Click="TestDbConnection_Click"
-                    Margin="5"
-                    HorizontalAlignment="Left"/>
         </Grid>
+        
+        <Button Content="Test DB" 
+                Click="TestDbConnection_Click"
+                Margin="10"
+                Padding="10 5"
+                HorizontalAlignment="Right"
+                VerticalAlignment="Bottom"
+                Grid.Row="1"/>
     </Grid>
 </UserControl>

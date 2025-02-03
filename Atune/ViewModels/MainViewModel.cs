@@ -5,6 +5,8 @@ using CommunityToolkit.Mvvm.Input;
 using Atune.Views;
 using Atune.Services;
 using Avalonia.Controls;
+using Avalonia;
+using Avalonia.Controls.ApplicationLifetimes;
 
 namespace Atune.ViewModels;
 public partial class MainViewModel : ViewModelBase
@@ -80,4 +82,23 @@ public partial class MainViewModel : ViewModelBase
             CurrentView = vm;
         }
     }
+
+    [RelayCommand]
+    private void Exit()
+    {
+        if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+            desktop.Shutdown();
+    }
+
+    [RelayCommand]
+    private void AddMedia()
+    {
+        if (CurrentView?.DataContext is MediaViewModel mediaVM)
+        {
+            mediaVM.AddMediaCommand.Execute(null);
+        }
+    }
+
+    public bool CurrentPageIsMedia => 
+        CurrentView is MediaView;
 }

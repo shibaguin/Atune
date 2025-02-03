@@ -54,7 +54,7 @@ public partial class MediaViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private async Task AddMusicAsync()
+    private async Task AddMediaAsync()
     {
         try
         {

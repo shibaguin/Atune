@@ -96,6 +96,16 @@
     </UserControl.Styles>
 
     <DockPanel Background="{DynamicResource BackgroundBrush}">
+        <StackPanel DockPanel.Dock="Top" 
+                   Orientation="Horizontal" 
+                   HorizontalAlignment="Right"
+                   Margin="0 5 10 5"
+                   IsVisible="{Binding CurrentPageIsMedia}">
+            <Button Content="Добавить музыку" 
+                    Command="{Binding GoMediaCommand}"
+                    Padding="10 5"/>
+        </StackPanel>
+
         <Border DockPanel.Dock="Top"
                 Background="{DynamicResource HeaderBackground}"
                 Height="{DynamicResource TopDockHeight}">
@@ -113,6 +123,13 @@
                            FontSize="{DynamicResource HeaderFontSize}"
                            FontWeight="Bold"
                            VerticalAlignment="Center"/>
+
+                <Button Grid.Column="2"
+                        Content="Добавить музыку"
+                        Command="{Binding AddMediaCommand}"
+                        Padding="15 5"
+                        FontSize="16"
+                        IsVisible="{Binding CurrentPageIsMedia}"/>
             </Grid>
         </Border>
 
