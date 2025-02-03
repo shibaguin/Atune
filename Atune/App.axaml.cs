@@ -90,11 +90,12 @@ public partial class App : Application
             var serviceProvider = services.BuildServiceProvider();
             Services = serviceProvider; // Затем присваиваем свойство Services
 
-            // Теперь инициализация БД
-            using var scope = Services.CreateScope();
-            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            db.Database.EnsureDeleted(); // Только для разработки!
-            db.Database.Migrate();
+            // Оберните инициализацию БД в Task.Run
+            Task.Run(() => {
+                using var scope = Services.CreateScope();
+                var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                db.Database.Migrate();
+            });
 
             // Остальная инициализация
             if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)

@@ -10,6 +10,9 @@
 	<!-- Для API 30+ (если требуется доступ ко всему хранилищу) -->
 	<!-- <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" /> -->
 
+	<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+	<uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+
 	<application
 		android:label="Atune"
 		android:icon="@drawable/Icon"

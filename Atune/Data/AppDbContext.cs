@@ -21,7 +21,7 @@ public class AppDbContext : DbContext
     {
         if (!optionsBuilder.IsConfigured)
         {
-            optionsBuilder.UseSqlite("Data Source=media_library.db;")
+            optionsBuilder.UseSqlite($"Filename={Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Personal), "media_library.db")}")
                 .UseQueryTrackingBehavior(QueryTrackingBehavior.TrackAll)
                 .EnableSensitiveDataLogging()
                 .EnableDetailedErrors()
