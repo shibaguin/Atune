@@ -20,6 +20,7 @@ using Microsoft.Extensions.Caching.Memory;
 using Serilog;
 using Serilog.Sinks.File;
 using Serilog.Extensions.Logging;
+using Microsoft.EntityFrameworkCore;
 
 namespace Atune;
 
@@ -82,12 +83,20 @@ public partial class App : Application
 
     public override void OnFrameworkInitializationCompleted()
     {
-        try {
+        try 
+        {
             var services = new ServiceCollection();
-            ConfigureServices(services);
+            ConfigureServices(services); // Сначала конфигурируем сервисы
             var serviceProvider = services.BuildServiceProvider();
-            Services = serviceProvider;
-            
+            Services = serviceProvider; // Затем присваиваем свойство Services
+
+            // Теперь инициализация БД
+            using var scope = Services.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            db.Database.EnsureDeleted(); // Только для разработки!
+            db.Database.Migrate();
+
+            // Остальная инициализация
             if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
             {
                 DisableAvaloniaDataAnnotationValidation();
@@ -111,7 +120,8 @@ public partial class App : Application
                 UpdateTheme(settings.ThemeVariant);
             }
         }
-        catch (Exception ex) {
+        catch (Exception ex)
+        {
             Log.Fatal(ex, "Ошибка инициализации приложения");
             throw;
         }
@@ -120,6 +130,15 @@ public partial class App : Application
     [UnconditionalSuppressMessage("Trimming", "IL2072", Justification = "DynamicallyAccessedMembers handled in registration")]
     private void ConfigureServices(IServiceCollection services)
     {
+        services.AddDbContext<AppDbContext>((provider, options) => 
+            options.UseSqlite("Data Source=media_library.db")
+                .EnableSensitiveDataLogging()
+                .EnableDetailedErrors());
+        
+        services.AddDbContextFactory<AppDbContext>(options => 
+            options.UseSqlite("Data Source=media_library.db"));
+        
+        // Остальные сервисы
         services.AddMemoryCache(options =>
         {
             options.SizeLimit = 100 * 1024 * 1024; // 100 MB лимит
@@ -141,7 +160,11 @@ public partial class App : Application
         // Явная регистрация Views с конструкторами
         services.AddTransient<MainView>(sp => new MainView());
         services.AddTransient<HomeView>(sp => new HomeView(sp.GetRequiredService<HomeViewModel>()));
-        services.AddTransient<MediaView>(sp => new MediaView(sp.GetRequiredService<MediaViewModel>()));
+        services.AddTransient<MediaView>(sp => 
+            new MediaView(
+                sp.GetRequiredService<MediaViewModel>(),
+                sp.GetRequiredService<AppDbContext>()
+            ));
         services.AddTransient<HistoryView>(sp => new HistoryView());
         services.AddTransient<SettingsView>(sp => 
             new SettingsView(

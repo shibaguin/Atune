@@ -170,4 +170,13 @@ public class SettingsService : ISettingsService
         }
         return "Статистика кэша недоступна";
     }
+
+    public void BackupDatabase(string backupPath)
+    {
+        File.Copy(
+            Path.Combine(Environment.CurrentDirectory, "media_library.db"),
+            backupPath,
+            overwrite: true
+        );
+    }
 } 

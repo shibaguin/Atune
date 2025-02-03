@@ -9,6 +9,17 @@
              x:Class="Atune.Views.MediaView"
              x:DataType="vm:MediaViewModel">
     <Grid>
+        <ListBox ItemsSource="{Binding MediaItems}" Grid.Column="0">
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <StackPanel Margin="5">
+                        <TextBlock Text="{Binding Title}" FontWeight="Bold"/>
+                        <TextBlock Text="{Binding Path}"/>
+                    </StackPanel>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+
         <Grid Margin="20" VerticalAlignment="Top">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
@@ -17,7 +28,7 @@
             
             <Button Grid.Column="1"
                     Content="Добавить музыку" 
-                    Command="{Binding AddMusicCommand}"
+                    Click="AddToLibrary_Click"
                     Padding="15 5"
                     FontSize="16"
                     HorizontalAlignment="Right"
@@ -28,6 +39,11 @@
                        Margin="0 40 0 0"
                        Foreground="Green"
                        HorizontalAlignment="Right"/>
+            
+            <Button Content="Test DB" 
+                    Click="TestDbConnection_Click"
+                    Margin="5"
+                    HorizontalAlignment="Left"/>
         </Grid>
     </Grid>
 </UserControl>

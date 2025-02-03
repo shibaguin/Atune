@@ -9,9 +9,15 @@ public class MediaItem
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     public int Id { get; set; }
     
+    [Required(ErrorMessage = "Title is required")]
+    [StringLength(200)]
     public string Title { get; set; } = string.Empty;
+    
     public string Artist { get; set; } = string.Empty;
+    
+    [Required(ErrorMessage = "Path is required")]
     public string Path { get; set; } = string.Empty;
+    
     public TimeSpan Duration { get; set; }
     
     // Добавим конструктор для удобства

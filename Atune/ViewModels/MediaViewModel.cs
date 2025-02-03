@@ -10,6 +10,7 @@ using Atune.Models;
 using CommunityToolkit.Mvvm.Input;
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
+using System.Collections.ObjectModel;
 
 namespace Atune.ViewModels;
 
@@ -22,6 +23,9 @@ public partial class MediaViewModel : ObservableObject
 
     [ObservableProperty]
     private string _statusMessage = "Готово к работе";
+
+    [ObservableProperty]
+    private ObservableCollection<MediaItem> _mediaItems = new();
 
     public MediaViewModel(IMemoryCache cache)
     {
