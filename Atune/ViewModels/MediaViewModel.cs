@@ -13,6 +13,7 @@ using Avalonia.Controls.ApplicationLifetimes;
 using System.Collections.ObjectModel;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using System.IO;
 
 namespace Atune.ViewModels;
 
@@ -90,9 +91,20 @@ public partial class MediaViewModel : ObservableObject
 
             if (files.Count > 0)
             {
-                StatusMessage = $"Добавлено файлов: {files.Count}";
-                // Здесь будет логика добавления в БД
-                await Task.CompletedTask;
+                using var db = _dbContextFactory.CreateDbContext();
+                foreach (var file in files)
+                {
+                    var mediaItem = new MediaItem(
+                        Path.GetFileNameWithoutExtension(file.Name),
+                        "Unknown Artist",
+                        file.Path.LocalPath,
+                        TimeSpan.Zero);
+
+                    await db.AddMediaAsync(mediaItem);
+                }
+                
+                await RefreshMediaCommand.ExecuteAsync(null);
+                StatusMessage = $"Успешно добавлено {files.Count} файлов";
             }
         }
         catch (Exception ex)
@@ -105,7 +117,7 @@ public partial class MediaViewModel : ObservableObject
     private async Task RefreshMedia()
     {
         using var db = _dbContextFactory.CreateDbContext();
-        var items = await db.MediaItems.ToListAsync();
+        var items = await db.GetAllMediaAsync();
         MediaItems = new ObservableCollection<MediaItem>(items);
     }
 } 

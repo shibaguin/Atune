@@ -2,19 +2,24 @@ using System.IO;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Extensions.Configuration;
+using System.Threading.Tasks;
+using System.Linq;
 
 public class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<AppDbContext>
 {
     public AppDbContext CreateDbContext(string[] args)
     {
-        var configuration = new ConfigurationBuilder()
-            .SetBasePath(Directory.GetCurrentDirectory())
-            .AddJsonFile("appsettings.json")
-            .Build();
-
         var optionsBuilder = new DbContextOptionsBuilder<AppDbContext>();
         optionsBuilder.UseSqlite("Data Source=media_library.db");
         
-        return new AppDbContext(optionsBuilder.Options);
+        var context = new AppDbContext(optionsBuilder.Options);
+        
+        // Синхронное выполнение миграций
+        if (context.Database.GetPendingMigrationsAsync().GetAwaiter().GetResult().Any())
+        {
+            context.Database.MigrateAsync().GetAwaiter().GetResult();
+        }
+        
+        return context;
     }
 } 

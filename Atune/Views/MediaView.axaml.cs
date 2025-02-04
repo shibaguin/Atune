@@ -148,8 +148,21 @@ public partial class MediaView : UserControl
                             continue;
                         }
 
-                        await dbContext.MediaItems.AddAsync(mediaItem);
-                        successCount++;
+                        using (var transaction = await dbContext.Database.BeginTransactionAsync())
+                        {
+                            try
+                            {
+                                await dbContext.MediaItems.AddAsync(mediaItem);
+                                await dbContext.SaveChangesAsync();
+                                await transaction.CommitAsync();
+                                successCount++;
+                            }
+                            catch
+                            {
+                                await transaction.RollbackAsync();
+                                throw;
+                            }
+                        }
                     }
                     catch (Exception ex)
                     {
@@ -161,7 +174,6 @@ public partial class MediaView : UserControl
 
                 if (successCount > 0)
                 {
-                    await dbContext.SaveChangesAsync();
                     Console.WriteLine($"{logHeader} Успешно добавлено {successCount} файлов");
                     
                     if (DataContext is MediaViewModel vm)

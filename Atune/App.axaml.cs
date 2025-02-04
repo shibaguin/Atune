@@ -82,7 +82,7 @@ public partial class App : Application
     public new static App? Current => Application.Current as App;
     public IServiceProvider? Services { get; private set; }
 
-    public override void OnFrameworkInitializationCompleted()
+    public override async void OnFrameworkInitializationCompleted()
     {
         try 
         {
@@ -95,10 +95,10 @@ public partial class App : Application
             using var scope = Services.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             
-            if (db.Database.GetPendingMigrations().Any())
+            if ((await db.Database.GetPendingMigrationsAsync()).Any())
             {
                 Console.WriteLine("Applying pending migrations...");
-                db.Database.Migrate();
+                await db.Database.MigrateAsync();
             }
 
             // Остальная инициализация
