@@ -53,6 +53,13 @@ public partial class MediaView : UserControl
         {
             try
             {
+                // Добавляем проверку доступности БД
+                if (!await dbContext.Database.CanConnectAsync())
+                {
+                    Console.WriteLine($"{logHeader} Нет подключения к БД");
+                    return;
+                }
+
                 var topLevel = TopLevel.GetTopLevel(this);
                 var storageProvider = topLevel?.StorageProvider;
                 
@@ -157,18 +164,18 @@ public partial class MediaView : UserControl
                                 await transaction.CommitAsync();
                                 successCount++;
                             }
-                            catch
+                            catch (Exception ex)
                             {
+                                Console.WriteLine($"{logHeader} Ошибка транзакции: {ex}");
                                 await transaction.RollbackAsync();
-                                throw;
+                                errorCount++;
                             }
                         }
                     }
                     catch (Exception ex)
                     {
-                        errorCount++;
-                        Console.WriteLine($"{logHeader} Ошибка обработки файла {realPath}:");
-                        Console.WriteLine(ex);
+                        Console.WriteLine($"{logHeader} Общая ошибка: {ex}");
+                        errorCount = files?.Count ?? 0;
                     }
                 }
 

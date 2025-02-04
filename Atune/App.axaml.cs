@@ -91,14 +91,26 @@ public partial class App : Application
             var serviceProvider = services.BuildServiceProvider();
             Services = serviceProvider; // Затем присваиваем свойство Services
 
-            // Применяем миграции перед инициализацией UI
+            // Применяем миграции и создаем БД
             using var scope = Services.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             
-            if ((await db.Database.GetPendingMigrationsAsync()).Any())
+            try 
             {
-                Console.WriteLine("Applying pending migrations...");
+                Console.WriteLine("Инициализация БД...");
+                await db.InitializeDatabase();
+                Console.WriteLine("Проверка миграций...");
                 await db.Database.MigrateAsync();
+                
+                // Дополнительная проверка структуры
+                var tableExists = await db.MediaItems.AnyAsync();
+                Console.WriteLine($"Проверка таблиц: {(tableExists ? "OK" : "WARNING: Таблицы пусты")}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка инициализации БД: {ex}");
+                File.WriteAllText("db_init_error.log", ex.ToString());
+                throw;
             }
 
             // Остальная инициализация
@@ -133,8 +145,9 @@ public partial class App : Application
         }
         catch (Exception ex)
         {
-            Log.Fatal(ex, "Миграции не применены");
-            throw;
+            Log.Fatal(ex, "Fatal initialization error");
+            File.WriteAllText("crash.log", $"CRITICAL ERROR: {ex}");
+            Environment.Exit(1);
         }
     }
 

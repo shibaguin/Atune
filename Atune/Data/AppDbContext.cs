@@ -29,16 +29,30 @@ public class AppDbContext : DbContext
         {
             var dbPath = OperatingSystem.IsAndroid() 
                 ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "AtuneDB", "media_library.db")
-                : Path.Combine(AppContext.BaseDirectory, "Data", "media_library.db");
+                : Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                    "Atune",
+                    "Data",
+                    "media_library.db");
 
             var dir = Path.GetDirectoryName(dbPath)!;
             if (!Directory.Exists(dir))
             {
-                Directory.CreateDirectory(dir);
+                try 
+                {
+                    Directory.CreateDirectory(dir);
+                    Console.WriteLine($"Создана директория БД: {dir}");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Ошибка создания директории БД: {ex}");
+                    throw;
+                }
             }
 
-            optionsBuilder.UseSqlite($"Data Source={dbPath}");
-            Console.WriteLine($"Инициализирована БД по пути: {Path.GetFullPath(dbPath)}");
+            Console.WriteLine($"Полный путь к БД: {Path.GetFullPath(dbPath)}");
+            optionsBuilder.UseSqlite($"Data Source={dbPath};Pooling=False;");
+            optionsBuilder.EnableSensitiveDataLogging();
         }
     }
 
@@ -57,6 +71,10 @@ public class AppDbContext : DbContext
                     v => TimeSpan.FromTicks(v))
                 .HasColumnType("BIGINT");
         });
+
+        // Явно создаем таблицу если не существует
+        modelBuilder.Entity<MediaItem>().ToTable(nameof(MediaItems), t => 
+            t.ExcludeFromMigrations(false));
     }
 
     public IQueryable<MediaItem> SafeMedia => MediaItems?.AsQueryable() ?? throw new InvalidOperationException("MediaItems DbSet not initialized");
@@ -105,6 +123,25 @@ public class AppDbContext : DbContext
         {
             MediaItems.Remove(media);
             await SaveChangesAsync();
+        }
+    }
+
+    public async Task InitializeDatabase()
+    {
+        try 
+        {
+            await Database.OpenConnectionAsync();
+            await Database.ExecuteSqlRawAsync(
+                "CREATE TABLE IF NOT EXISTS MediaItems (" +
+                "Id INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                "Title TEXT NOT NULL, " +
+                "Artist TEXT NOT NULL, " +
+                "Path TEXT NOT NULL UNIQUE, " +
+                "Duration INTEGER NOT NULL)");
+        }
+        finally 
+        {
+            await Database.CloseConnectionAsync();
         }
     }
 } 
