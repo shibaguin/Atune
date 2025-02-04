@@ -179,4 +179,10 @@ public class SettingsService : ISettingsService
             overwrite: true
         );
     }
+
+    public string GetSetting(string key)
+    {
+        var settings = LoadSettings();
+        return settings?.GetType().GetProperty(key)?.GetValue(settings)?.ToString() ?? string.Empty;
+    }
 } 

@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Atune.Models;
 using System.IO;
 using System.Runtime.CompilerServices;
+using System.Linq;
 
 [RequiresUnreferencedCode("EF Core may require unreferenced code")]
 public class AppDbContext : DbContext
@@ -49,4 +50,6 @@ public class AppDbContext : DbContext
                 .HasColumnType("BIGINT");
         });
     }
+
+    public IQueryable<MediaItem> SafeMedia => MediaItems?.AsQueryable() ?? throw new InvalidOperationException("MediaItems DbSet not initialized");
 } 
