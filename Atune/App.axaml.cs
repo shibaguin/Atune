@@ -91,12 +91,15 @@ public partial class App : Application
             var serviceProvider = services.BuildServiceProvider();
             Services = serviceProvider; // Затем присваиваем свойство Services
 
-            // Оберните инициализацию БД в Task.Run
-            Task.Run(() => {
-                using var scope = Services.CreateScope();
-                var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            // Применяем миграции перед инициализацией UI
+            using var scope = Services.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            
+            if (db.Database.GetPendingMigrations().Any())
+            {
+                Console.WriteLine("Applying pending migrations...");
                 db.Database.Migrate();
-            });
+            }
 
             // Остальная инициализация
             if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
@@ -104,6 +107,12 @@ public partial class App : Application
                 DisableAvaloniaDataAnnotationValidation();
                 desktop.MainWindow = serviceProvider.GetRequiredService<MainWindow>();
                 desktop.Exit += OnAppExit;
+                desktop.Startup += (s, e) => 
+                {
+                    // Убрать удаление директории
+                    // var dbDir = Path.Combine(AppContext.BaseDirectory, "Data");
+                    // if (Directory.Exists(dbDir)) Directory.Delete(dbDir, true);
+                };
             }
             else if (ApplicationLifetime is ISingleViewApplicationLifetime singleView)
             {
@@ -124,7 +133,7 @@ public partial class App : Application
         }
         catch (Exception ex)
         {
-            Log.Fatal(ex, "Ошибка инициализации приложения");
+            Log.Fatal(ex, "Миграции не применены");
             throw;
         }
     }
@@ -132,23 +141,8 @@ public partial class App : Application
     [UnconditionalSuppressMessage("Trimming", "IL2072", Justification = "DynamicallyAccessedMembers handled in registration")]
     private void ConfigureServices(IServiceCollection services)
     {
-        services.AddDbContext<AppDbContext>((provider, options) => 
-        {
-            var dbPath = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.Personal), 
-                "media_library.db");
-            
-            Console.WriteLine($"Database path: {dbPath}");
-            options.UseSqlite($"Filename={dbPath}");
-        });
-        
-        services.AddDbContextFactory<AppDbContext>(options => 
-        {
-            var dbPath = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.Personal), 
-                "media_library.db");
-            options.UseSqlite($"Filename={dbPath}");
-        });
+        services.AddDbContext<AppDbContext>();
+        services.AddDbContextFactory<AppDbContext>();
         
         // Остальные сервисы
         services.AddMemoryCache(options =>

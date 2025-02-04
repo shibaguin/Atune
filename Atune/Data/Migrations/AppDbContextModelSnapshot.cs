@@ -21,6 +21,14 @@ namespace Atune.Data.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("Artist")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("Duration")
+                        .HasColumnType("BIGINT");
+
                     b.Property<string>("Path")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -32,7 +40,7 @@ namespace Atune.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("MediaItems");
+                    b.ToTable("MediaItems", (string)null);
                 });
 #pragma warning restore 612, 618
         }

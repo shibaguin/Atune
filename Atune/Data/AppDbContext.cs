@@ -15,23 +15,27 @@ public class AppDbContext : DbContext
     public AppDbContext(DbContextOptions<AppDbContext> options) 
         : base(options) 
     {
-        Console.WriteLine($"Полный путь к БД: {Path.GetFullPath(Database.GetDbConnection().DataSource)}");
+        var dbPath = Database.GetDbConnection().DataSource;
+        Console.WriteLine($"Используемая БД: {Path.GetFullPath(dbPath)}");
+        Console.WriteLine($"Директория приложения: {AppContext.BaseDirectory}");
     }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         if (!optionsBuilder.IsConfigured)
         {
-            optionsBuilder.UseSqlite($"Filename={Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Personal), "media_library.db")}")
-                .UseQueryTrackingBehavior(QueryTrackingBehavior.TrackAll)
-                .EnableSensitiveDataLogging()
-                .EnableDetailedErrors()
-                .LogTo(message => 
-                {
-                    Console.WriteLine($"[SQL] {message}");
-                    File.AppendAllText("sql.log", $"{DateTime.Now:HH:mm:ss} {message}\n");
-                }, 
-                LogLevel.Information);
+            var dbPath = OperatingSystem.IsAndroid() 
+                ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "AtuneDB", "media_library.db")
+                : Path.Combine(AppContext.BaseDirectory, "Data", "media_library.db");
+
+            var dir = Path.GetDirectoryName(dbPath)!;
+            if (!Directory.Exists(dir))
+            {
+                Directory.CreateDirectory(dir);
+            }
+
+            optionsBuilder.UseSqlite($"Data Source={dbPath}");
+            Console.WriteLine($"Инициализирована БД по пути: {Path.GetFullPath(dbPath)}");
         }
     }
 
@@ -39,6 +43,7 @@ public class AppDbContext : DbContext
     {
         modelBuilder.Entity<MediaItem>(entity =>
         {
+            entity.ToTable("MediaItems");
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Title).IsRequired().HasMaxLength(200);
             entity.Property(e => e.Artist).IsRequired().HasMaxLength(100);

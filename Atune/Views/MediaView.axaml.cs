@@ -354,4 +354,22 @@ public partial class MediaView : UserControl
 #endif
         return Task.FromResult(System.IO.File.Exists(path));
     }
+
+    private void ShowDbPath_Click(object sender, RoutedEventArgs e)
+    {
+        // Используем фабрику для создания контекста
+        if (_dbContextFactory is null)
+        {
+            Console.WriteLine("DbContextFactory не доступна");
+            return;
+        }
+
+        using var db = _dbContextFactory.CreateDbContext();
+        var path = db?.Database.GetDbConnection().DataSource ?? "не определен";
+        
+        Console.WriteLine($"Текущий путь к БД: {path}");
+        
+        var vm = DataContext as MediaViewModel;
+        vm?.UpdateStatusMessage?.Invoke($"Путь к БД: {path}");
+    }
 }

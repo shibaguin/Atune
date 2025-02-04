@@ -30,6 +30,8 @@ public partial class MediaViewModel : ObservableObject
     [ObservableProperty]
     private ObservableCollection<MediaItem> _mediaItems = new();
 
+    public Action<string>? UpdateStatusMessage { get; set; }
+
     public MediaViewModel(IMemoryCache cache, IDbContextFactory<AppDbContext> dbContextFactory)
     {
         _cache = cache;

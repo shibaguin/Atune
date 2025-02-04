@@ -17,7 +17,9 @@ namespace Atune.Data.Migrations
                     Id = table.Column<int>(type: "INTEGER", nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
                     Title = table.Column<string>(type: "TEXT", maxLength: 200, nullable: false),
-                    Path = table.Column<string>(type: "TEXT", nullable: false)
+                    Artist = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
+                    Path = table.Column<string>(type: "TEXT", nullable: false),
+                    Duration = table.Column<long>(type: "BIGINT", nullable: false)
                 },
                 constraints: table =>
                 {
