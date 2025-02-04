@@ -10,10 +10,26 @@
     <ApplicationVersion>1</ApplicationVersion>
     <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
     <AndroidPackageFormat>apk</AndroidPackageFormat>
-    <PublishTrimmed>false</PublishTrimmed>
-    <TrimMode>copyused</TrimMode>
-    <AndroidEnableProfiledAot>false</AndroidEnableProfiledAot>
+
+    <!-- Отключаем LLVM для стабильности -->
+    <EnableLLVM>false</EnableLLVM>
+
+    <PublishTrimmed>true</PublishTrimmed>
+    <TrimMode>link</TrimMode>
+    <AndroidEnableProfiledAot>true</AndroidEnableProfiledAot>
+    <RunAOTCompilation>true</RunAOTCompilation>
+
+    
+
   </PropertyGroup>
+
+  <ItemGroup>
+    <TrimmerRootAssembly Include="Avalonia.Android" RootMode="All" />
+    <TrimmerRootAssembly Include="Avalonia.Controls" RootMode="All" />
+    <TrimmerRootAssembly Include="System.Net.Requests" RootMode="All" />
+    <TrimmerRootAssembly Include="System.Net.Http" RootMode="All" />
+
+  </ItemGroup>
 
   <ItemGroup>
     <AndroidResource Include="Icon.png">

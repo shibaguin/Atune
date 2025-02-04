@@ -14,6 +14,7 @@ using System.Collections.ObjectModel;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using System.IO;
+using System.Linq;
 
 namespace Atune.ViewModels;
 
@@ -38,15 +39,19 @@ public partial class MediaViewModel : ObservableObject
         _cache = cache;
         _dbContextFactory = dbContextFactory;
         LoadMediaContent();
+        
+        // Добавляем автоматическую загрузку при инициализации
+        RefreshMediaCommand.ExecuteAsync(null);
     }
 
     private void LoadMediaContent()
     {
         if (!_cache.TryGetValue("MediaContent", out List<MediaItem>? content))
         {
-            content = LoadFromDataSource();
+            // Если в кэше нет данных - загружаем из БД
+            content = LoadFromDatabase();
             var cacheOptions = new MemoryCacheEntryOptions()
-                .SetSize(content.Count * 500 + 1024) // Базовый размер + 1KB на служебные данные
+                .SetSize(content.Count * 500 + 1024)
                 .SetPriority(CacheItemPriority.Normal)
                 .SetSlidingExpiration(TimeSpan.FromMinutes(15));
             _cache.Set("MediaContent", content, cacheOptions);
@@ -58,6 +63,13 @@ public partial class MediaViewModel : ObservableObject
     {
         // Загрузка данных из внешнего источника
         return new List<MediaItem>();
+    }
+
+    private List<MediaItem> LoadFromDatabase()
+    {
+        // Загрузка данных из базы данных
+        using var db = _dbContextFactory.CreateDbContext();
+        return db.MediaItems.ToList();
     }
 
     [RelayCommand]
@@ -119,5 +131,11 @@ public partial class MediaViewModel : ObservableObject
         using var db = _dbContextFactory.CreateDbContext();
         var items = await db.GetAllMediaAsync();
         MediaItems = new ObservableCollection<MediaItem>(items);
+        
+        // Обновляем кэш после загрузки новых данных
+        _cache.Set("MediaContent", items, new MemoryCacheEntryOptions()
+            .SetSize(items.Count * 500 + 1024)
+            .SetPriority(CacheItemPriority.Normal)
+            .SetSlidingExpiration(TimeSpan.FromMinutes(15)));
     }
 } 
