@@ -5,6 +5,7 @@ using Avalonia.Android;
 using Android.OS;
 using Android;
 using Android.Runtime;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Atune.Android;
 
@@ -18,7 +19,7 @@ public class MainActivity : AvaloniaMainActivity<App>
 {
     private const int RequestStoragePermission = 1;
 
-    protected override void OnCreate(Bundle savedInstanceState)
+    protected override void OnCreate(Bundle? savedInstanceState)
     {
         base.OnCreate(savedInstanceState);
         if ((int)Build.VERSION.SdkInt >= 23)
@@ -27,6 +28,8 @@ public class MainActivity : AvaloniaMainActivity<App>
         }
     }
 
+    [SuppressMessage("Interoperability", "CA1416:Validate platform compatibility", 
+        Justification = "Android version checked programmatically")]
     private void RequestStoragePermissions()
     {
         if ((int)Build.VERSION.SdkInt < 23) return;
@@ -40,6 +43,8 @@ public class MainActivity : AvaloniaMainActivity<App>
         }
     }
 
+    [SuppressMessage("Interoperability", "CA1416:Validate platform compatibility", 
+        Justification = "Base call guarded by version check")]
     public override void OnRequestPermissionsResult(
         int requestCode, 
         string[] permissions, 

@@ -323,7 +323,7 @@ public partial class MediaView : UserControl
 #endif
 
     [Obsolete("Метод будет удален в будущих версиях")]
-    private async Task<bool> FileExists(string path)
+    private Task<bool> FileExists(string path)
     {
 #if ANDROID
         if (path.StartsWith("content://"))
@@ -333,14 +333,14 @@ public partial class MediaView : UserControl
                 var uri = Android.Net.Uri.Parse(path);
                 var contentResolver = Android.App.Application.Context.ContentResolver;
                 using var stream = contentResolver.OpenInputStream(uri);
-                return stream != null;
+                return Task.FromResult(stream != null);
             }
             catch 
             {
-                return false;
+                return Task.FromResult(false);
             }
         }
 #endif
-        return System.IO.File.Exists(path);
+        return Task.FromResult(System.IO.File.Exists(path));
     }
 }

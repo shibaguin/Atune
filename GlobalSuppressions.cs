@@ -25,4 +25,12 @@
 [assembly: SuppressMessage("Trimming", "IL2026", 
     Scope = "type", 
     Target = "T:Microsoft.EntityFrameworkCore.DbContextOptionsBuilder`1",
-    Justification = "EF Core requires unreferenced code")] 
+    Justification = "EF Core requires unreferenced code")]
+[assembly: SuppressMessage("Interoperability", "CA1416:Validate platform compatibility", 
+    Scope = "member", 
+    Target = "~M:Atune.Android.MainActivity.RequestStoragePermissions", 
+    Justification = "Android version checked programmatically")]
+[assembly: SuppressMessage("Interoperability", "CA1416:Validate platform compatibility", 
+    Scope = "member", 
+    Target = "~M:Atune.Android.MainActivity.OnRequestPermissionsResult(System.Int32,System.String[],Android.Content.PM.Permission[])", 
+    Justification = "Base call guarded by version check")] 
