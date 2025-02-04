@@ -143,7 +143,12 @@ public partial class App : Application
         });
         
         services.AddDbContextFactory<AppDbContext>(options => 
-            options.UseSqlite("Data Source=media_library.db"));
+        {
+            var dbPath = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.Personal), 
+                "media_library.db");
+            options.UseSqlite($"Filename={dbPath}");
+        });
         
         // Остальные сервисы
         services.AddMemoryCache(options =>
@@ -170,7 +175,7 @@ public partial class App : Application
         services.AddTransient<MediaView>(sp => 
             new MediaView(
                 sp.GetRequiredService<MediaViewModel>(),
-                sp.GetRequiredService<AppDbContext>()
+                sp.GetRequiredService<IDbContextFactory<AppDbContext>>()
             ));
         services.AddTransient<HistoryView>(sp => new HistoryView());
         services.AddTransient<SettingsView>(sp => 

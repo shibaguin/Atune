@@ -19,6 +19,7 @@ namespace Atune.ViewModels;
 public partial class MediaViewModel : ObservableObject
 {
     private readonly IMemoryCache _cache;
+    private readonly IDbContextFactory<AppDbContext> _dbContextFactory;
     
     [ObservableProperty]
     private List<MediaItem> _mediaContent = new List<MediaItem>();
@@ -29,9 +30,10 @@ public partial class MediaViewModel : ObservableObject
     [ObservableProperty]
     private ObservableCollection<MediaItem> _mediaItems = new();
 
-    public MediaViewModel(IMemoryCache cache)
+    public MediaViewModel(IMemoryCache cache, IDbContextFactory<AppDbContext> dbContextFactory)
     {
         _cache = cache;
+        _dbContextFactory = dbContextFactory;
         LoadMediaContent();
     }
 
@@ -100,25 +102,8 @@ public partial class MediaViewModel : ObservableObject
     [RelayCommand]
     private async Task RefreshMedia()
     {
-        try 
-        {
-            await Task.Run(async () =>
-            {
-                if (App.Current?.Services == null) return;
-                
-                using var scope = App.Current.Services.CreateScope();
-                var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-                var items = await db.MediaItems.ToListAsync();
-                
-                await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
-                {
-                    MediaItems = new ObservableCollection<MediaItem>(items);
-                });
-            });
-        }
-        catch (Exception ex)
-        {
-            StatusMessage = $"Ошибка обновления: {ex.Message}";
-        }
+        using var db = _dbContextFactory.CreateDbContext();
+        var items = await db.MediaItems.ToListAsync();
+        MediaItems = new ObservableCollection<MediaItem>(items);
     }
 } 

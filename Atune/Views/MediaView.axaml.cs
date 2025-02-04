@@ -25,18 +25,17 @@ namespace Atune.Views;
 
 public partial class MediaView : UserControl
 {
-    private readonly AppDbContext? _dbContext;
+    private readonly IDbContextFactory<AppDbContext>? _dbContextFactory;
 
     public MediaView()
     {
         InitializeComponent();
     }
     
-    public MediaView(MediaViewModel vm, AppDbContext dbContext) : this()
+    public MediaView(MediaViewModel vm, IDbContextFactory<AppDbContext> dbContextFactory) : this()
     {
         DataContext = vm;
-        _dbContext = dbContext;
-        Console.WriteLine($"[MediaView] DbContext инициализирован: {_dbContext?.Database?.GetDbConnection()?.DataSource}");
+        _dbContextFactory = dbContextFactory;
     }
 
     private async void AddToLibrary_Click(object sender, RoutedEventArgs e)
@@ -44,11 +43,13 @@ public partial class MediaView : UserControl
         const string logHeader = "[MediaView]";
         Console.WriteLine($"{logHeader} Кнопка нажата!");
         
-        if (_dbContext == null)
+        if (_dbContextFactory == null)
         {
-            Console.WriteLine($"{logHeader} Ошибка: DbContext не инициализирован");
+            Console.WriteLine($"{logHeader} Ошибка: DbContextFactory не инициализирована");
             return;
         }
+
+        using var dbContext = _dbContextFactory.CreateDbContext();
 
         try
         {
@@ -145,7 +146,7 @@ public partial class MediaView : UserControl
                         continue;
                     }
 
-                    await _dbContext.MediaItems.AddAsync(mediaItem);
+                    await dbContext.MediaItems.AddAsync(mediaItem);
                     successCount++;
                 }
                 catch (Exception ex)
@@ -158,7 +159,7 @@ public partial class MediaView : UserControl
 
             if (successCount > 0)
             {
-                await _dbContext.SaveChangesAsync();
+                await dbContext.SaveChangesAsync();
                 Console.WriteLine($"{logHeader} Успешно добавлено {successCount} файлов");
                 
                 if (DataContext is MediaViewModel vm)
@@ -178,15 +179,10 @@ public partial class MediaView : UserControl
 
     private async Task ValidateDatabaseRecords()
     {
-        if (_dbContext == null)
-        {
-            Console.WriteLine("[MediaView] Контекст БД недоступен");
-            return;
-        }
-
+        using var dbContext = _dbContextFactory.CreateDbContext();
         Console.WriteLine($"[MediaView] Валидация записей в БД...");
         
-        var records = await _dbContext.MediaItems
+        var records = await dbContext.MediaItems
             .OrderByDescending(x => x.Id)
             .Take(5)
             .ToListAsync();
