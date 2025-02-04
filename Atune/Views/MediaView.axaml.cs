@@ -15,6 +15,11 @@ using System.Threading.Tasks;
 using System.ComponentModel.DataAnnotations;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+#if ANDROID
+using Android.Net;
+using Android.App;
+using Android.Provider;
+#endif
 
 namespace Atune.Views;
 
@@ -60,168 +65,113 @@ public partial class MediaView : UserControl
                 AllowMultiple = true,
                 FileTypeFilter = new[] 
                 {
-                    new FilePickerFileType("Audio files") 
-                    { 
-                        Patterns = new[] { "*.mp3", "*.wav", "*.flac", "*.ogg", "*.aac" } 
-                    },
-                    new FilePickerFileType("Все файлы") { Patterns = new[] { "*" } }
+                    new FilePickerFileType("Audio files")
+                    {
+                        Patterns = new[] { "*.mp3", "*.flac", "*.wav" },
+                        MimeTypes = new[] { "audio/*" }
+                    }
                 }
             });
 
-            if (files.Count == 0)
-            {
-                Console.WriteLine($"{logHeader} Файлы не выбраны");
-                return;
-            }
+            int errorCount = 0;
+            int successCount = 0;
 
-            Console.WriteLine($"{logHeader} Выбрано файлов: {(files != null ? files.Count : 0)}");
-            
-            using (var transaction = await _dbContext.Database.BeginTransactionAsync())
+            foreach (var file in files ?? Enumerable.Empty<IStorageFile>())
             {
+                var realPath = file.Path.LocalPath;
+                
+                // Для десктопных систем проверяем существование файла
+                if (!OperatingSystem.IsAndroid())
+                {
+                    if (!System.IO.File.Exists(realPath))
+                    {
+                        Console.WriteLine($"{logHeader} Файл не существует: {realPath}");
+                        errorCount++;
+                        continue;
+                    }
+                }
+                else 
+                {
+                    // Оригинальная обработка для Android
+                    #if ANDROID
+                    if (file.Path.Scheme != "content")
+                    {
+                        realPath = await ConvertFileUriToContentUri(file.Path.LocalPath);
+                    }
+                    
+                    if (realPath.StartsWith("content://"))
+                    {
+                        realPath = await GetAndroidRealPath(file);
+                    }
+
+                    var fileExists = await FileExists(realPath);
+                    if (!fileExists)
+                    {
+                        Console.WriteLine($"{logHeader} Файл не существует: {realPath}");
+                        errorCount++;
+                        continue;
+                    }
+                    #endif
+                }
+
+                Console.WriteLine($"{logHeader} Обработка файла: {realPath}");
+
                 try
                 {
-                    var importedDir = Path.Combine(
-                        Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-                        "Atune_Imported");
-                    
-                    Directory.CreateDirectory(importedDir);
-                    Console.WriteLine($"{logHeader} Целевая директория: {importedDir}");
+                    var fileNameWithoutExtension = Path.GetFileNameWithoutExtension(realPath);
+                    var duration = TimeSpan.Zero;
+                    string artist = "Unknown Artist";
 
-                    var successCount = 0;
-                    var errorCount = 0;
+#if ANDROID
+                    duration = await GetDuration(realPath);
+                    artist = await GetAndroidTagInfo(realPath);
+#endif
 
-                    var canConnect = await _dbContext.Database.CanConnectAsync();
-                    Console.WriteLine($"{logHeader} Подключение к БД: {canConnect}");
+                    var mediaItem = new MediaItem(
+                        fileNameWithoutExtension, 
+                        artist,
+                        realPath, 
+                        duration);
 
-                    var tables = await _dbContext.Database.SqlQueryRaw<string>(
-                        "SELECT name FROM sqlite_master WHERE type='table'").ToListAsync();
-                    Console.WriteLine($"{logHeader} Таблицы в БД: {string.Join(", ", tables)}");
-
-                    foreach (var file in files ?? Enumerable.Empty<IStorageFile>())
+                    var validationResults = new List<ValidationResult>();
+                    if (!Validator.TryValidateObject(mediaItem, new ValidationContext(mediaItem), validationResults))
                     {
-                        if (file?.Path?.LocalPath == null)
+                        Console.WriteLine($"{logHeader} Ошибки валидации для файла {realPath}:");
+                        foreach (var error in validationResults)
                         {
-                            Console.WriteLine($"{logHeader} Неверный путь к файлу");
-                            errorCount++;
-                            continue;
+                            Console.WriteLine($"- {error.ErrorMessage}");
                         }
-                        
-                        var sourcePath = file.Path.LocalPath;
-                        if (sourcePath.StartsWith("~/"))
-                        {
-                            var homeDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-                            sourcePath = sourcePath.Replace("~", homeDir).Replace("/", Path.DirectorySeparatorChar.ToString());
-                            Console.WriteLine($"Преобразованный путь: {sourcePath}");
-                        }
-
-                        if (!System.IO.File.Exists(sourcePath))
-                        {
-                            Console.WriteLine($"{logHeader} Файл не существует: {sourcePath}");
-                            errorCount++;
-                            continue;
-                        }
-
-                        Console.WriteLine($"{logHeader} Обработка файла: {sourcePath}");
-
-                        try
-                        {
-                            var fileNameWithoutExtension = Path.GetFileNameWithoutExtension(sourcePath);
-                            var duration = TimeSpan.Zero; // По умолчанию
-
-                        var mediaItem = new MediaItem(
-                                fileNameWithoutExtension, 
-                                "N/A", // Заглушка для артиста
-                                sourcePath, 
-                                duration);
-
-                            var validationResults = new List<ValidationResult>();
-                            if (!Validator.TryValidateObject(mediaItem, 
-                                new ValidationContext(mediaItem), 
-                                validationResults, 
-                                true))
-                            {
-                                Console.WriteLine($"{logHeader} Ошибка валидации:");
-                                foreach (var error in validationResults)
-                                {
-                                    Console.WriteLine($"- {error.ErrorMessage}");
-                                }
-                                errorCount++;
-                                continue;
-                            }
-
-                            // Логирование
-                            Console.WriteLine($"{logHeader} Добавляем:");
-                            Console.WriteLine($"- Название: {mediaItem.Title}");
-                            Console.WriteLine($"- Путь: {mediaItem.Path}");
-
-                            // Добавление в БД
-                            await _dbContext.MediaItems.AddAsync(mediaItem);
-                            await _dbContext.SaveChangesAsync();
-                            
-                            successCount++;
-
-                            Console.WriteLine($"{logHeader} Успешно: {mediaItem}");
-                            
-                            // Для Linux используем альтернативную проверку прав
-                            Console.WriteLine($"Права доступа: {(Environment.OSVersion.Platform == PlatformID.Win32NT ? "Windows" : "Unix")}");
-
-                            // После добавления
-                            Console.WriteLine($"Состояние сущности: {_dbContext.Entry(mediaItem).State}");
-                            if (mediaItem.Id > 0)
-                            {
-                                Console.WriteLine("Запись успешно добавлена с ID: " + mediaItem.Id);
-                            }
-                            else
-                            {
-                                Console.WriteLine("ОШИБКА: ID не назначен");
-                            }
-
-                            // Обновляем коллекцию в ViewModel
-                            if (DataContext is MediaViewModel vm)
-                            {
-                                vm.MediaItems = new ObservableCollection<MediaItem>(await _dbContext.MediaItems.ToListAsync());
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            errorCount++;
-                            Console.WriteLine($"{logHeader} Ошибка обработки файла {sourcePath}:");
-                            Console.WriteLine(ex);
-                        }
+                        errorCount++;
+                        continue;
                     }
 
-                    // Добавляем проверку перед сохранением
-                    if (successCount > 0)
-                    {
-                        await transaction.CommitAsync();
-                        Console.WriteLine($"{logHeader} Успешно сохранено: {successCount} записей");
-                    }
-                    else
-                    {
-                        await transaction.RollbackAsync();
-                        Console.WriteLine($"{logHeader} Нет данных для сохранения");
-                    }
-
-                    // Добавляем принудическое обновление контекста
-                    _dbContext.ChangeTracker.Clear();
-                    var totalCount = await _dbContext.MediaItems.CountAsync();
-                    Console.WriteLine($"{logHeader} Всего записей в БД: {totalCount}");
-
-                    // Валидация
-                    await ValidateDatabaseRecords();
+                    await _dbContext.MediaItems.AddAsync(mediaItem);
+                    successCount++;
                 }
                 catch (Exception ex)
                 {
-                    await transaction.RollbackAsync();
-                    Console.WriteLine($"{logHeader} Критическая ошибка транзакции:");
+                    errorCount++;
+                    Console.WriteLine($"{logHeader} Ошибка обработки файла {realPath}:");
                     Console.WriteLine(ex);
-                    throw;
                 }
             }
+
+            if (successCount > 0)
+            {
+                await _dbContext.SaveChangesAsync();
+                Console.WriteLine($"{logHeader} Успешно добавлено {successCount} файлов");
+                
+                if (DataContext is MediaViewModel vm)
+                {
+                    await vm.RefreshMediaCommand.ExecuteAsync(null);
+                }
+            }
+
+            Console.WriteLine($"{logHeader} Обработка завершена. Успешно: {successCount}, Ошибок: {errorCount}");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"{logHeader} Необработанная ошибка:");
+            Console.WriteLine($"{logHeader} Критическая ошибка:");
             Console.WriteLine(ex);
         }
     }
@@ -298,5 +248,99 @@ public partial class MediaView : UserControl
     private void InitializeComponent()
     {
         AvaloniaXamlLoader.Load(this);
+    }
+
+    // Переносим методы внутрь класса
+#if ANDROID
+    private async Task<string> GetAndroidRealPath(IStorageFile file)
+    {
+        try 
+        {
+            var uri = Android.Net.Uri.Parse(file.Path.AbsoluteUri);
+            var cursor = Android.App.Application.Context.ContentResolver.Query(
+                uri, null, null, null, null);
+            cursor?.MoveToFirst();
+            var index = cursor?.GetColumnIndex(MediaStore.MediaColumns.Data);
+            return cursor?.GetString(index ?? 0) ?? file.Path.LocalPath;
+        }
+        catch 
+        {
+            return file.Path.LocalPath;
+        }
+    }
+
+    private async Task<string> GetAndroidTagInfo(string path)
+    {
+        try 
+        {
+            var uri = Android.Net.Uri.Parse(path);
+            var projection = new[] { MediaStore.Audio.AudioColumns.Artist };
+            using var cursor = await Task.Run(() => 
+                Android.App.Application.Context.ContentResolver.Query(
+                    uri, projection, null, null, null));
+            
+            cursor?.MoveToFirst();
+            return cursor?.GetString(0) ?? "Unknown Artist";
+        }
+        catch 
+        {
+            return "Unknown Artist";
+        }
+    }
+
+    private async Task<TimeSpan> GetDuration(string path)
+    {
+        try 
+        {
+            var uri = Android.Net.Uri.Parse(path);
+            var projection = new[] { MediaStore.Audio.AudioColumns.Duration };
+            using var cursor = await Task.Run(() => 
+                Android.App.Application.Context.ContentResolver.Query(
+                    uri, projection, null, null, null));
+            
+            cursor?.MoveToFirst();
+            return TimeSpan.FromMilliseconds(cursor?.GetLong(0) ?? 0);
+        }
+        catch 
+        {
+            return TimeSpan.Zero;
+        }
+    }
+
+    private async Task<string> ConvertFileUriToContentUri(string filePath)
+    {
+        try
+        {
+            var mediaFile = new Java.IO.File(filePath);
+            var uri = Android.Net.Uri.FromFile(mediaFile);
+            return uri.ToString();
+        }
+        catch
+        {
+            return filePath;
+        }
+    }
+#endif
+
+    [Obsolete("Метод будет удален в будущих версиях")]
+    private async Task<bool> FileExists(string path)
+    {
+#if ANDROID
+        if (path.StartsWith("content://"))
+        {
+            try 
+            {
+                var uri = Android.Net.Uri.Parse(path);
+                var contentResolver = Android.App.Application.Context.ContentResolver;
+                using var stream = contentResolver.OpenInputStream(uri);
+                return stream != null;
+            }
+            catch 
+            {
+                return false;
+            }
+        }
+#endif
+        return System.IO.File.Exists(path);
     }
 }

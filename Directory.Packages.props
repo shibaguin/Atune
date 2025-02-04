@@ -30,5 +30,8 @@
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.4" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.4" />
     <PackageVersion Include="TagLibSharp" Version="2.3.0" />
+    <PackageVersion Include="SQLitePCLRaw.bundle_green" Version="2.1.0" />
+    <PackageVersion Include="Xamarin.AndroidX.Core" Version="1.13.0" />
+    <PackageVersion Include="Xamarin.AndroidX.DocumentFile" Version="1.0.1" />
   </ItemGroup>
 </Project>

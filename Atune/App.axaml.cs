@@ -21,6 +21,7 @@ using Serilog;
 using Serilog.Sinks.File;
 using Serilog.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
+using System.IO;
 
 namespace Atune;
 
@@ -132,9 +133,14 @@ public partial class App : Application
     private void ConfigureServices(IServiceCollection services)
     {
         services.AddDbContext<AppDbContext>((provider, options) => 
-            options.UseSqlite("Data Source=media_library.db")
-                .EnableSensitiveDataLogging()
-                .EnableDetailedErrors());
+        {
+            var dbPath = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.Personal), 
+                "media_library.db");
+            
+            Console.WriteLine($"Database path: {dbPath}");
+            options.UseSqlite($"Filename={dbPath}");
+        });
         
         services.AddDbContextFactory<AppDbContext>(options => 
             options.UseSqlite("Data Source=media_library.db"));

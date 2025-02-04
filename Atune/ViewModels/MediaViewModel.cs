@@ -11,6 +11,8 @@ using CommunityToolkit.Mvvm.Input;
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using System.Collections.ObjectModel;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Atune.ViewModels;
 
@@ -92,6 +94,31 @@ public partial class MediaViewModel : ObservableObject
         catch (Exception ex)
         {
             StatusMessage = $"Ошибка: {ex.Message}";
+        }
+    }
+
+    [RelayCommand]
+    private async Task RefreshMedia()
+    {
+        try 
+        {
+            await Task.Run(async () =>
+            {
+                if (App.Current?.Services == null) return;
+                
+                using var scope = App.Current.Services.CreateScope();
+                var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                var items = await db.MediaItems.ToListAsync();
+                
+                await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
+                {
+                    MediaItems = new ObservableCollection<MediaItem>(items);
+                });
+            });
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Ошибка обновления: {ex.Message}";
         }
     }
 } 

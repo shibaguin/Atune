@@ -52,5 +52,13 @@
                 HorizontalAlignment="Right"
                 VerticalAlignment="Bottom"
                 Grid.Row="1"/>
+
+        <Button Content="Обновить" 
+                Command="{Binding RefreshMediaCommand}"
+                Margin="10"
+                Padding="10 5"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Bottom"
+                Grid.Row="1"/>
     </Grid>
 </UserControl>
