@@ -7,16 +7,25 @@
 
 	<uses-permission android:name="android.permission.INTERNET" />
 	
-	<!-- Для API 30+ (если требуется доступ ко всему хранилищу) -->
-	<!-- <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" /> -->
-
-	<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-	<uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+	<!-- Разрешения для доступа ко всему хранилищу (Android 11+) -->
+	<uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />
+	
+	<!-- Разрешения для Android 13+ -->
+	<uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+	<uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
+	<uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
+	
+	<!-- Для обратной совместимости с версиями ниже Android 13 -->
+	<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+		android:maxSdkVersion="32" />
+	<uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
+		android:maxSdkVersion="32" />
 
 	<application
 		android:label="Atune"
 		android:icon="@drawable/Icon"
-		android:requestLegacyExternalStorage="true">
+		android:requestLegacyExternalStorage="true"
+		android:preserveLegacyExternalStorage="true">
 	</application>
 
 </manifest>
