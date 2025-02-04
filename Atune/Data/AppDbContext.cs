@@ -144,4 +144,9 @@ public class AppDbContext : DbContext
             await Database.CloseConnectionAsync();
         }
     }
+
+    public async Task<bool> ExistsByPathAsync(string path)
+    {
+        return await MediaItems.AnyAsync(m => m.Path == path);
+    }
 } 

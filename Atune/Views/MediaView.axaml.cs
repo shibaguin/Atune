@@ -85,49 +85,71 @@ public partial class MediaView : UserControl
 
                 int errorCount = 0;
                 int successCount = 0;
+                int duplicateCount = 0;
 
                 foreach (var file in files ?? Enumerable.Empty<IStorageFile>())
                 {
-                    var realPath = file.Path.LocalPath;
+                    string? realPath = null;
                     
-                    // Для десктопных систем проверяем существование файла
-                    if (!OperatingSystem.IsAndroid())
-                    {
-                        if (!System.IO.File.Exists(realPath))
-                        {
-                            Console.WriteLine($"{logHeader} Файл не существует: {realPath}");
-                            errorCount++;
-                            continue;
-                        }
-                    }
-                    else 
-                    {
-                        // Оригинальная обработка для Android
-                        #if ANDROID
-                        if (file.Path.Scheme != "content")
-                        {
-                            realPath = await ConvertFileUriToContentUri(file.Path.LocalPath);
-                        }
-                        
-                        if (realPath.StartsWith("content://"))
-                        {
-                            realPath = await GetAndroidRealPath(file);
-                        }
-
-                        var fileExists = await FileExists(realPath);
-                        if (!fileExists)
-                        {
-                            Console.WriteLine($"{logHeader} Файл не существует: {realPath}");
-                            errorCount++;
-                            continue;
-                        }
-                        #endif
-                    }
-
-                    Console.WriteLine($"{logHeader} Обработка файла: {realPath}");
-
                     try
                     {
+                        realPath = file.Path.LocalPath;
+                        
+                        // Добавляем проверку на null для фабрики
+                        if (_dbContextFactory == null)
+                        {
+                            Console.WriteLine($"{logHeader} Ошибка: Фабрика контекста БД не инициализирована");
+                            errorCount++;
+                            continue;
+                        }
+                        
+                        // Проверка на существование в БД
+                        using (var checkDb = _dbContextFactory.CreateDbContext())
+                        {
+                            if (await checkDb.ExistsByPathAsync(realPath))
+                            {
+                                Console.WriteLine($"{logHeader} Файл уже существует: {realPath}");
+                                duplicateCount++;
+                                continue;
+                            }
+                        }
+                        
+                        // Для десктопных систем проверяем существование файла
+                        if (!OperatingSystem.IsAndroid())
+                        {
+                            if (!System.IO.File.Exists(realPath))
+                            {
+                                Console.WriteLine($"{logHeader} Файл не существует: {realPath}");
+                                errorCount++;
+                                continue;
+                            }
+                        }
+                        else 
+                        {
+                            // Оригинальная обработка для Android
+                            #if ANDROID
+                            if (file.Path.Scheme != "content")
+                            {
+                                realPath = await ConvertFileUriToContentUri(file.Path.LocalPath);
+                            }
+                            
+                            if (realPath.StartsWith("content://"))
+                            {
+                                realPath = await GetAndroidRealPath(file);
+                            }
+
+                            var fileExists = await FileExists(realPath);
+                            if (!fileExists)
+                            {
+                                Console.WriteLine($"{logHeader} Файл не существует: {realPath}");
+                                errorCount++;
+                                continue;
+                            }
+                            #endif
+                        }
+
+                        Console.WriteLine($"{logHeader} Обработка файла: {realPath}");
+
                         var fileNameWithoutExtension = Path.GetFileNameWithoutExtension(realPath);
                         var duration = TimeSpan.Zero;
                         string artist = "Unknown Artist";
@@ -172,10 +194,15 @@ public partial class MediaView : UserControl
                             }
                         }
                     }
+                    catch (DbUpdateException ex) when (ex.InnerException?.Message?.Contains("UNIQUE constraint") == true)
+                    {
+                        Console.WriteLine($"{logHeader} Файл уже существует: {realPath ?? "unknown_path"}");
+                        duplicateCount++;
+                    }
                     catch (Exception ex)
                     {
                         Console.WriteLine($"{logHeader} Общая ошибка: {ex}");
-                        errorCount = files?.Count ?? 0;
+                        errorCount++;
                     }
                 }
 
@@ -189,7 +216,7 @@ public partial class MediaView : UserControl
                     }
                 }
 
-                Console.WriteLine($"{logHeader} Обработка завершена. Успешно: {successCount}, Ошибок: {errorCount}");
+                Console.WriteLine($"{logHeader} Обработка завершена. Успешно: {successCount}, Ошибок: {errorCount}, Дубликатов: {duplicateCount}");
             }
             catch (Exception ex)
             {

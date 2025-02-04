@@ -25,6 +25,12 @@ namespace Atune.Data.Migrations
                 {
                     table.PrimaryKey("PK_MediaItems", x => x.Id);
                 });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_MediaItems_Path",
+                table: "MediaItems",
+                column: "Path",
+                unique: true);
         }
 
         /// <inheritdoc />

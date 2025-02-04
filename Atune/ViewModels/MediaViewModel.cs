@@ -101,27 +101,61 @@ public partial class MediaViewModel : ObservableObject
                     }
                 });
 
-            if (files.Count > 0)
+            int duplicateCount = 0;
+            int successCount = 0;
+            int errorCount = 0;
+
+            foreach (var file in files ?? Enumerable.Empty<IStorageFile>())
             {
-                using var db = _dbContextFactory.CreateDbContext();
-                foreach (var file in files)
+                try
                 {
+                    var realPath = file.Path.LocalPath;
+                    
+                    // Проверка на существование
+                    using var db = _dbContextFactory.CreateDbContext();
+                    if (await db.ExistsByPathAsync(realPath))
+                    {
+                        duplicateCount++;
+                        continue;
+                    }
+
                     var mediaItem = new MediaItem(
                         Path.GetFileNameWithoutExtension(file.Name),
                         "Unknown Artist",
-                        file.Path.LocalPath,
+                        realPath,
                         TimeSpan.Zero);
 
                     await db.AddMediaAsync(mediaItem);
+
+                    successCount++;
                 }
-                
+                catch (DbUpdateException ex) when (ex.InnerException?.Message?.Contains("UNIQUE constraint") == true)
+                {
+                    duplicateCount++;
+                }
+                catch (Exception ex)
+                {
+                    errorCount++;
+                    Console.WriteLine($"Ошибка: {ex.Message}");
+                }
+            }
+
+            // Обновление статуса
+            var statusParts = new List<string>();
+            if (successCount > 0) statusParts.Add($"Добавлено: {successCount}");
+            if (duplicateCount > 0) statusParts.Add($"Пропущено дубликатов: {duplicateCount}");
+            if (errorCount > 0) statusParts.Add($"Ошибок: {errorCount}");
+            
+            StatusMessage = string.Join(" • ", statusParts);
+            
+            if (successCount > 0)
+            {
                 await RefreshMediaCommand.ExecuteAsync(null);
-                StatusMessage = $"Успешно добавлено {files.Count} файлов";
             }
         }
-        catch (Exception ex)
+        catch (DbUpdateException ex) when (ex.InnerException?.Message?.Contains("UNIQUE constraint") == true)
         {
-            StatusMessage = $"Ошибка: {ex.Message}";
+            StatusMessage = "Файл уже существует в библиотеке!";
         }
     }
 
