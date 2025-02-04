@@ -131,13 +131,6 @@ public class AppDbContext : DbContext
         try 
         {
             await Database.OpenConnectionAsync();
-            await Database.ExecuteSqlRawAsync(
-                "CREATE TABLE IF NOT EXISTS MediaItems (" +
-                "Id INTEGER PRIMARY KEY AUTOINCREMENT, " +
-                "Title TEXT NOT NULL, " +
-                "Artist TEXT NOT NULL, " +
-                "Path TEXT NOT NULL UNIQUE, " +
-                "Duration INTEGER NOT NULL)");
         }
         finally 
         {

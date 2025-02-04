@@ -122,6 +122,9 @@ public partial class MediaViewModel : ObservableObject
                     var mediaItem = new MediaItem(
                         Path.GetFileNameWithoutExtension(file.Name),
                         "Unknown Artist",
+                        "Unknown Album",
+                        0,
+                        "Unknown Genre",
                         realPath,
                         TimeSpan.Zero);
 

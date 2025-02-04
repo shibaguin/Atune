@@ -22,6 +22,7 @@ using Serilog.Sinks.File;
 using Serilog.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
 using System.IO;
+using Atune.Models;
 
 namespace Atune;
 
@@ -92,26 +93,7 @@ public partial class App : Application
             Services = serviceProvider; // Затем присваиваем свойство Services
 
             // Применяем миграции и создаем БД
-            using var scope = Services.CreateScope();
-            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            
-            try 
-            {
-                Console.WriteLine("Инициализация БД...");
-                await db.InitializeDatabase();
-                Console.WriteLine("Проверка миграций...");
-                await db.Database.MigrateAsync();
-                
-                // Дополнительная проверка структуры
-                var tableExists = await db.MediaItems.AnyAsync();
-                Console.WriteLine($"Проверка таблиц: {(tableExists ? "OK" : "WARNING: Таблицы пусты")}");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Ошибка инициализации БД: {ex}");
-                File.WriteAllText("db_init_error.log", ex.ToString());
-                throw;
-            }
+            await InitializeDatabaseAsync();
 
             // Остальная инициализация
             if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
@@ -142,6 +124,16 @@ public partial class App : Application
                 var settings = settingsService.LoadSettings();
                 UpdateTheme(settings.ThemeVariant);
             }
+
+            // Добавляем тестовую запись в БД
+            var testItem = new MediaItem(
+                "Test Title", 
+                "Test Artist", 
+                "Test Album", 
+                2024, 
+                "Test Genre",
+                "/test/path.mp3", 
+                TimeSpan.FromSeconds(123));
         }
         catch (Exception ex)
         {
@@ -262,5 +254,57 @@ public partial class App : Application
     {
         ConfigureCachePolicies();
         Log.CloseAndFlush();
+    }
+
+    private async Task InitializeDatabaseAsync()
+    {
+        if (Services == null) 
+        {
+            throw new InvalidOperationException("Service provider is not initialized");
+        }
+        
+        using var scope = Services!.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        
+        try
+        {
+            // Проверяем существование БД
+            if (!await db.Database.CanConnectAsync())
+            {
+                Console.WriteLine("БД не найдена, создаем новую...");
+                await db.Database.EnsureCreatedAsync();
+                return;
+            }
+
+            // Проверяем существование таблиц
+            var tableExists = await db.Database.ExecuteSqlRawAsync(
+                "SELECT count(*) FROM sqlite_master " +
+                "WHERE type='table' AND name='MediaItems'") > 0;
+
+            if (!tableExists)
+            {
+                Console.WriteLine("Таблицы не найдены, применяем миграции...");
+                await db.Database.MigrateAsync();
+            }
+            else
+            {
+                // Проверяем наличие всех колонок
+                var columnCheck = await db.Database.ExecuteSqlRawAsync(
+                    "SELECT count(*) FROM pragma_table_info('MediaItems') " +
+                    "WHERE name IN ('Album', 'Year', 'Genre')") == 3;
+
+                if (!columnCheck)
+                {
+                    Console.WriteLine("Обнаружены изменения структуры, применяем миграции...");
+                    await db.Database.MigrateAsync();
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Ошибка инициализации БД: {ex}");
+            File.WriteAllText("db_init_error.log", ex.ToString());
+            throw;
+        }
     }
 }

@@ -18,6 +18,9 @@ namespace Atune.Data.Migrations
                         .Annotation("Sqlite:Autoincrement", true),
                     Title = table.Column<string>(type: "TEXT", maxLength: 200, nullable: false),
                     Artist = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
+                    Album = table.Column<string>(type: "TEXT", nullable: false),
+                    Year = table.Column<int>(type: "INTEGER", nullable: false),
+                    Genre = table.Column<string>(type: "TEXT", nullable: false),
                     Path = table.Column<string>(type: "TEXT", nullable: false),
                     Duration = table.Column<long>(type: "BIGINT", nullable: false)
                 },
@@ -25,12 +28,6 @@ namespace Atune.Data.Migrations
                 {
                     table.PrimaryKey("PK_MediaItems", x => x.Id);
                 });
-
-            migrationBuilder.CreateIndex(
-                name: "IX_MediaItems_Path",
-                table: "MediaItems",
-                column: "Path",
-                unique: true);
         }
 
         /// <inheritdoc />

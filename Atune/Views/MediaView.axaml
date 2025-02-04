@@ -19,7 +19,11 @@
                 <DataTemplate>
                     <StackPanel Margin="5">
                         <TextBlock Text="{Binding Title}" FontWeight="Bold"/>
-                        <TextBlock Text="{Binding Path}"/>
+                        <TextBlock Text="{Binding Artist}"/>
+                        <TextBlock Text="{Binding Album}"/>
+                        <TextBlock Text="{Binding Year}"/>
+                        <TextBlock Text="{Binding Genre}"/>
+                        <TextBlock Text="{Binding Path}" FontSize="10" Opacity="0.6"/>
                     </StackPanel>
                 </DataTemplate>
             </ListBox.ItemTemplate>

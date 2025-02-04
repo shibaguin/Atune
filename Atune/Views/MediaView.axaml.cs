@@ -153,15 +153,25 @@ public partial class MediaView : UserControl
                         var fileNameWithoutExtension = Path.GetFileNameWithoutExtension(realPath);
                         var duration = TimeSpan.Zero;
                         string artist = "Unknown Artist";
+                        string album = "Unknown Album";
+                        int year = 0;
+                        string genre = "Unknown Genre";
 
     #if ANDROID
                         duration = await GetDuration(realPath);
-                        artist = await GetAndroidTagInfo(realPath);
+                        var (a, al, y, g) = await GetAndroidTagInfo(realPath);
+                        artist = a;
+                        album = al;
+                        year = y;
+                        genre = g;
     #endif
 
                         var mediaItem = new MediaItem(
-                            fileNameWithoutExtension, 
+                            fileNameWithoutExtension,
                             artist,
+                            album,
+                            year,
+                            genre,
                             realPath, 
                             duration);
 
@@ -274,6 +284,9 @@ public partial class MediaView : UserControl
             var testItem = new MediaItem(
                 "Test Title", 
                 "Test Artist", 
+                "Test Album", 
+                2024, 
+                "Test Genre",
                 "/test/path.mp3", 
                 TimeSpan.FromSeconds(123));
             
@@ -326,23 +339,37 @@ public partial class MediaView : UserControl
         }
     }
 
-    private async Task<string> GetAndroidTagInfo(string path)
+    private async Task<(string Artist, string Album, int Year, string Genre)> GetAndroidTagInfo(string path)
     {
         try 
         {
             var uri = Android.Net.Uri.Parse(path);
-            var projection = new[] { MediaStore.Audio.AudioColumns.Artist };
+            var projection = new[] { 
+                MediaStore.Audio.AudioColumns.Artist,
+                MediaStore.Audio.AudioColumns.Album,
+                MediaStore.Audio.AudioColumns.Years,
+                MediaStore.Audio.AudioColumns.Genre
+            };
+            
             using var cursor = await Task.Run(() => 
                 Android.App.Application.Context.ContentResolver.Query(
                     uri, projection, null, null, null));
             
-            cursor?.MoveToFirst();
-            return cursor?.GetString(0) ?? "Unknown Artist";
+            if (cursor?.MoveToFirst() == true)
+            {
+                return (
+                    cursor.GetString(0) ?? "Unknown Artist",
+                    cursor.GetString(1) ?? "Unknown Album",
+                    cursor.GetInt(2),
+                    cursor.GetString(3) ?? "Unknown Genre"
+                );
+            }
         }
         catch 
         {
-            return "Unknown Artist";
+            // Логирование ошибок
         }
+        return ("Unknown Artist", "Unknown Album", 0, "Unknown Genre");
     }
 
     private async Task<TimeSpan> GetDuration(string path)
@@ -417,5 +444,23 @@ public partial class MediaView : UserControl
         
         var vm = DataContext as MediaViewModel;
         vm?.UpdateStatusMessage?.Invoke($"Путь к БД: {path}");
+    }
+
+    private (string Artist, string Album, int Year, string Genre) GetDesktopTagInfo(string path)
+    {
+        try
+        {
+            using var file = TagLib.File.Create(path);
+            return (
+                file.Tag.FirstPerformer ?? file.Tag.AlbumArtists.FirstOrDefault() ?? "Unknown Artist",
+                file.Tag.Album ?? "Unknown Album",
+                (int)(file.Tag.Year > 0 ? file.Tag.Year : 0),
+                file.Tag.FirstGenre ?? "Unknown Genre"
+            );
+        }
+        catch
+        {
+            return ("Unknown Artist", "Unknown Album", 0, "Unknown Genre");
+        }
     }
 }

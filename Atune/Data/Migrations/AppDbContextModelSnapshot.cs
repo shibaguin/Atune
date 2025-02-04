@@ -21,6 +21,10 @@ namespace Atune.Data.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("Album")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Artist")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -28,6 +32,10 @@ namespace Atune.Data.Migrations
 
                     b.Property<long>("Duration")
                         .HasColumnType("BIGINT");
+
+                    b.Property<string>("Genre")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("Path")
                         .IsRequired()
@@ -37,6 +45,9 @@ namespace Atune.Data.Migrations
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("TEXT");
+
+                    b.Property<int>("Year")
+                        .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
 
