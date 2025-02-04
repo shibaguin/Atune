@@ -154,7 +154,7 @@ public partial class MediaView : UserControl
                         var duration = TimeSpan.Zero;
                         string artist = "Unknown Artist";
                         string album = "Unknown Album";
-                        int year = 0;
+                        uint year = 0;
                         string genre = "Unknown Genre";
 
     #if ANDROID
@@ -164,6 +164,25 @@ public partial class MediaView : UserControl
                         album = al;
                         year = y;
                         genre = g;
+    #else
+                        // Добавляем обработку для десктопных систем
+                        try 
+                        {
+                            var desktopTags = GetDesktopTagInfo(realPath);
+                            artist = desktopTags.Artist;
+                            album = desktopTags.Album;
+                            year = desktopTags.Year;
+                            genre = desktopTags.Genre;
+                            duration = desktopTags.Duration;
+                        }
+                        catch
+                        {
+                            // Резервные значения
+                            artist = "Unknown Artist";
+                            album = "Unknown Album";
+                            year = (uint)DateTime.Now.Year;
+                            genre = "Unknown Genre";
+                        }
     #endif
 
                         var mediaItem = new MediaItem(
@@ -339,7 +358,7 @@ public partial class MediaView : UserControl
         }
     }
 
-    private async Task<(string Artist, string Album, int Year, string Genre)> GetAndroidTagInfo(string path)
+    private async Task<(string Artist, string Album, uint Year, string Genre)> GetAndroidTagInfo(string path)
     {
         try 
         {
@@ -347,7 +366,7 @@ public partial class MediaView : UserControl
             var projection = new[] { 
                 MediaStore.Audio.AudioColumns.Artist,
                 MediaStore.Audio.AudioColumns.Album,
-                MediaStore.Audio.AudioColumns.Years,
+                MediaStore.Audio.AudioColumns.Year,
                 MediaStore.Audio.AudioColumns.Genre
             };
             
@@ -357,19 +376,21 @@ public partial class MediaView : UserControl
             
             if (cursor?.MoveToFirst() == true)
             {
+                var year = (uint)Math.Clamp(cursor.GetInt(2), 1900, 2100);
+                
                 return (
                     cursor.GetString(0) ?? "Unknown Artist",
                     cursor.GetString(1) ?? "Unknown Album",
-                    cursor.GetInt(2),
+                    year,
                     cursor.GetString(3) ?? "Unknown Genre"
                 );
             }
         }
-        catch 
+        catch (Exception ex)
         {
-            // Логирование ошибок
+            Console.WriteLine($"Ошибка чтения тегов: {ex.Message}");
         }
-        return ("Unknown Artist", "Unknown Album", 0, "Unknown Genre");
+        return ("Unknown Artist", "Unknown Album", (uint)DateTime.Now.Year, "Unknown Genre");
     }
 
     private async Task<TimeSpan> GetDuration(string path)
@@ -446,7 +467,7 @@ public partial class MediaView : UserControl
         vm?.UpdateStatusMessage?.Invoke($"Путь к БД: {path}");
     }
 
-    private (string Artist, string Album, int Year, string Genre) GetDesktopTagInfo(string path)
+    private (string Artist, string Album, uint Year, string Genre, TimeSpan Duration) GetDesktopTagInfo(string path)
     {
         try
         {
@@ -454,13 +475,15 @@ public partial class MediaView : UserControl
             return (
                 file.Tag.FirstPerformer ?? file.Tag.AlbumArtists.FirstOrDefault() ?? "Unknown Artist",
                 file.Tag.Album ?? "Unknown Album",
-                (int)(file.Tag.Year > 0 ? file.Tag.Year : 0),
-                file.Tag.FirstGenre ?? "Unknown Genre"
+                file.Tag.Year > 0 ? file.Tag.Year : (uint)DateTime.Now.Year,
+                file.Tag.FirstGenre ?? "Unknown Genre",
+                file.Properties.Duration
             );
         }
-        catch
+        catch (Exception ex)
         {
-            return ("Unknown Artist", "Unknown Album", 0, "Unknown Genre");
+            Console.WriteLine($"Ошибка чтения тегов: {ex.Message}");
+            return ("Unknown Artist", "Unknown Album", (uint)DateTime.Now.Year, "Unknown Genre", TimeSpan.Zero);
         }
     }
 }

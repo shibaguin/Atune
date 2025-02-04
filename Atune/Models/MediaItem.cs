@@ -16,7 +16,8 @@ public class MediaItem
     public string Artist { get; set; } = string.Empty;
     
     public string Album { get; set; } = string.Empty;
-    public int Year { get; set; }
+    [Range(1900u, 2100u, ErrorMessage = "Недопустимый год")]
+    public uint Year { get; set; }
     public string Genre { get; set; } = string.Empty;
     
     [Required(ErrorMessage = "Path is required")]
@@ -25,7 +26,7 @@ public class MediaItem
     public TimeSpan Duration { get; set; }
     
     // Добавим конструктор для удобства
-    public MediaItem(string title, string artist, string album, int year, string genre, string path, TimeSpan duration)
+    public MediaItem(string title, string artist, string album, uint year, string genre, string path, TimeSpan duration)
     {
         Title = title;
         Artist = artist;
