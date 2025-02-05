@@ -6,7 +6,6 @@ using System.Linq;
 using System;
 using Atune.Models;
 using Avalonia;
-using TagLib;
 using Avalonia.Markup.Xaml;
 using Atune.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
@@ -20,6 +19,7 @@ using Android.Net;
 using Android.App;
 using Android.Provider;
 #endif
+using ATL;
 
 namespace Atune.Views;
 
@@ -90,7 +90,6 @@ public partial class MediaView : UserControl
                 foreach (var file in files ?? Enumerable.Empty<IStorageFile>())
                 {
                     string? realPath = null;
-                    
                     try
                     {
                         realPath = file.Path.LocalPath;
@@ -150,49 +149,17 @@ public partial class MediaView : UserControl
 
                         Console.WriteLine($"{logHeader} Обработка файла: {realPath}");
 
-                        var fileNameWithoutExtension = Path.GetFileNameWithoutExtension(realPath);
-                        var duration = TimeSpan.Zero;
-                        string artist = "Unknown Artist";
-                        string album = "Unknown Album";
-                        uint year = 0;
-                        string genre = "Unknown Genre";
-
-    #if ANDROID
-                        duration = await GetDuration(realPath);
-                        var (a, al, y, g) = await GetAndroidTagInfo(realPath);
-                        artist = a;
-                        album = al;
-                        year = y;
-                        genre = g;
-    #else
-                        // Добавляем обработку для десктопных систем
-                        try 
-                        {
-                            var desktopTags = GetDesktopTagInfo(realPath);
-                            artist = desktopTags.Artist;
-                            album = desktopTags.Album;
-                            year = desktopTags.Year;
-                            genre = desktopTags.Genre;
-                            duration = desktopTags.Duration;
-                        }
-                        catch
-                        {
-                            // Резервные значения
-                            artist = "Unknown Artist";
-                            album = "Unknown Album";
-                            year = (uint)DateTime.Now.Year;
-                            genre = "Unknown Genre";
-                        }
-    #endif
-
+                        // Универсальная обработка с ATL
+                        var track = new Track(realPath);
+                        
                         var mediaItem = new MediaItem(
-                            fileNameWithoutExtension,
-                            artist,
-                            album,
-                            year,
-                            genre,
-                            realPath, 
-                            duration);
+                            track.Title ?? Path.GetFileNameWithoutExtension(file.Name),
+                            track.Artist ?? "Unknown Artist",
+                            track.Album ?? "Unknown Album",
+                            (uint)(track.Year > 0 ? track.Year : DateTime.Now.Year),
+                            track.Genre ?? "Unknown Genre",
+                            realPath,
+                            TimeSpan.FromMilliseconds(track.DurationMs));
 
                         var validationResults = new List<ValidationResult>();
                         if (!Validator.TryValidateObject(mediaItem, new ValidationContext(mediaItem), validationResults))
@@ -307,7 +274,7 @@ public partial class MediaView : UserControl
                 2024, 
                 "Test Genre",
                 "/test/path.mp3", 
-                TimeSpan.FromSeconds(123));
+                TimeSpan.FromMilliseconds(123));
             
             db.MediaItems.Add(testItem);
             var result = await db.SaveChangesAsync();
@@ -362,49 +329,27 @@ public partial class MediaView : UserControl
     {
         try 
         {
-            var uri = Android.Net.Uri.Parse(path);
-            var projection = new[] { 
-                MediaStore.Audio.AudioColumns.Artist,
-                MediaStore.Audio.AudioColumns.Album,
-                MediaStore.Audio.AudioColumns.Year,
-                MediaStore.Audio.AudioColumns.Genre
-            };
-            
-            using var cursor = await Task.Run(() => 
-                Android.App.Application.Context.ContentResolver.Query(
-                    uri, projection, null, null, null));
-            
-            if (cursor?.MoveToFirst() == true)
-            {
-                var year = (uint)Math.Clamp(cursor.GetInt(2), 1900, 2100);
-                
-                return (
-                    cursor.GetString(0) ?? "Unknown Artist",
-                    cursor.GetString(1) ?? "Unknown Album",
-                    year,
-                    cursor.GetString(3) ?? "Unknown Genre"
-                );
-            }
+            var track = new Track(path);
+            return (
+                track.Artist ?? "Unknown Artist",
+                track.Album ?? "Unknown Album",
+                (uint)(track.Year > 0 ? track.Year : DateTime.Now.Year),
+                track.Genre ?? "Unknown Genre"
+            );
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Ошибка чтения тегов: {ex.Message}");
+            Console.WriteLine($"Ошибка чтения тегов ATL: {ex.Message}");
+            return ("Unknown Artist", "Unknown Album", (uint)DateTime.Now.Year, "Unknown Genre");
         }
-        return ("Unknown Artist", "Unknown Album", (uint)DateTime.Now.Year, "Unknown Genre");
     }
 
     private async Task<TimeSpan> GetDuration(string path)
     {
         try 
         {
-            var uri = Android.Net.Uri.Parse(path);
-            var projection = new[] { MediaStore.Audio.AudioColumns.Duration };
-            using var cursor = await Task.Run(() => 
-                Android.App.Application.Context.ContentResolver.Query(
-                    uri, projection, null, null, null));
-            
-            cursor?.MoveToFirst();
-            return TimeSpan.FromMilliseconds(cursor?.GetLong(0) ?? 0);
+            var track = new Track(path);
+            return TimeSpan.FromMilliseconds(track.DurationMs);
         }
         catch 
         {
@@ -471,18 +416,18 @@ public partial class MediaView : UserControl
     {
         try
         {
-            using var file = TagLib.File.Create(path);
+            var track = new Track(path);
             return (
-                file.Tag.FirstPerformer ?? file.Tag.AlbumArtists.FirstOrDefault() ?? "Unknown Artist",
-                file.Tag.Album ?? "Unknown Album",
-                file.Tag.Year > 0 ? file.Tag.Year : (uint)DateTime.Now.Year,
-                file.Tag.FirstGenre ?? "Unknown Genre",
-                file.Properties.Duration
+                track.Artist ?? "Unknown Artist",
+                track.Album ?? "Unknown Album",
+                (uint)(track.Year > 0 ? track.Year : DateTime.Now.Year),
+                track.Genre ?? "Unknown Genre",
+                TimeSpan.FromMilliseconds(track.DurationMs)
             );
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Ошибка чтения тегов: {ex.Message}");
+            Console.WriteLine($"Ошибка чтения тегов ATL: {ex.Message}");
             return ("Unknown Artist", "Unknown Album", (uint)DateTime.Now.Year, "Unknown Genre", TimeSpan.Zero);
         }
     }

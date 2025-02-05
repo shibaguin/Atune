@@ -31,7 +31,7 @@
     <PackageReference Include="Serilog.Extensions.Hosting" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" />
-    <PackageReference Include="TagLibSharp" />
+    <PackageReference Include="Z440.ATL.Core" />
   </ItemGroup>
 
   <ItemGroup>
