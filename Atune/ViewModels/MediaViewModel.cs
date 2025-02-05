@@ -175,4 +175,29 @@ public partial class MediaViewModel : ObservableObject
             .SetPriority(CacheItemPriority.Normal)
             .SetSlidingExpiration(TimeSpan.FromMinutes(15)));
     }
+
+    [RelayCommand]
+    private async Task DropMediaRecords()
+    {
+        try
+        {
+            using var db = _dbContextFactory.CreateDbContext();
+            var allMedia = await db.GetAllMediaAsync();
+            if (allMedia.Any())
+            {
+                db.MediaItems.RemoveRange(allMedia);
+                await db.SaveChangesAsync();
+                StatusMessage = "Все записи удалены из БД";
+                await RefreshMediaCommand.ExecuteAsync(null);
+            }
+            else
+            {
+                StatusMessage = "БД уже пуста";
+            }
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Ошибка при удалении: {ex.Message}";
+        }
+    }
 } 

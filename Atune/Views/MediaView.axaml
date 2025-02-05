@@ -57,12 +57,23 @@
                 VerticalAlignment="Bottom"
                 Grid.Row="1"/>
 
-        <Button Content="Обновить" 
-                Command="{Binding RefreshMediaCommand}"
-                Margin="10"
-                Padding="10 5"
-                HorizontalAlignment="Left"
-                VerticalAlignment="Bottom"
-                Grid.Row="1"/>
+        <StackPanel Orientation="Horizontal"
+                    HorizontalAlignment="Left"
+                    VerticalAlignment="Bottom"
+                    Margin="10"
+                    Grid.Row="1">
+            <Button Content="Обновить" 
+                    Command="{Binding RefreshMediaCommand}"
+                    Margin="0"
+                    Padding="10 5"
+                    HorizontalAlignment="Left"
+                    VerticalAlignment="Bottom"/>
+            <Button Content="Drop" 
+                    Command="{Binding DropMediaRecordsCommand}"
+                    Margin="10,0,0,0"
+                    Padding="10 5"
+                    HorizontalAlignment="Left"
+                    VerticalAlignment="Bottom"/>
+        </StackPanel>
     </Grid>
 </UserControl>
