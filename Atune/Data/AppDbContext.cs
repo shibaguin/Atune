@@ -27,31 +27,68 @@ public class AppDbContext : DbContext
     {
         if (!optionsBuilder.IsConfigured)
         {
-            var dbPath = OperatingSystem.IsAndroid() 
-                ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Personal), "media_library.db")
-                : Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                    "Atune",
-                    "Data",
-                    "media_library.db");
+            string dbPath = GetDatabasePath();
+            Console.WriteLine($"Database path: {dbPath}");
 
-            var dir = Path.GetDirectoryName(dbPath)!;
+            EnsureDatabaseDirectory(dbPath);
+            CreateDatabaseFile(dbPath);
+
+            optionsBuilder.UseSqlite($"Data Source={dbPath};");
+        }
+    }
+
+    private string GetDatabasePath()
+    {
+        if (OperatingSystem.IsAndroid())
+        {
+            // Используем специальный путь для Android
+            return Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.Personal),
+                "atune_media.db");
+        }
+        
+        return Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+            "Atune",
+            "Data",
+            "media_library.db");
+    }
+
+    private void EnsureDatabaseDirectory(string dbPath)
+    {
+        try
+        {
+            var dir = Path.GetDirectoryName(dbPath);
+            if (string.IsNullOrEmpty(dir))
+                throw new InvalidOperationException("Invalid database directory");
+
             if (!Directory.Exists(dir))
             {
-                try 
-                {
-                    Directory.CreateDirectory(dir);
-                    Console.WriteLine($"Создана директория БД: {dir}");
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Ошибка создания директории БД: {ex}");
-                    throw new InvalidOperationException("Не удалось создать директорию для БД", ex);
-                }
+                Directory.CreateDirectory(dir);
+                Console.WriteLine($"Created database directory: {dir}");
             }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"FATAL DIRECTORY ERROR: {ex}");
+            throw;
+        }
+    }
 
-            Console.WriteLine($"Полный путь к БД: {Path.GetFullPath(dbPath)}");
-            optionsBuilder.UseSqlite($"Data Source={dbPath};");
+    private void CreateDatabaseFile(string dbPath)
+    {
+        try
+        {
+            if (!File.Exists(dbPath))
+            {
+                Console.WriteLine("Creating new database file");
+                using (File.Create(dbPath)) { }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"FATAL FILE CREATION ERROR: {ex}");
+            throw;
         }
     }
 

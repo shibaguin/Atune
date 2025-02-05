@@ -275,40 +275,38 @@ public partial class App : Application
 
     private async Task InitializeDatabaseAsync()
     {
-        if (Services == null) 
-        {
-            throw new InvalidOperationException("Service provider is not initialized");
-        }
-        
         using var scope = Services!.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         
         try
         {
-            // Упрощенная инициализация - всегда создаем БД при старте
+            Console.WriteLine("Initializing database...");
             await db.Database.EnsureCreatedAsync();
             
-            // Проверяем базовую структуру
-            var testItem = await db.MediaItems.FirstOrDefaultAsync();
-            Console.WriteLine($"Тестовая проверка БД выполнена успешно");
+            // Простая проверка работоспособности
+            var exists = await db.MediaItems.AnyAsync();
+            Console.WriteLine($"Database status: {(exists ? "OK" : "EMPTY")}");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Критическая ошибка инициализации БД: {ex}");
-            File.WriteAllText("db_init_error.log", ex.ToString());
-            
-            // Пытаемся удалить и пересоздать БД
-            try 
-            {
-                await db.Database.EnsureDeletedAsync();
-                await db.Database.EnsureCreatedAsync();
-                Console.WriteLine("БД успешно пересоздана");
-            }
-            catch (Exception recoveryEx)
-            {
-                Console.WriteLine($"Ошибка восстановления БД: {recoveryEx}");
-                throw new InvalidOperationException("Не удалось восстановить БД", recoveryEx);
-            }
+            Console.WriteLine($"DATABASE ERROR: {ex}");
+            await RecreateDatabase(db);
+        }
+    }
+
+    private async Task RecreateDatabase(AppDbContext db)
+    {
+        try
+        {
+            Console.WriteLine("Attempting database recreation...");
+            await db.Database.EnsureDeletedAsync();
+            await db.Database.EnsureCreatedAsync();
+            Console.WriteLine("Database recreated successfully");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"FATAL RECREATION ERROR: {ex}");
+            throw new InvalidOperationException("Cannot initialize database", ex);
         }
     }
 }
