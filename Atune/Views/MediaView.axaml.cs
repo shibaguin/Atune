@@ -18,6 +18,7 @@ using System.Collections.ObjectModel;
 using Android.Net;
 using Android.App;
 using Android.Provider;
+using Android.Util;
 #endif
 using ATL;
 
@@ -89,28 +90,42 @@ public partial class MediaView : UserControl
 
                 foreach (var file in files ?? Enumerable.Empty<IStorageFile>())
                 {
-                    string? realPath = null;
+                    string realPath;
                     try
                     {
-                        realPath = file.Path.LocalPath;
-                        
-                        // Добавляем проверку на null для фабрики
-                        if (_dbContextFactory == null)
+                        if (OperatingSystem.IsAndroid())
                         {
-                            Console.WriteLine($"{logHeader} Ошибка: Фабрика контекста БД не инициализирована");
-                            errorCount++;
-                            continue;
+#if ANDROID
+                            Android.Util.Log.Debug("MediaView", $"Начало копирования файла: {file.Name}");
+#endif
+                            // Формируем путь к папке AtuneMedia внутри MyDocuments
+                            var destFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "AtuneMedia");
+                            if (!Directory.Exists(destFolder))
+                                Directory.CreateDirectory(destFolder);
+                            // Формируем путь назначения с именем файла
+                            var destPath = Path.Combine(destFolder, file.Name);
+                            // Копируем файл с использованием потока
+                            using (var sourceStream = await file.OpenReadAsync())
+                            using (var destStream = File.Create(destPath))
+                            {
+                                await sourceStream.CopyToAsync(destStream);
+                            }
+#if ANDROID
+                            Android.Util.Log.Debug("MediaView", $"Файл скопирован в: {destPath}");
+#endif
+                            realPath = destPath;
+                        }
+                        else
+                        {
+                            realPath = file.Path.LocalPath;
                         }
                         
-                        // Проверка на существование в БД
-                        using (var checkDb = _dbContextFactory.CreateDbContext())
+                        Console.WriteLine($"{logHeader} Обработка файла: {realPath}");
+                        
+                        if (await dbContext.ExistsByPathAsync(realPath))
                         {
-                            if (await checkDb.ExistsByPathAsync(realPath))
-                            {
-                                Console.WriteLine($"{logHeader} Файл уже существует: {realPath}");
-                                duplicateCount++;
-                                continue;
-                            }
+                            duplicateCount++;
+                            continue;
                         }
                         
                         // Для десктопных систем проверяем существование файла
@@ -147,58 +162,34 @@ public partial class MediaView : UserControl
                             #endif
                         }
 
-                        Console.WriteLine($"{logHeader} Обработка файла: {realPath}");
-
-                        // Универсальная обработка с ATL
-                        var track = new Track(realPath);
-                        
+                        // Для Android можно использовать универсальный метод GetDesktopTagInfo,
+                        // так как теперь realPath указывает на локально скопированный файл
+                        var tagInfo = GetDesktopTagInfo(realPath);
+#if ANDROID
+                        Android.Util.Log.Debug("MediaView", $"Теги получены: Artist={tagInfo.Artist}, Album={tagInfo.Album}, Year={tagInfo.Year}");
+#endif
+                        var duration = tagInfo.Duration;
+                       
                         var mediaItem = new MediaItem(
-                            track.Title ?? Path.GetFileNameWithoutExtension(file.Name),
-                            track.Artist ?? "Unknown Artist",
-                            track.Album ?? "Unknown Album",
-                            (uint)(track.Year > 0 ? track.Year : DateTime.Now.Year),
-                            track.Genre ?? "Unknown Genre",
+                            Path.GetFileNameWithoutExtension(file.Name),
+                            tagInfo.Artist ?? "Unknown Artist",
+                            tagInfo.Album ?? "Unknown Album",
+                            tagInfo.Year,
+                            tagInfo.Genre ?? "Unknown Genre",
                             realPath,
-                            TimeSpan.FromMilliseconds(track.DurationMs));
-
-                        var validationResults = new List<ValidationResult>();
-                        if (!Validator.TryValidateObject(mediaItem, new ValidationContext(mediaItem), validationResults))
-                        {
-                            Console.WriteLine($"{logHeader} Ошибки валидации для файла {realPath}:");
-                            foreach (var error in validationResults)
-                            {
-                                Console.WriteLine($"- {error.ErrorMessage}");
-                            }
-                            errorCount++;
-                            continue;
-                        }
-
-                        using (var transaction = await dbContext.Database.BeginTransactionAsync())
-                        {
-                            try
-                            {
-                                await dbContext.MediaItems.AddAsync(mediaItem);
-                                await dbContext.SaveChangesAsync();
-                                await transaction.CommitAsync();
-                                successCount++;
-                            }
-                            catch (Exception ex)
-                            {
-                                Console.WriteLine($"{logHeader} Ошибка транзакции: {ex}");
-                                await transaction.RollbackAsync();
-                                errorCount++;
-                            }
-                        }
+                            duration
+                        );
+                        await dbContext.AddMediaAsync(mediaItem);
+                        successCount++;
                     }
                     catch (DbUpdateException ex) when (ex.InnerException?.Message?.Contains("UNIQUE constraint") == true)
                     {
-                        Console.WriteLine($"{logHeader} Файл уже существует: {realPath ?? "unknown_path"}");
                         duplicateCount++;
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine($"{logHeader} Общая ошибка: {ex}");
                         errorCount++;
+                        Console.WriteLine($"Ошибка: {ex.Message}");
                     }
                 }
 
