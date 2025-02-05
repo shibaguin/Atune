@@ -28,7 +28,7 @@ public class AppDbContext : DbContext
         if (!optionsBuilder.IsConfigured)
         {
             var dbPath = OperatingSystem.IsAndroid() 
-                ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "AtuneDB", "media_library.db")
+                ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Personal), "media_library.db")
                 : Path.Combine(
                     Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
                     "Atune",
@@ -46,13 +46,12 @@ public class AppDbContext : DbContext
                 catch (Exception ex)
                 {
                     Console.WriteLine($"Ошибка создания директории БД: {ex}");
-                    throw;
+                    throw new InvalidOperationException("Не удалось создать директорию для БД", ex);
                 }
             }
 
             Console.WriteLine($"Полный путь к БД: {Path.GetFullPath(dbPath)}");
-            optionsBuilder.UseSqlite($"Data Source={dbPath};Pooling=False;");
-            optionsBuilder.EnableSensitiveDataLogging();
+            optionsBuilder.UseSqlite($"Data Source={dbPath};");
         }
     }
 

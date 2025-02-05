@@ -32,15 +32,17 @@ public partial class App : Application
     {
         try 
         {
-            // Добавляем проверки на null
-            if (Application.Current?.PlatformSettings != null)
+            Dispatcher.UIThread.InvokeAsync(() => 
             {
-                Application.Current.PlatformSettings.ColorValuesChanged += OnSystemThemeChanged;
-            }
+                if (Application.Current?.PlatformSettings != null)
+                {
+                    Application.Current.PlatformSettings.ColorValuesChanged += OnSystemThemeChanged;
+                }
+            }, DispatcherPriority.Normal).Wait(TimeSpan.FromSeconds(1));
         }
         catch 
         {
-            // Игнорируем ошибки на платформах где нет PlatformSettings
+            // Игнорируем таймауты
         }
     }
 
@@ -250,10 +252,25 @@ public partial class App : Application
         }
     }
     
-    private void OnAppExit(object? sender, ControlledApplicationLifetimeExitEventArgs e)
+    private async void OnAppExit(object? sender, ControlledApplicationLifetimeExitEventArgs e)
     {
-        ConfigureCachePolicies();
-        Log.CloseAndFlush();
+        try 
+        {
+            ConfigureCachePolicies();
+            Log.CloseAndFlush();
+            
+            // Убираем проверку на IsApplicationExiting
+            // Даем фиксированное время на завершение операций
+            await Task.Delay(300).ConfigureAwait(false);
+        }
+        catch (TaskCanceledException) 
+        {
+            // Игнорируем отмену задач
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Ошибка при завершении приложения");
+        }
     }
 
     private async Task InitializeDatabaseAsync()
@@ -268,43 +285,30 @@ public partial class App : Application
         
         try
         {
-            // Проверяем существование БД
-            if (!await db.Database.CanConnectAsync())
-            {
-                Console.WriteLine("БД не найдена, создаем новую...");
-                await db.Database.EnsureCreatedAsync();
-                return;
-            }
-
-            // Проверяем существование таблиц
-            var tableExists = await db.Database.ExecuteSqlRawAsync(
-                "SELECT count(*) FROM sqlite_master " +
-                "WHERE type='table' AND name='MediaItems'") > 0;
-
-            if (!tableExists)
-            {
-                Console.WriteLine("Таблицы не найдены, применяем миграции...");
-                await db.Database.MigrateAsync();
-            }
-            else
-            {
-                // Проверяем наличие всех колонок
-                var columnCheck = await db.Database.ExecuteSqlRawAsync(
-                    "SELECT count(*) FROM pragma_table_info('MediaItems') " +
-                    "WHERE name IN ('Album', 'Year', 'Genre')") == 3;
-
-                if (!columnCheck)
-                {
-                    Console.WriteLine("Обнаружены изменения структуры, применяем миграции...");
-                    await db.Database.MigrateAsync();
-                }
-            }
+            // Упрощенная инициализация - всегда создаем БД при старте
+            await db.Database.EnsureCreatedAsync();
+            
+            // Проверяем базовую структуру
+            var testItem = await db.MediaItems.FirstOrDefaultAsync();
+            Console.WriteLine($"Тестовая проверка БД выполнена успешно");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Ошибка инициализации БД: {ex}");
+            Console.WriteLine($"Критическая ошибка инициализации БД: {ex}");
             File.WriteAllText("db_init_error.log", ex.ToString());
-            throw;
+            
+            // Пытаемся удалить и пересоздать БД
+            try 
+            {
+                await db.Database.EnsureDeletedAsync();
+                await db.Database.EnsureCreatedAsync();
+                Console.WriteLine("БД успешно пересоздана");
+            }
+            catch (Exception recoveryEx)
+            {
+                Console.WriteLine($"Ошибка восстановления БД: {recoveryEx}");
+                throw new InvalidOperationException("Не удалось восстановить БД", recoveryEx);
+            }
         }
     }
 }
