@@ -211,6 +211,47 @@
                          VerticalAlignment="Stretch"/>
             </Grid>
         </Border>
+        
+        <!-- Панель мультимедиа управления (бар) -->
+        <Grid DockPanel.Dock="Bottom" Margin="0,0,0,0" Background="{DynamicResource BackgroundBrush}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>   <!-- Для обложки -->
+                <ColumnDefinition Width="*"/>      <!-- Для кнопок управления -->
+            </Grid.ColumnDefinitions>
+            <!-- Обложка (заглушка) -->
+            <Border Width="80"
+                    Height="80"
+                    Background="Gray"
+                    Margin="10"
+                    CornerRadius="5"
+                    Grid.Column="0">
+                <TextBlock Text="Обложка"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center"
+                           Foreground="White"/>
+            </Border>
+            <!-- Панель с кнопками управления мультимедиа (центрированный бар) -->
+            <Grid Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <!-- Кнопка "Previous" в левом столбце -->
+                <Button Grid.Column="0" Background="Transparent" BorderThickness="0" HorizontalAlignment="Right" Margin="5">
+                    <PathIcon Data="M2.75 20a1 1 0 1 0 2 0V4a1 1 0 1 0-2 0v16ZM20.75 19.053c0 1.424-1.612 2.252-2.77 1.422L7.51 12.968a1.75 1.75 0 0 1 .075-2.895l10.47-6.716c1.165-.748 2.695.089 2.695 1.473v14.223Z"/>
+                </Button>
+                <!-- Кнопка "Play/Pause" в центральном столбце -->
+                <Button Grid.Column="1" Background="Transparent" BorderThickness="0" HorizontalAlignment="Center" Margin="5">
+                    <PathIcon Data="M2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10S2 17.523 2 12Zm8.856-3.845A1.25 1.25 0 0 0 9 9.248v5.504a1.25 1.25 0 0 0 1.856 1.093l5.757-3.189a.75.75 0 0 0 0-1.312l-5.757-3.189Z"/>
+                </Button>
+                <!-- Кнопка "Next" в правом столбце -->
+                <Button Grid.Column="2" Background="Transparent" BorderThickness="0" HorizontalAlignment="Left" Margin="5">
+                    <PathIcon Data="M21 4a1 1 0 1 0-2 0v16a1 1 0 1 0 2 0V4ZM3 4.947c0-1.424 1.612-2.252 2.77-1.422l10.47 7.507a1.75 1.75 0 0 1-.075 2.895l-10.47 6.716C4.53 21.39 3 20.554 3 19.17V4.947Z"/>
+                </Button>
+            </Grid>
+        </Grid>
+
         <ContentControl Content="{Binding CurrentView}"
                         HorizontalAlignment="Stretch"
                         VerticalAlignment="Stretch"/>
