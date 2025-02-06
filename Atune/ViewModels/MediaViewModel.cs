@@ -15,13 +15,14 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using System.IO;
 using System.Linq;
+using Atune.Data.Interfaces;
 
 namespace Atune.ViewModels;
 
 public partial class MediaViewModel : ObservableObject
 {
     private readonly IMemoryCache _cache;
-    private readonly IDbContextFactory<AppDbContext> _dbContextFactory;
+    private readonly IUnitOfWork _unitOfWork;
     
     [ObservableProperty]
     private List<MediaItem> _mediaContent = new List<MediaItem>();
@@ -34,10 +35,10 @@ public partial class MediaViewModel : ObservableObject
 
     public Action<string>? UpdateStatusMessage { get; set; }
 
-    public MediaViewModel(IMemoryCache cache, IDbContextFactory<AppDbContext> dbContextFactory)
+    public MediaViewModel(IMemoryCache cache, IUnitOfWork unitOfWork)
     {
         _cache = cache;
-        _dbContextFactory = dbContextFactory;
+        _unitOfWork = unitOfWork;
         LoadMediaContent();
         
         // Добавляем автоматическую загрузку при инициализации
@@ -46,8 +47,8 @@ public partial class MediaViewModel : ObservableObject
 
     private async Task<List<MediaItem>> LoadFromDatabaseAsync()
     {
-        using var db = _dbContextFactory.CreateDbContext();
-        return await db.MediaItems.ToListAsync();
+        var result = await _unitOfWork.Media.GetAllWithDetailsAsync();
+        return result.ToList();
     }
 
     private async void LoadMediaContent()
@@ -110,8 +111,7 @@ public partial class MediaViewModel : ObservableObject
                     var realPath = file.Path.LocalPath;
                     
                     // Проверка на существование
-                    using var db = _dbContextFactory.CreateDbContext();
-                    if (await db.ExistsByPathAsync(realPath))
+                    if (await _unitOfWork.Media.ExistsByPathAsync(realPath))
                     {
                         duplicateCount++;
                         continue;
@@ -126,7 +126,7 @@ public partial class MediaViewModel : ObservableObject
                         realPath,
                         TimeSpan.Zero);
 
-                    await db.AddMediaAsync(mediaItem);
+                    await _unitOfWork.Media.AddAsync(mediaItem);
 
                     successCount++;
                 }
@@ -140,6 +140,8 @@ public partial class MediaViewModel : ObservableObject
                     Console.WriteLine($"Ошибка: {ex.Message}");
                 }
             }
+
+            await _unitOfWork.CommitAsync();
 
             // Обновление статуса
             var statusParts = new List<string>();
@@ -163,12 +165,11 @@ public partial class MediaViewModel : ObservableObject
     [RelayCommand]
     private async Task RefreshMedia()
     {
-        using var db = _dbContextFactory.CreateDbContext();
-        var items = await db.GetAllMediaAsync();
+        var items = await _unitOfWork.Media.GetAllWithDetailsAsync();
         MediaItems = new ObservableCollection<MediaItem>(items);
         
         _cache.Set("MediaContent", items, new MemoryCacheEntryOptions()
-            .SetSize(items.Count * 500 + 1024)
+            .SetSize(items.Count() * 500 + 1024)
             .SetPriority(CacheItemPriority.Normal)
             .SetSlidingExpiration(TimeSpan.FromMinutes(15)));
     }
@@ -178,19 +179,14 @@ public partial class MediaViewModel : ObservableObject
     {
         try
         {
-            using var db = _dbContextFactory.CreateDbContext();
-            var allMedia = await db.GetAllMediaAsync();
-            if (allMedia.Any())
+            var allMedia = await _unitOfWork.Media.GetAllAsync();
+            foreach (var media in allMedia)
             {
-                db.MediaItems.RemoveRange(allMedia);
-                await db.SaveChangesAsync();
-                StatusMessage = "Все записи удалены из БД";
-                await RefreshMediaCommand.ExecuteAsync(null);
+                await _unitOfWork.Media.DeleteAsync(media);
             }
-            else
-            {
-                StatusMessage = "БД уже пуста";
-            }
+            await _unitOfWork.CommitAsync();
+            StatusMessage = "Все записи удалены из БД";
+            await RefreshMediaCommand.ExecuteAsync(null);
         }
         catch (Exception ex)
         {

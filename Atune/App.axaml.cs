@@ -24,6 +24,9 @@ using Microsoft.EntityFrameworkCore;
 using System.IO;
 using Atune.Models;
 using Microsoft.Extensions.Hosting;
+using Atune.Data.Interfaces;
+using Atune.Data.Repositories;
+using Atune.Data;
 
 namespace Atune;
 
@@ -215,6 +218,14 @@ public partial class App : Application
         services.AddLogging(builder => {
             builder.AddSerilog(dispose: true);
         });
+
+        // Добавляем новые сервисы
+        services.AddScoped<IUnitOfWork>(provider => 
+            new UnitOfWork(
+                provider.GetRequiredService<AppDbContext>(),
+                provider.GetRequiredService<ILoggerService>()));
+        
+        services.AddScoped<IMediaRepository, MediaRepository>();
     }
 
     [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "Disabled for Avalonia compatibility")]
