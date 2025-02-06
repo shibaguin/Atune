@@ -104,13 +104,14 @@ public partial class MediaViewModel : ObservableObject
             int successCount = 0;
             int errorCount = 0;
 
+            var newItems = new List<MediaItem>(); // Коллекция для bulk-вставки
+
             foreach (var file in files ?? Enumerable.Empty<IStorageFile>())
             {
                 try
                 {
                     var realPath = file.Path.LocalPath;
                     
-                    // Проверка на существование
                     if (await _unitOfWork.Media.ExistsByPathAsync(realPath))
                     {
                         duplicateCount++;
@@ -126,8 +127,7 @@ public partial class MediaViewModel : ObservableObject
                         realPath,
                         TimeSpan.Zero);
 
-                    await _unitOfWork.Media.AddAsync(mediaItem);
-
+                    newItems.Add(mediaItem); // Добавляем в коллекцию для массовой вставки
                     successCount++;
                 }
                 catch (DbUpdateException ex) when (ex.InnerException?.Message?.Contains("UNIQUE constraint") == true)
@@ -141,19 +141,30 @@ public partial class MediaViewModel : ObservableObject
                 }
             }
 
-            await _unitOfWork.CommitAsync();
-
-            // Обновление статуса
-            var statusParts = new List<string>();
-            if (successCount > 0) statusParts.Add($"Добавлено: {successCount}");
-            if (duplicateCount > 0) statusParts.Add($"Пропущено дубликатов: {duplicateCount}");
-            if (errorCount > 0) statusParts.Add($"Ошибок: {errorCount}");
-            
-            StatusMessage = string.Join(" • ", statusParts);
-            
-            if (successCount > 0)
+            try
             {
-                await RefreshMediaCommand.ExecuteAsync(null);
+                if (newItems.Count > 0)
+                {
+                    await _unitOfWork.Media.BulkInsertAsync(newItems);
+                    await _unitOfWork.CommitAsync();
+                }
+
+                // Обновление статуса
+                var statusParts = new List<string>();
+                if (successCount > 0) statusParts.Add($"Добавлено: {successCount}");
+                if (duplicateCount > 0) statusParts.Add($"Пропущено дубликатов: {duplicateCount}");
+                if (errorCount > 0) statusParts.Add($"Ошибок: {errorCount}");
+                
+                StatusMessage = string.Join(" • ", statusParts);
+                
+                if (successCount > 0)
+                {
+                    await RefreshMediaCommand.ExecuteAsync(null);
+                }
+            }
+            catch (DbUpdateException ex) when (ex.InnerException?.Message?.Contains("UNIQUE constraint") == true)
+            {
+                StatusMessage = "Обнаружены дубликаты при массовой вставке!";
             }
         }
         catch (DbUpdateException ex) when (ex.InnerException?.Message?.Contains("UNIQUE constraint") == true)

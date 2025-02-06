@@ -59,7 +59,18 @@ namespace Atune.Data.Repositories
 
         public async Task BulkInsertAsync(IEnumerable<MediaItem> items)
         {
-            await _context.MediaItems.AddRangeAsync(items);
+            // Оптимизированная массовая вставка с пакетированием
+            const int batchSize = 100;
+            var batches = items
+                .Select((x, i) => new { Index = i, Value = x })
+                .GroupBy(x => x.Index / batchSize)
+                .Select(g => g.Select(x => x.Value).ToList());
+
+            foreach (var batch in batches)
+            {
+                await _context.MediaItems.AddRangeAsync(batch);
+                await _context.SaveChangesAsync(); // Сохраняем пакетами
+            }
         }
     }
 } 
