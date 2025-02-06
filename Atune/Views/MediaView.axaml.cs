@@ -21,33 +21,37 @@ using Android.Provider;
 using Android.Util;
 #endif
 using ATL;
+using Microsoft.Extensions.Logging;
+using Atune.Services;
 
 namespace Atune.Views;
 
 public partial class MediaView : UserControl
 {
     private readonly IDbContextFactory<AppDbContext>? _dbContextFactory;
+    private readonly ILoggerService? _logger;
 
     public MediaView()
     {
         InitializeComponent();
     }
     
-    public MediaView(MediaViewModel vm, IDbContextFactory<AppDbContext> dbContextFactory) : this()
+    public MediaView(MediaViewModel vm, IDbContextFactory<AppDbContext> dbContextFactory, ILoggerService logger) : this()
     {
         DataContext = vm;
         _dbContextFactory = dbContextFactory;
+        _logger = logger;
     }
 
     private async void AddToLibrary_Click(object sender, RoutedEventArgs e)
     {
         const string logHeader = "[MediaView]";
-        Console.WriteLine($"{logHeader} Кнопка нажата!");
+        _logger?.LogInformation($"{logHeader} Кнопка нажата");
         
         var dbContext = _dbContextFactory?.CreateDbContext();
         if (dbContext is null)
         {
-            Console.WriteLine($"{logHeader} Ошибка: Не удалось создать контекст БД");
+            _logger?.LogError($"{logHeader} Не удалось создать контекст БД");
             return;
         }
         using (dbContext)
@@ -57,7 +61,7 @@ public partial class MediaView : UserControl
                 // Добавляем проверку доступности БД
                 if (!await dbContext.Database.CanConnectAsync())
                 {
-                    Console.WriteLine($"{logHeader} Нет подключения к БД");
+                    _logger?.LogWarning($"{logHeader} Нет подключения к БД");
                     return;
                 }
 
@@ -66,7 +70,7 @@ public partial class MediaView : UserControl
                 
                 if (storageProvider is null)
                 {
-                    Console.WriteLine($"{logHeader} StorageProvider недоступен");
+                    _logger?.LogWarning($"{logHeader} StorageProvider недоступен");
                     return;
                 }
 
@@ -120,7 +124,7 @@ public partial class MediaView : UserControl
                             realPath = file.Path.LocalPath;
                         }
                         
-                        Console.WriteLine($"{logHeader} Обработка файла: {realPath}");
+                        _logger?.LogInformation($"{logHeader} Обработка файла: {realPath}");
                         
                         if (await dbContext.ExistsByPathAsync(realPath))
                         {
@@ -133,7 +137,7 @@ public partial class MediaView : UserControl
                         {
                             if (!System.IO.File.Exists(realPath))
                             {
-                                Console.WriteLine($"{logHeader} Файл не существует: {realPath}");
+                                _logger?.LogWarning($"{logHeader} Файл не существует: {realPath}");
                                 errorCount++;
                                 continue;
                             }
@@ -155,7 +159,7 @@ public partial class MediaView : UserControl
                             var fileExists = await FileExists(realPath);
                             if (!fileExists)
                             {
-                                Console.WriteLine($"{logHeader} Файл не существует: {realPath}");
+                                _logger?.LogWarning($"{logHeader} Файл не существует: {realPath}");
                                 errorCount++;
                                 continue;
                             }
@@ -189,13 +193,13 @@ public partial class MediaView : UserControl
                     catch (Exception ex)
                     {
                         errorCount++;
-                        Console.WriteLine($"Ошибка: {ex.Message}");
+                        _logger?.LogError($"Ошибка: {ex.Message}", ex);
                     }
                 }
 
                 if (successCount > 0)
                 {
-                    Console.WriteLine($"{logHeader} Успешно добавлено {successCount} файлов");
+                    _logger?.LogInformation($"{logHeader} Успешно добавлено {successCount} файлов");
                     
                     if (DataContext is MediaViewModel vm)
                     {
@@ -203,12 +207,14 @@ public partial class MediaView : UserControl
                     }
                 }
 
-                Console.WriteLine($"{logHeader} Обработка завершена. Успешно: {successCount}, Ошибок: {errorCount}, Дубликатов: {duplicateCount}");
+                _logger?.LogInformation($"{logHeader} Обработка завершена. Успешно: {successCount}, Ошибок: {errorCount}, Дубликатов: {duplicateCount}");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"{logHeader} Критическая ошибка:");
-                Console.WriteLine(ex);
+                if (_logger != null)
+                {
+                    _logger.LogError($"{logHeader} Критическая ошибка", ex);
+                }
             }
         }
     }
@@ -273,7 +279,7 @@ public partial class MediaView : UserControl
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Ошибка чтения тегов ATL: {ex.Message}");
+            _logger?.LogError("Ошибка чтения тегов ATL", ex);
             return ("Unknown Artist", "Unknown Album", (uint)DateTime.Now.Year, "Unknown Genre");
         }
     }
@@ -333,14 +339,17 @@ public partial class MediaView : UserControl
         // Используем фабрику для создания контекста
         if (_dbContextFactory is null)
         {
-            Console.WriteLine("DbContextFactory не доступна");
+            _logger?.LogWarning("DbContextFactory не доступна");
             return;
         }
 
         using var db = _dbContextFactory.CreateDbContext();
         var path = db?.Database.GetDbConnection().DataSource ?? "не определен";
         
-        Console.WriteLine($"Текущий путь к БД: {path}");
+        if (_logger != null)
+        {
+            _logger.LogInformation($"Текущий путь к БД: {path}");
+        }
         
         var vm = DataContext as MediaViewModel;
         vm?.UpdateStatusMessage?.Invoke($"Путь к БД: {path}");
@@ -361,7 +370,7 @@ public partial class MediaView : UserControl
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Ошибка чтения тегов ATL: {ex.Message}");
+            _logger?.LogError("Ошибка чтения тегов ATL", ex);
             return ("Unknown Artist", "Unknown Album", (uint)DateTime.Now.Year, "Unknown Genre", TimeSpan.Zero);
         }
     }

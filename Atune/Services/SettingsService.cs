@@ -10,6 +10,7 @@ using Microsoft.Extensions.Options;
 using System.Threading.Tasks;
 using System.Threading;
 using System.Text.Json;
+using Atune.Services;
 
 namespace Atune.Services;
 
@@ -24,7 +25,9 @@ public class SettingsService : ISettingsService
     // Путь к файлу настроек теперь хранится в экземпляре
     private readonly string _settingsPath;
 
-    public SettingsService(IMemoryCache cache, IPlatformPathService platformPathService)
+    private readonly ILoggerService _logger;
+
+    public SettingsService(IMemoryCache cache, IPlatformPathService platformPathService, ILoggerService logger)
     {
         _cache = cache;
         _platformPathService = platformPathService;
@@ -35,6 +38,8 @@ public class SettingsService : ISettingsService
 
         // Инициализируем путь к файлу настроек через наш сервис
         _settingsPath = _platformPathService.GetSettingsPath();
+
+        _logger = logger;
     }
 
     private static long GetPlatformCacheLimit()
@@ -48,9 +53,9 @@ public class SettingsService : ISettingsService
 
     public void SaveSettings(AppSettings settings)
     {
-        lock (_fileLockAsync)
+        try
         {
-            try
+            lock (_fileLockAsync)
             {
                 var cacheOptions = new MemoryCacheEntryOptions()
                     .SetSize(1024)
@@ -101,12 +106,13 @@ public class SettingsService : ISettingsService
                     File.WriteAllLines(_settingsPath, lines);
                 }
             }
-            catch (Exception ex)
-            {
-                _cache.Remove("AppSettings");
-                Debug.WriteLine($"Ошибка сохранения настроек: {ex.Message}");
-                throw new SettingsException("Не удалось сохранить настройки", ex);
-            }
+            _logger.LogInformation("Настройки успешно сохранены");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError("Ошибка сохранения настроек", ex);
+            _cache.Remove("AppSettings");
+            throw new SettingsException("Не удалось сохранить настройки", ex);
         }
     }
 

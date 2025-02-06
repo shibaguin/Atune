@@ -23,13 +23,27 @@ using Serilog.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
 using System.IO;
 using Atune.Models;
+using Microsoft.Extensions.Hosting;
 
 namespace Atune;
 
 public partial class App : Application
 {
+    private readonly IHost _host;
+
     public App()
     {
+        _host = new HostBuilder()
+            .UseSerilog((context, config) => config
+                .Enrich.FromLogContext()
+                .WriteTo.Console()
+                .WriteTo.File(
+                    Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Atune", "logs", "log-.txt"),
+                    rollingInterval: RollingInterval.Day,
+                    retainedFileCountLimit: 7)
+                .MinimumLevel.Debug())
+            .Build();
+
         try 
         {
             Dispatcher.UIThread.InvokeAsync(() => 
@@ -68,14 +82,6 @@ public partial class App : Application
 
     public override void Initialize()
     {
-        Log.Logger = new LoggerConfiguration()
-            .MinimumLevel.Debug()
-            .WriteTo.Console()
-            .WriteTo.File("logs/atune-.log", 
-                rollingInterval: RollingInterval.Day,
-                retainedFileCountLimit: 7)
-            .CreateLogger();
-
         Log.Information("Инициализация приложения");
         
         AvaloniaXamlLoader.Load(this);
@@ -95,6 +101,7 @@ public partial class App : Application
 
     public override async void OnFrameworkInitializationCompleted()
     {
+        Log.Information("Инициализация приложения");
         try 
         {
             var services = new ServiceCollection();
@@ -170,6 +177,7 @@ public partial class App : Application
         // Регистрируем платформенно-специфичный сервис и сервис настроек
         services.AddSingleton<IPlatformPathService, PlatformPathService>();
         services.AddSingleton<ISettingsService, SettingsService>();
+        services.AddSingleton<ILoggerService, LoggerService>();
 
         // Явная регистрация ViewModels
         services.AddTransient<MainViewModel>();
@@ -184,7 +192,8 @@ public partial class App : Application
         services.AddTransient<MediaView>(sp => 
             new MediaView(
                 sp.GetRequiredService<MediaViewModel>(),
-                sp.GetRequiredService<IDbContextFactory<AppDbContext>>()
+                sp.GetRequiredService<IDbContextFactory<AppDbContext>>(),
+                sp.GetRequiredService<ILoggerService>()
             ));
         services.AddTransient<HistoryView>(sp => new HistoryView());
         services.AddTransient<SettingsView>(sp => 
@@ -260,25 +269,10 @@ public partial class App : Application
         }
     }
     
-    private async void OnAppExit(object? sender, ControlledApplicationLifetimeExitEventArgs e)
+    private void OnAppExit(object? sender, ControlledApplicationLifetimeExitEventArgs e)
     {
-        try 
-        {
-            ConfigureCachePolicies();
-            Log.CloseAndFlush();
-            
-            // Убираем проверку на IsApplicationExiting
-            // Даем фиксированное время на завершение операций
-            await Task.Delay(300).ConfigureAwait(false);
-        }
-        catch (TaskCanceledException) 
-        {
-            // Игнорируем отмену задач
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "Ошибка при завершении приложения");
-        }
+        Log.Information("Завершение работы приложения");
+        Log.CloseAndFlush();
     }
 
     private async Task InitializeDatabaseAsync()
@@ -288,16 +282,16 @@ public partial class App : Application
         
         try
         {
-            Console.WriteLine("Initializing database...");
+            Log.Information("Initializing database...");
             await db.Database.EnsureCreatedAsync();
             
             // Простая проверка работоспособности
             var exists = await db.MediaItems.AnyAsync();
-            Console.WriteLine($"Database status: {(exists ? "OK" : "EMPTY")}");
+            Log.Information($"Database status: {(exists ? "OK" : "EMPTY")}");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"DATABASE ERROR: {ex}");
+            Log.Error(ex, "DATABASE ERROR");
             await RecreateDatabase(db);
         }
     }
@@ -306,14 +300,14 @@ public partial class App : Application
     {
         try
         {
-            Console.WriteLine("Attempting database recreation...");
+            Log.Information("Attempting database recreation...");
             await db.Database.EnsureDeletedAsync();
             await db.Database.EnsureCreatedAsync();
-            Console.WriteLine("Database recreated successfully");
+            Log.Information("Database recreated successfully");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"FATAL RECREATION ERROR: {ex}");
+            Log.Error(ex, "FATAL RECREATION ERROR");
             throw new InvalidOperationException("Cannot initialize database", ex);
         }
     }
