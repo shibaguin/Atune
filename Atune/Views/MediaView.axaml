@@ -49,14 +49,6 @@
                        HorizontalAlignment="Right"/>
         </Grid>
         
-        <Button Content="Test DB" 
-                Click="TestDbConnection_Click"
-                Margin="10"
-                Padding="10 5"
-                HorizontalAlignment="Right"
-                VerticalAlignment="Bottom"
-                Grid.Row="1"/>
-
         <StackPanel Orientation="Horizontal"
                     HorizontalAlignment="Left"
                     VerticalAlignment="Bottom"

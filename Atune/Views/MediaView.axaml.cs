@@ -232,55 +232,6 @@ public partial class MediaView : UserControl
         await dbContext.SaveChangesAsync();
     }
 
-    private async void TestDbConnection_Click(object sender, RoutedEventArgs e)
-    {
-        const string logHeader = "[DB TEST]";
-        Console.WriteLine($"{logHeader} Начало теста БД");
-        
-        try
-        {
-            using var db = new AppDbContext(new DbContextOptionsBuilder<AppDbContext>()
-                .UseSqlite("Data Source=media_library.db")
-                .Options);
-            
-            // Простая транзакция
-            await db.Database.EnsureCreatedAsync();
-            
-            // Добавление тестовой записи
-            var testItem = new MediaItem(
-                "Test Title", 
-                "Test Artist", 
-                "Test Album", 
-                2024, 
-                "Test Genre",
-                "/test/path.mp3", 
-                TimeSpan.FromMilliseconds(123));
-            
-            db.MediaItems.Add(testItem);
-            var result = await db.SaveChangesAsync();
-            
-            Console.WriteLine($"{logHeader} Добавлено записей: {result}");
-            Console.WriteLine($"{logHeader} ID новой записи: {testItem.Id}");
-
-            // Чтение записи
-            var item = await db.MediaItems.FindAsync(testItem.Id);
-            Console.WriteLine($"{logHeader} Прочитано: {item?.Title ?? "NULL"}");
-
-            // Удаление записи
-            if (item != null)
-            {
-                db.MediaItems.Remove(item);
-                await db.SaveChangesAsync();
-                Console.WriteLine($"{logHeader} Запись удалена");
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"{logHeader} ОШИБКА:");
-            Console.WriteLine(ex);
-        }
-    }
-
     private void InitializeComponent()
     {
         AvaloniaXamlLoader.Load(this);
