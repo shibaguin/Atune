@@ -7,6 +7,9 @@ using Atune.Models;
 using Avalonia;
 using Avalonia.Platform;
 using Microsoft.Extensions.Options;
+using System.Threading.Tasks;
+using System.Threading;
+using System.Text.Json;
 
 namespace Atune.Services;
 
@@ -14,7 +17,7 @@ public class SettingsService : ISettingsService
 {
     private readonly IMemoryCache _cache;
     private readonly MemoryCacheEntryOptions _cacheOptions;
-    private static readonly object _fileLock = new object();
+    private static readonly SemaphoreSlim _fileLockAsync = new SemaphoreSlim(1, 1);
 
     // Добавляем внедрение сервиса для платформенно-специфичных путей
     private readonly IPlatformPathService _platformPathService;
@@ -45,7 +48,7 @@ public class SettingsService : ISettingsService
 
     public void SaveSettings(AppSettings settings)
     {
-        lock (_fileLock)
+        lock (_fileLockAsync)
         {
             try
             {
@@ -118,7 +121,7 @@ public class SettingsService : ISettingsService
     
     private AppSettings LoadSettingsInternal()
     {
-        lock (_fileLock)
+        lock (_fileLockAsync)
         {
             try
             {
@@ -192,5 +195,63 @@ public class SettingsService : ISettingsService
     {
         var settings = LoadSettings();
         return settings?.GetType().GetProperty(key)?.GetValue(settings)?.ToString() ?? string.Empty;
+    }
+
+    public async Task SaveSettingsAsync(AppSettings settings)
+    {
+        await _fileLockAsync.WaitAsync();
+        try
+        {
+            var cacheOptions = new MemoryCacheEntryOptions()
+                .SetSize(1024)
+                .SetPriority(CacheItemPriority.High)
+                .SetSlidingExpiration(TimeSpan.FromMinutes(30));
+            
+            await Task.Run(() => _cache.Set("AppSettings", settings, cacheOptions));
+            
+            var directory = Path.GetDirectoryName(_settingsPath);
+            if (!string.IsNullOrWhiteSpace(directory))
+            {
+                await Task.Run(() => Directory.CreateDirectory(directory));
+            }
+            
+            await File.WriteAllTextAsync(_settingsPath, JsonSerializer.Serialize(settings));
+        }
+        finally
+        {
+            _fileLockAsync.Release();
+        }
+    }
+
+    public async Task<AppSettings> LoadSettingsAsync()
+    {
+        await _fileLockAsync.WaitAsync();
+        try
+        {
+            if (_cache.TryGetValue("AppSettings", out AppSettings? cachedSettings))
+            {
+                return cachedSettings!;
+            }
+
+            if (!File.Exists(_settingsPath))
+            {
+                return new AppSettings();
+            }
+
+            var json = await File.ReadAllTextAsync(_settingsPath);
+            var settings = JsonSerializer.Deserialize<AppSettings>(json) ?? new AppSettings();
+            
+            var cacheOptions = new MemoryCacheEntryOptions()
+                .SetSize(1024)
+                .SetPriority(CacheItemPriority.High)
+                .SetSlidingExpiration(TimeSpan.FromMinutes(30));
+            
+            _cache.Set("AppSettings", settings, cacheOptions);
+            return settings;
+        }
+        finally
+        {
+            _fileLockAsync.Release();
+        }
     }
 } 

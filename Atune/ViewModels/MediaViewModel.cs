@@ -44,12 +44,17 @@ public partial class MediaViewModel : ObservableObject
         RefreshMediaCommand.ExecuteAsync(null);
     }
 
-    private void LoadMediaContent()
+    private async Task<List<MediaItem>> LoadFromDatabaseAsync()
+    {
+        using var db = _dbContextFactory.CreateDbContext();
+        return await db.MediaItems.ToListAsync();
+    }
+
+    private async void LoadMediaContent()
     {
         if (!_cache.TryGetValue("MediaContent", out List<MediaItem>? content))
         {
-            // Если в кэше нет данных - загружаем из БД
-            content = LoadFromDatabase();
+            content = await LoadFromDatabaseAsync();
             var cacheOptions = new MemoryCacheEntryOptions()
                 .SetSize(content.Count * 500 + 1024)
                 .SetPriority(CacheItemPriority.Normal)
@@ -63,13 +68,6 @@ public partial class MediaViewModel : ObservableObject
     {
         // Загрузка данных из внешнего источника
         return new List<MediaItem>();
-    }
-
-    private List<MediaItem> LoadFromDatabase()
-    {
-        // Загрузка данных из базы данных
-        using var db = _dbContextFactory.CreateDbContext();
-        return db.MediaItems.ToList();
     }
 
     [RelayCommand]
@@ -169,7 +167,6 @@ public partial class MediaViewModel : ObservableObject
         var items = await db.GetAllMediaAsync();
         MediaItems = new ObservableCollection<MediaItem>(items);
         
-        // Обновляем кэш после загрузки новых данных
         _cache.Set("MediaContent", items, new MemoryCacheEntryOptions()
             .SetSize(items.Count * 500 + 1024)
             .SetPriority(CacheItemPriority.Normal)

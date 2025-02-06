@@ -215,32 +215,21 @@ public partial class MediaView : UserControl
 
     private async Task ValidateDatabaseRecords()
     {
-        if (_dbContextFactory is null)
-        {
-            Console.WriteLine("[MediaView] Ошибка: DbContextFactory не инициализирована");
-            return;
-        }
+        if (_dbContextFactory is null) return;
 
-        using var dbContext = _dbContextFactory.CreateDbContext();
-        if (dbContext is null)
-        {
-            Console.WriteLine("[MediaView] Ошибка создания контекста БД");
-            return;
-        }
+        await using var dbContext = _dbContextFactory.CreateDbContext();
+        if (dbContext is null) return;
 
-        Console.WriteLine($"[MediaView] Валидация записей в БД...");
-        
-        var records = await dbContext.MediaItems
-            .OrderByDescending(x => x.Id)
-            .Take(5)
+        var invalidRecords = await dbContext.MediaItems
+            .Where(m => string.IsNullOrEmpty(m.Path) || !File.Exists(m.Path))
             .ToListAsync();
 
-        Console.WriteLine($"Последние {records.Count} записей:");
-        foreach (var item in records)
+        foreach (var record in invalidRecords)
         {
-            Console.WriteLine($"- {item.Id}: {item.Title} | {item.Artist}");
-            Console.WriteLine($"  Path: {item.Path} (exists: {System.IO.File.Exists(item.Path ?? "")})");
+            dbContext.MediaItems.Remove(record);
         }
+
+        await dbContext.SaveChangesAsync();
     }
 
     private async void TestDbConnection_Click(object sender, RoutedEventArgs e)
@@ -301,19 +290,22 @@ public partial class MediaView : UserControl
 #if ANDROID
     private async Task<string> GetAndroidRealPath(IStorageFile file)
     {
-        try 
+        return await Task.Run(() => 
         {
-            var uri = Android.Net.Uri.Parse(file.Path.AbsoluteUri);
-            var cursor = Android.App.Application.Context.ContentResolver.Query(
-                uri, null, null, null, null);
-            cursor?.MoveToFirst();
-            var index = cursor?.GetColumnIndex(MediaStore.MediaColumns.Data);
-            return cursor?.GetString(index ?? 0) ?? file.Path.LocalPath;
-        }
-        catch 
-        {
-            return file.Path.LocalPath;
-        }
+            try 
+            {
+                var uri = Android.Net.Uri.Parse(file.Path.AbsoluteUri);
+                using var cursor = Android.App.Application.Context.ContentResolver.Query(
+                    uri, null, null, null, null);
+                cursor?.MoveToFirst();
+                var index = cursor?.GetColumnIndex(MediaStore.MediaColumns.Data);
+                return cursor?.GetString(index ?? 0) ?? file.Path.LocalPath;
+            }
+            catch 
+            {
+                return file.Path.LocalPath;
+            }
+        });
     }
 
     private async Task<(string Artist, string Album, uint Year, string Genre)> GetAndroidTagInfo(string path)
