@@ -14,35 +14,24 @@ public class SettingsService : ISettingsService
 {
     private readonly IMemoryCache _cache;
     private readonly MemoryCacheEntryOptions _cacheOptions;
-    private static readonly string _settingsPath = GetSettingsPath();
     private static readonly object _fileLock = new object();
 
-    public SettingsService(IMemoryCache cache)
+    // Добавляем внедрение сервиса для платформенно-специфичных путей
+    private readonly IPlatformPathService _platformPathService;
+    // Путь к файлу настроек теперь хранится в экземпляре
+    private readonly string _settingsPath;
+
+    public SettingsService(IMemoryCache cache, IPlatformPathService platformPathService)
     {
         _cache = cache;
+        _platformPathService = platformPathService;
         _cacheOptions = new MemoryCacheEntryOptions()
             .SetSize(1024) // Размер записи в байтах (~1KB на настройки)
             .SetPriority(CacheItemPriority.High)
             .SetSlidingExpiration(TimeSpan.FromMinutes(30));
-    }
 
-    private static string GetSettingsPath()
-    {
-        const string fileName = "settings.ini";
-        
-        if (OperatingSystem.IsAndroid())
-        {
-            // Для внешнего хранилища
-            return Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
-                fileName);
-        }
-        
-        // Для десктопных ОС
-        return Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-            "Atune",
-            fileName);
+        // Инициализируем путь к файлу настроек через наш сервис
+        _settingsPath = _platformPathService.GetSettingsPath();
     }
 
     private static long GetPlatformCacheLimit()

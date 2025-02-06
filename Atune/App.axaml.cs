@@ -80,6 +80,14 @@ public partial class App : Application
         
         AvaloniaXamlLoader.Load(this);
         base.Initialize();
+
+        var services = new ServiceCollection();
+        // Регистрируем сервис для платформенно-специфичных путей
+        services.AddSingleton<IPlatformPathService, PlatformPathService>();
+        // Регистрируем SettingsService, который теперь зависит от IPlatformPathService
+        services.AddSingleton<ISettingsService, SettingsService>();
+        // регистрация других сервисов (если есть)
+        Services = services.BuildServiceProvider();
     }
 
     public new static App? Current => Application.Current as App;
@@ -159,10 +167,10 @@ public partial class App : Application
             options.ExpirationScanFrequency = TimeSpan.FromMinutes(5); // Частота проверки экспирации
         });
         services.AddSingleton<ViewLocator>();
-        
-        // Сервисы
+        // Регистрируем платформенно-специфичный сервис и сервис настроек
+        services.AddSingleton<IPlatformPathService, PlatformPathService>();
         services.AddSingleton<ISettingsService, SettingsService>();
-        
+
         // Явная регистрация ViewModels
         services.AddTransient<MainViewModel>();
         services.AddTransient<HomeViewModel>();
