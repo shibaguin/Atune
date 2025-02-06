@@ -57,9 +57,28 @@ public class SettingsService : ISettingsService
                 _cache.Set("AppSettings", settings, cacheOptions);
                 
                 var directory = Path.GetDirectoryName(_settingsPath);
-                if (!Directory.Exists(directory) && directory != null)
+                if (!string.IsNullOrWhiteSpace(directory))
                 {
-                    Directory.CreateDirectory(directory);
+                    try
+                    {
+                        // Directory.CreateDirectory создаст директорию, если её не существует,
+                        // и не вызовет исключения, если директория уже создана.
+                        Directory.CreateDirectory(directory);
+                    }
+                    catch (UnauthorizedAccessException ex)
+                    {
+                        Debug.WriteLine("Недостаточно прав для создания директории: " + directory);
+                        throw new InvalidOperationException("Недостаточно прав для доступа к директории " + directory, ex);
+                    }
+                    catch (IOException ex)
+                    {
+                        // Если ошибка возникла из-за гонок, проверяем наличие директории повторно.
+                        if (!Directory.Exists(directory))
+                        {
+                            Debug.WriteLine("Ошибка при создании директории: " + directory);
+                            throw new InvalidOperationException("Не удалось создать директорию " + directory, ex);
+                        }
+                    }
                 }
 
                 var lines = new List<string>
