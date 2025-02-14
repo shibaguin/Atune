@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Atune.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250204215101_InitialCreate")]
+    [Migration("20250214191230_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -49,10 +49,23 @@ namespace Atune.Data.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("Year")
+                    b.Property<uint>("Year")
                         .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("Artist")
+                        .HasDatabaseName("IX_MediaItems_Artist");
+
+                    b.HasIndex("Genre")
+                        .HasDatabaseName("IX_MediaItems_Genre");
+
+                    b.HasIndex("Path")
+                        .IsUnique()
+                        .HasDatabaseName("IX_MediaItems_Path");
+
+                    b.HasIndex("Artist", "Title")
+                        .HasDatabaseName("IX_MediaItems_Artist_Title");
 
                     b.ToTable("MediaItems", (string)null);
                 });

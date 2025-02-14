@@ -98,6 +98,22 @@ public class AppDbContext : DbContext
         {
             entity.ToTable("MediaItems");
             entity.HasKey(e => e.Id);
+            
+            // Добавляем индексы для часто используемых полей
+            entity.HasIndex(e => e.Path)
+                  .IsUnique()
+                  .HasDatabaseName("IX_MediaItems_Path");
+                  
+            entity.HasIndex(e => e.Artist)
+                  .HasDatabaseName("IX_MediaItems_Artist");
+                  
+            entity.HasIndex(e => e.Genre)
+                  .HasDatabaseName("IX_MediaItems_Genre");
+                  
+            entity.HasIndex(e => new { e.Artist, e.Title })
+                  .HasDatabaseName("IX_MediaItems_Artist_Title");
+
+            // Существующие настройки
             entity.Property(e => e.Title).IsRequired().HasMaxLength(200);
             entity.Property(e => e.Artist).IsRequired().HasMaxLength(100);
             entity.Property(e => e.Path).IsRequired();
