@@ -14,13 +14,6 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <ProgressBar Grid.Row="1" 
-                     IsIndeterminate="{Binding IsBusy}"
-                     IsVisible="{Binding IsBusy}"
-                     Height="4"
-                     VerticalAlignment="Top"
-                     Margin="5"/>
-
         <ListBox ItemsSource="{Binding MediaItems}" 
                  Grid.Row="1">
             <ListBox.ItemsPanel>
@@ -65,12 +58,6 @@
                     Padding="15 5"
                     FontSize="16"
                     HorizontalAlignment="Right"/>
-            
-            <TextBlock Grid.Column="1"
-                       Text="{Binding StatusMessage}"
-                       Margin="10 0 0 0"
-                       Foreground="Green"
-                       HorizontalAlignment="Right"/>
         </Grid>
         
         <StackPanel Orientation="Horizontal"

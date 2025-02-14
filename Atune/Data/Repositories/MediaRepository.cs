@@ -58,28 +58,44 @@ namespace Atune.Data.Repositories
                 .ToListAsync(cancellationToken);
         }
 
-        public async Task BulkInsertAsync(IEnumerable<MediaItem> items)
+        public async Task BulkInsertAsync(IEnumerable<MediaItem> items, Action<IEnumerable<MediaItem>>? onBatchProcessed = null)
         {
-            // Уменьшаем размер пакета для Android
-            var batchSize = OperatingSystem.IsAndroid() ? 20 : 100;
-            
-            var batches = items
-                .Select((x, i) => new { Index = i, Value = x })
-                .GroupBy(x => x.Index / batchSize)
-                .Select(g => g.Select(x => x.Value).ToList());
+            // Настройки для разных платформ
+            var (batchSize, delayMs) = OperatingSystem.IsAndroid() 
+                ? (200, 20)    // Большие батчи с сохранением задержки
+                : (500, 50);  // Крупные батчи для десктопа
 
-            foreach (var batch in batches)
+            var batches = items.Chunk(batchSize);
+            
+            await using var transaction = await _context.Database.BeginTransactionAsync();
+            try
             {
-                await _context.MediaItems.AddRangeAsync(batch);
-                await _context.SaveChangesAsync(); 
-                
-                // Для Android принудительно освобождаем память
-                if (OperatingSystem.IsAndroid())
+                foreach (var batch in batches)
                 {
-                    GC.Collect();
-                    GC.WaitForPendingFinalizers();
+                    await _context.BulkInsertAsync(batch, options => 
+                    {
+                        options.InsertKeepIdentity = true;
+                        options.BatchSize = batchSize;
+                    });
                 }
+                await transaction.CommitAsync();
+                onBatchProcessed?.Invoke(items);
+                
+                if (OperatingSystem.IsAndroid())
+                    await Task.Delay(delayMs); // Плавность UI
             }
+            finally
+            {
+                await transaction.DisposeAsync();
+            }
+        }
+
+        public async Task<HashSet<string>> GetExistingPathsAsync(IEnumerable<string> paths)
+        {
+            return new HashSet<string>(await _context.MediaItems
+                .Where(m => paths.Contains(m.Path))
+                .Select(m => m.Path)
+                .ToListAsync());
         }
     }
 } 

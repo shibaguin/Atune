@@ -1,3 +1,4 @@
+using System;
 using Microsoft.Extensions.Caching.Memory;
 using System.Collections.Generic;
 using System.Threading;
@@ -47,10 +48,14 @@ namespace Atune.Data.Repositories
             _cache.Remove(CacheKey);
         }
         public async Task<bool> ExistsByPathAsync(string path) => await _decorated.ExistsByPathAsync(path);
-        public async Task BulkInsertAsync(IEnumerable<MediaItem> items)
+        public async Task BulkInsertAsync(IEnumerable<MediaItem> items, Action<IEnumerable<MediaItem>>? onBatchProcessed = null)
         {
-            await _decorated.BulkInsertAsync(items);
+            await _decorated.BulkInsertAsync(items, onBatchProcessed);
             _cache.Remove(CacheKey);
+        }
+        public async Task<HashSet<string>> GetExistingPathsAsync(IEnumerable<string> paths)
+        {
+            return await _decorated.GetExistingPathsAsync(paths);
         }
     }
 } 

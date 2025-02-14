@@ -29,9 +29,6 @@ public partial class MediaViewModel : ObservableObject
     private List<MediaItem> _mediaContent = new List<MediaItem>();
 
     [ObservableProperty]
-    private string _statusMessage = "Готово к работе";
-
-    [ObservableProperty]
     private ObservableCollection<MediaItem> _mediaItems = new();
 
     [ObservableProperty]
@@ -87,6 +84,7 @@ public partial class MediaViewModel : ObservableObject
     {
         try
         {
+            IsBusy = true;
             if (Application.Current?.ApplicationLifetime is not IClassicDesktopStyleApplicationLifetime desktop)
                 return;
 
@@ -115,20 +113,23 @@ public partial class MediaViewModel : ObservableObject
             int successCount = 0;
             int errorCount = 0;
 
-            var newItems = new List<MediaItem>(); // Коллекция для bulk-вставки
+            var newItems = new List<MediaItem>();
 
-            foreach (var file in files ?? Enumerable.Empty<IStorageFile>())
+            var allPaths = files.Select(f => f.Path.LocalPath).ToList();
+            var existingPaths = await _unitOfWork.Media.GetExistingPathsAsync(allPaths);
+
+            foreach (var file in files)
             {
+                if (existingPaths.Contains(file.Path.LocalPath))
+                {
+                    duplicateCount++;
+                    continue;
+                }
+
                 try
                 {
                     var realPath = file.Path.LocalPath;
                     
-                    if (await _unitOfWork.Media.ExistsByPathAsync(realPath))
-                    {
-                        duplicateCount++;
-                        continue;
-                    }
-
                     var mediaItem = new MediaItem(
                         Path.GetFileNameWithoutExtension(file.Name),
                         "Unknown Artist",
@@ -138,7 +139,7 @@ public partial class MediaViewModel : ObservableObject
                         realPath,
                         TimeSpan.Zero);
 
-                    newItems.Add(mediaItem); // Добавляем в коллекцию для массовой вставки
+                    newItems.Add(mediaItem);
                     successCount++;
                 }
                 catch (DbUpdateException ex) when (ex.InnerException?.Message?.Contains("UNIQUE constraint") == true)
@@ -152,51 +153,52 @@ public partial class MediaViewModel : ObservableObject
                 }
             }
 
-            try
+            if (newItems.Count > 0)
             {
-                if (newItems.Count > 0)
+                await _unitOfWork.Media.BulkInsertAsync(newItems, batch => 
                 {
-                    await _unitOfWork.Media.BulkInsertAsync(newItems);
-                    await _unitOfWork.CommitAsync();
-                }
-
-                // Обновление статуса
-                var statusParts = new List<string>();
-                if (successCount > 0) statusParts.Add($"Добавлено: {successCount}");
-                if (duplicateCount > 0) statusParts.Add($"Пропущено дубликатов: {duplicateCount}");
-                if (errorCount > 0) statusParts.Add($"Ошибок: {errorCount}");
-                
-                StatusMessage = string.Join(" • ", statusParts);
-                
-                if (successCount > 0)
-                {
-                    // Для Android принудительно обновляем UI
-                    if (OperatingSystem.IsAndroid())
+                    Dispatcher.UIThread.Post(() => 
                     {
-                        await Dispatcher.UIThread.InvokeAsync(async () => 
+                        foreach (var item in batch)
                         {
-                            await RefreshMediaCommand.ExecuteAsync(null);
-                        });
-                    }
-                    else
-                    {
-                        await RefreshMediaCommand.ExecuteAsync(null);
-                    }
-                }
+                            MediaItems.Insert(0, item);
+                        }
+                    });
+                });
+                
+                await _unitOfWork.CommitAsync();
             }
-            catch (DbUpdateException ex) when (ex.InnerException?.Message?.Contains("UNIQUE constraint") == true)
-            {
-                StatusMessage = "Обнаружены дубликаты при массовой вставке!";
-            }
-        }
-        catch (DbUpdateException ex) when (ex.InnerException?.Message?.Contains("UNIQUE constraint") == true)
-        {
-            StatusMessage = "Файл уже существует в библиотеке!";
         }
         finally
         {
             IsBusy = false;
         }
+    }
+
+    private async Task UpdateMediaItemsGradually(IEnumerable<MediaItem> items)
+    {
+        await Dispatcher.UIThread.InvokeAsync(async () =>
+        {
+            MediaItems.Clear();
+            
+            // Пакетное добавление для плавного обновления
+            var batchSize = OperatingSystem.IsAndroid() ? 50 : 200;
+            var count = 0;
+            
+            foreach (var item in items)
+            {
+                MediaItems.Add(item);
+                count++;
+                
+                if (count % batchSize == 0)
+                {
+                    OnPropertyChanged(nameof(MediaItems));
+                    await Task.Delay(10); // Задержка для рендеринга
+                }
+            }
+            
+            OnPropertyChanged(nameof(MediaItems));
+        });
     }
 
     [RelayCommand]
@@ -205,8 +207,6 @@ public partial class MediaViewModel : ObservableObject
         try
         {
             IsBusy = true;
-            StatusMessage = "Загрузка данных...";
-            
             var items = await _unitOfWork.Media.GetAllWithDetailsAsync();
             
             // Универсальный способ обновления для всех платформ
@@ -220,12 +220,10 @@ public partial class MediaViewModel : ObservableObject
                 // Форсируем обновление UI
                 OnPropertyChanged(nameof(MediaItems));
             });
-            
-            StatusMessage = $"Загружено {items.Count()} записей";
         }
         catch (Exception ex)
         {
-            StatusMessage = $"Ошибка загрузки: {ex.Message}";
+            Console.WriteLine($"Ошибка загрузки: {ex.Message}");
         }
         finally
         {
@@ -244,12 +242,11 @@ public partial class MediaViewModel : ObservableObject
                 await _unitOfWork.Media.DeleteAsync(media);
             }
             await _unitOfWork.CommitAsync();
-            StatusMessage = "Все записи удалены из БД";
             await RefreshMediaCommand.ExecuteAsync(null);
         }
         catch (Exception ex)
         {
-            StatusMessage = $"Ошибка при удалении: {ex.Message}";
+            Console.WriteLine($"Ошибка при удалении: {ex.Message}");
         }
     }
 } 

@@ -127,6 +127,13 @@ public class AppDbContext : DbContext
         // Явно создаем таблицу если не существует
         modelBuilder.Entity<MediaItem>().ToTable(nameof(MediaItems), t => 
             t.ExcludeFromMigrations(false));
+
+        modelBuilder.Entity<MediaItem>()
+            .HasIndex(m => m.Path)
+            .IsUnique();
+        
+        modelBuilder.Entity<MediaItem>()
+            .HasIndex(m => new { m.Artist, m.Album });
     }
 
     public IQueryable<MediaItem> SafeMedia => MediaItems?.AsQueryable() ?? throw new InvalidOperationException("MediaItems DbSet not initialized");
@@ -194,4 +201,26 @@ public class AppDbContext : DbContext
     {
         return await MediaItems.AnyAsync(m => m.Path == path);
     }
+
+    public async Task BulkInsertAsync(IEnumerable<MediaItem> entities, Action<BulkInsertOptions>? configureOptions = null)
+    {
+        var options = new BulkInsertOptions();
+        configureOptions?.Invoke(options);
+        
+        foreach (var entity in entities)
+        {
+            await MediaItems.AddAsync(entity);
+            if (options.BatchSize > 0 && MediaItems.Local.Count % options.BatchSize == 0)
+            {
+                await SaveChangesAsync();
+            }
+        }
+        await SaveChangesAsync();
+    }
+}
+
+public class BulkInsertOptions
+{
+    public int BatchSize { get; set; } = 100;
+    public bool InsertKeepIdentity { get; set; }
 } 
