@@ -14,16 +14,40 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <ListBox ItemsSource="{Binding MediaItems}" Grid.Row="1">
+        <ProgressBar Grid.Row="1" 
+                     IsIndeterminate="{Binding IsBusy}"
+                     IsVisible="{Binding IsBusy}"
+                     Height="4"
+                     VerticalAlignment="Top"
+                     Margin="5"/>
+
+        <ListBox ItemsSource="{Binding MediaItems}" 
+                 Grid.Row="1">
+            <ListBox.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <VirtualizingStackPanel />
+                </ItemsPanelTemplate>
+            </ListBox.ItemsPanel>
             <ListBox.ItemTemplate>
                 <DataTemplate>
-                    <StackPanel Margin="5">
-                        <TextBlock Text="{Binding Title}" FontWeight="Bold"/>
-                        <TextBlock Text="{Binding Artist}"/>
-                        <TextBlock Text="{Binding Album}"/>
-                        <TextBlock Text="{Binding Year}"/>
-                        <TextBlock Text="{Binding Genre}"/>
-                        <TextBlock Text="{Binding Path}" FontSize="10" Opacity="0.6"/>
+                    <StackPanel Margin="5" Spacing="3">
+                        <TextBlock Text="{Binding Title}" 
+                                   FontWeight="Bold"
+                                   MaxLines="1"/>
+                        <TextBlock Text="{Binding Artist}" 
+                                   MaxLines="1"/>
+                        <StackPanel Orientation="Horizontal" Spacing="5">
+                            <TextBlock Text="{Binding Genre}" 
+                                       Foreground="Gray"
+                                       MaxLines="1"/>
+                            <TextBlock Text="{Binding Year}" 
+                                       Foreground="Gray"/>
+                        </StackPanel>
+                        <TextBlock Text="{Binding Path}" 
+                                   FontSize="12"
+                                   Foreground="DarkGray"
+                                   MaxLines="1"
+                                   TextTrimming="CharacterEllipsis"/>
                     </StackPanel>
                 </DataTemplate>
             </ListBox.ItemTemplate>

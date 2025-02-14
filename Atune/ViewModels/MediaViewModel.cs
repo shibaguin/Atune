@@ -16,6 +16,7 @@ using Microsoft.Extensions.DependencyInjection;
 using System.IO;
 using System.Linq;
 using Atune.Data.Interfaces;
+using Avalonia.Threading;
 
 namespace Atune.ViewModels;
 
@@ -32,6 +33,9 @@ public partial class MediaViewModel : ObservableObject
 
     [ObservableProperty]
     private ObservableCollection<MediaItem> _mediaItems = new();
+
+    [ObservableProperty]
+    private bool _isBusy;
 
     public Action<string>? UpdateStatusMessage { get; set; }
 
@@ -60,6 +64,13 @@ public partial class MediaViewModel : ObservableObject
                 .SetSize(content.Count * 500 + 1024)
                 .SetPriority(CacheItemPriority.Normal)
                 .SetSlidingExpiration(TimeSpan.FromMinutes(15));
+            
+            // Для Android уменьшаем время кэширования
+            if (OperatingSystem.IsAndroid())
+            {
+                cacheOptions.SetSlidingExpiration(TimeSpan.FromMinutes(5));
+            }
+            
             _cache.Set("MediaContent", content, cacheOptions);
         }
         MediaContent = content ?? new List<MediaItem>();
@@ -159,7 +170,18 @@ public partial class MediaViewModel : ObservableObject
                 
                 if (successCount > 0)
                 {
-                    await RefreshMediaCommand.ExecuteAsync(null);
+                    // Для Android принудительно обновляем UI
+                    if (OperatingSystem.IsAndroid())
+                    {
+                        await Dispatcher.UIThread.InvokeAsync(async () => 
+                        {
+                            await RefreshMediaCommand.ExecuteAsync(null);
+                        });
+                    }
+                    else
+                    {
+                        await RefreshMediaCommand.ExecuteAsync(null);
+                    }
                 }
             }
             catch (DbUpdateException ex) when (ex.InnerException?.Message?.Contains("UNIQUE constraint") == true)
@@ -171,20 +193,43 @@ public partial class MediaViewModel : ObservableObject
         {
             StatusMessage = "Файл уже существует в библиотеке!";
         }
+        finally
+        {
+            IsBusy = false;
+        }
     }
 
     [RelayCommand]
     private async Task RefreshMedia()
     {
-        try 
+        try
         {
+            IsBusy = true;
+            StatusMessage = "Загрузка данных...";
+            
             var items = await _unitOfWork.Media.GetAllWithDetailsAsync();
-            MediaItems = new ObservableCollection<MediaItem>(items);
+            
+            // Универсальный способ обновления для всех платформ
+            await Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                MediaItems.Clear();
+                foreach (var item in items)
+                {
+                    MediaItems.Add(item);
+                }
+                // Форсируем обновление UI
+                OnPropertyChanged(nameof(MediaItems));
+            });
+            
             StatusMessage = $"Загружено {items.Count()} записей";
         }
         catch (Exception ex)
         {
             StatusMessage = $"Ошибка загрузки: {ex.Message}";
+        }
+        finally
+        {
+            IsBusy = false;
         }
     }
 
