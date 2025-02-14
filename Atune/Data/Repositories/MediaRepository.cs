@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Atune.Data.Interfaces;
 using Atune.Models;
+using System.Threading;
 
 namespace Atune.Data.Repositories
 {
@@ -49,12 +50,12 @@ namespace Atune.Data.Repositories
             return await _context.MediaItems.AnyAsync(m => m.Path == path);
         }
 
-        public async Task<IEnumerable<MediaItem>> GetAllWithDetailsAsync()
+        public async Task<IEnumerable<MediaItem>> GetAllWithDetailsAsync(CancellationToken cancellationToken = default)
         {
             return await _context.MediaItems
                 .AsNoTracking()
                 .OrderBy(m => m.Title)
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
         }
 
         public async Task BulkInsertAsync(IEnumerable<MediaItem> items)

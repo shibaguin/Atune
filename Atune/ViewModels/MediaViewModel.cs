@@ -42,7 +42,7 @@ public partial class MediaViewModel : ObservableObject
         LoadMediaContent();
         
         // Добавляем автоматическую загрузку при инициализации
-        RefreshMediaCommand.ExecuteAsync(null);
+        RefreshMediaCommand.ExecuteAsync(null!);
     }
 
     private async Task<List<MediaItem>> LoadFromDatabaseAsync()
@@ -176,13 +176,16 @@ public partial class MediaViewModel : ObservableObject
     [RelayCommand]
     private async Task RefreshMedia()
     {
-        var items = await _unitOfWork.Media.GetAllWithDetailsAsync();
-        MediaItems = new ObservableCollection<MediaItem>(items);
-        
-        _cache.Set("MediaContent", items, new MemoryCacheEntryOptions()
-            .SetSize(items.Count() * 500 + 1024)
-            .SetPriority(CacheItemPriority.Normal)
-            .SetSlidingExpiration(TimeSpan.FromMinutes(15)));
+        try 
+        {
+            var items = await _unitOfWork.Media.GetAllWithDetailsAsync();
+            MediaItems = new ObservableCollection<MediaItem>(items);
+            StatusMessage = $"Загружено {items.Count()} записей";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Ошибка загрузки: {ex.Message}";
+        }
     }
 
     [RelayCommand]

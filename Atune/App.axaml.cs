@@ -225,7 +225,16 @@ public partial class App : Application
                 provider.GetRequiredService<AppDbContext>(),
                 provider.GetRequiredService<ILoggerService>()));
         
-        services.AddScoped<IMediaRepository, MediaRepository>();
+        services.AddScoped<IMediaRepository>(provider => 
+        {
+            var context = provider.GetRequiredService<AppDbContext>();
+            var logger = provider.GetRequiredService<ILoggerService>();
+            var baseRepo = new MediaRepository(context);
+            return new CachedMediaRepository(
+                baseRepo, 
+                provider.GetRequiredService<IMemoryCache>()
+            );
+        });
     }
 
     [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "Disabled for Avalonia compatibility")]
