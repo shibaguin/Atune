@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Atune.Data.Interfaces;
 using Atune.Models;
 using System.Threading;
+using System.IO;
 
 namespace Atune.Data.Repositories
 {
@@ -96,6 +97,14 @@ namespace Atune.Data.Repositories
                 .Where(m => paths.Contains(m.Path))
                 .Select(m => m.Path)
                 .ToListAsync());
+        }
+
+        public async Task<HashSet<string>> GetExistingPathsInFolderAsync(string folderPath)
+        {
+            var allFiles = Directory.EnumerateFiles(folderPath, "*.*", SearchOption.AllDirectories)
+                .Select(Path.GetFullPath);
+            
+            return await GetExistingPathsAsync(allFiles);
         }
     }
 } 

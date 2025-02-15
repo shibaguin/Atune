@@ -247,7 +247,7 @@ public partial class MediaView : UserControl
 #if ANDROID
     private async Task<string> GetAndroidRealPath(IStorageFile file)
     {
-        return await Task.Run(() => 
+        return await Task.Run(async () =>
         {
             try 
             {
@@ -312,26 +312,13 @@ public partial class MediaView : UserControl
     }
 #endif
 
-    [Obsolete("Метод будет удален в будущих версиях")]
-    private Task<bool> FileExists(string path)
+    private async Task<bool> FileExists(string path)
     {
-#if ANDROID
-        if (path.StartsWith("content://"))
-        {
-            try 
-            {
-                var uri = Android.Net.Uri.Parse(path);
-                var contentResolver = Android.App.Application.Context.ContentResolver;
-                using var stream = contentResolver.OpenInputStream(uri);
-                return Task.FromResult(stream != null);
-            }
-            catch 
-            {
-                return Task.FromResult(false);
-            }
-        }
-#endif
-        return Task.FromResult(System.IO.File.Exists(path));
+        #if ANDROID
+        return await Task.Run(() => System.IO.File.Exists(path));
+        #else
+        return await Task.FromResult(System.IO.File.Exists(path));
+        #endif
     }
 
     private void ShowDbPath_Click(object sender, RoutedEventArgs e)
@@ -373,5 +360,23 @@ public partial class MediaView : UserControl
             _logger?.LogError("Ошибка чтения тегов ATL", ex);
             return ("Unknown Artist", "Unknown Album", (uint)DateTime.Now.Year, "Unknown Genre", TimeSpan.Zero);
         }
+    }
+
+    private async Task<string> ProcessAndroidFile(string path)
+    {
+        #if ANDROID
+        var destFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "AtuneMedia");
+        Directory.CreateDirectory(destFolder);
+        
+        var destPath = Path.Combine(destFolder, Path.GetFileName(path));
+        using (var source = File.OpenRead(path))
+        using (var dest = File.Create(destPath))
+        {
+            await source.CopyToAsync(dest);
+        }
+        return destPath;
+        #else
+        return await Task.FromResult(path);
+        #endif
     }
 }

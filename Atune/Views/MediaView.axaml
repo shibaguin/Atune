@@ -50,6 +50,7 @@
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
             
             <Button Grid.Column="1"
@@ -58,6 +59,12 @@
                     Padding="15 5"
                     FontSize="16"
                     HorizontalAlignment="Right"/>
+            <Button Grid.Column="2"
+                    Content="Добавить папку"
+                    Command="{Binding AddFolderCommand}"
+                    Margin="5,0"
+                    Padding="15 5"
+                    FontSize="16"/>
         </Grid>
         
         <StackPanel Orientation="Horizontal"

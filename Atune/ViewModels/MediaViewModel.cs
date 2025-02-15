@@ -17,6 +17,8 @@ using System.IO;
 using System.Linq;
 using Atune.Data.Interfaces;
 using Avalonia.Threading;
+using ATL;
+using Atune.Services;
 
 namespace Atune.ViewModels;
 
@@ -24,6 +26,7 @@ public partial class MediaViewModel : ObservableObject
 {
     private readonly IMemoryCache _cache;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly ILoggerService? _logger;
     
     [ObservableProperty]
     private List<MediaItem> _mediaContent = new List<MediaItem>();
@@ -36,10 +39,11 @@ public partial class MediaViewModel : ObservableObject
 
     public Action<string>? UpdateStatusMessage { get; set; }
 
-    public MediaViewModel(IMemoryCache cache, IUnitOfWork unitOfWork)
+    public MediaViewModel(IMemoryCache cache, IUnitOfWork unitOfWork, ILoggerService logger)
     {
         _cache = cache;
         _unitOfWork = unitOfWork;
+        _logger = logger;
         LoadMediaContent();
         
         // Добавляем автоматическую загрузку при инициализации
@@ -89,10 +93,18 @@ public partial class MediaViewModel : ObservableObject
                 return;
 
             var mainWindow = desktop.MainWindow;
-            if (mainWindow == null) return;
+            if (mainWindow == null)
+            {
+                _logger?.LogError("MainWindow is null");
+                return;
+            }
 
             var topLevel = TopLevel.GetTopLevel(mainWindow);
-            if (topLevel == null) return;
+            if (topLevel == null)
+            {
+                _logger?.LogError("TopLevel is null");
+                return;
+            }
 
             var files = await topLevel.StorageProvider.OpenFilePickerAsync(
                 new FilePickerOpenOptions
@@ -249,4 +261,102 @@ public partial class MediaViewModel : ObservableObject
             Console.WriteLine($"Ошибка при удалении: {ex.Message}");
         }
     }
+
+    [RelayCommand]
+    private async Task AddFolderAsync()
+    {
+        try
+        {
+            IsBusy = true;
+            if (Application.Current?.ApplicationLifetime is not IClassicDesktopStyleApplicationLifetime desktop)
+                return;
+
+            var mainWindow = desktop.MainWindow;
+            if (mainWindow == null) 
+            {
+                _logger?.LogError("MainWindow is null");
+                return;
+            }
+
+            var topLevel = TopLevel.GetTopLevel(mainWindow);
+            if (topLevel == null)
+            {
+                _logger?.LogError("TopLevel is null");
+                return;
+            }
+
+            var folders = await topLevel.StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions
+            {
+                Title = "Выберите папки с музыкой",
+                AllowMultiple = true
+            });
+
+            var allFiles = new List<string>();
+            foreach (var folder in folders)
+            {
+                var folderPath = folder.Path.LocalPath;
+                var files = Directory.EnumerateFiles(folderPath, "*.*", SearchOption.AllDirectories)
+                    .Where(f => _supportedFormats.Contains(Path.GetExtension(f).ToLower()));
+                allFiles.AddRange(files);
+            }
+
+            var existingPaths = await _unitOfWork.Media.GetExistingPathsAsync(allFiles);
+            var newItems = allFiles.Except(existingPaths)
+                .Select(path => CreateMediaItemFromPath(path))
+                .ToList();
+
+            if (newItems.Count > 0)
+            {
+                await _unitOfWork.Media.BulkInsertAsync(newItems, batch => 
+                {
+                    Dispatcher.UIThread.Post(() => 
+                    {
+                        foreach (var item in batch)
+                        {
+                            MediaItems.Insert(0, item);
+                        }
+                    });
+                });
+                await _unitOfWork.CommitAsync();
+            }
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private MediaItem CreateMediaItemFromPath(string path)
+    {
+        var tagInfo = GetDesktopTagInfo(path); // Используем метод из MediaView
+        return new MediaItem(
+            Path.GetFileNameWithoutExtension(path),
+            tagInfo.Artist ?? "Unknown Artist",
+            tagInfo.Album ?? "Unknown Album",
+            tagInfo.Year,
+            tagInfo.Genre ?? "Unknown Genre",
+            path,
+            tagInfo.Duration);
+    }
+
+    private (string Artist, string Album, uint Year, string Genre, TimeSpan Duration) GetDesktopTagInfo(string path)
+    {
+        try
+        {
+            var track = new ATL.Track(path);
+            return (
+                track.Artist ?? "Unknown Artist",
+                track.Album ?? "Unknown Album",
+                (uint)(track.Year > 0 ? track.Year : DateTime.Now.Year),
+                track.Genre ?? "Unknown Genre",
+                TimeSpan.FromMilliseconds(track.DurationMs)
+            );
+        }
+        catch
+        {
+            return ("Unknown Artist", "Unknown Album", (uint)DateTime.Now.Year, "Unknown Genre", TimeSpan.Zero);
+        }
+    }
+
+    private static readonly string[] _supportedFormats = { ".mp3", ".flac", ".wav", ".ogg" };
 } 
