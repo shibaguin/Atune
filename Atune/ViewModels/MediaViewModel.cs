@@ -19,6 +19,7 @@ using Atune.Data.Interfaces;
 using Avalonia.Threading;
 using ATL;
 using Atune.Services;
+using Atune.Extensions;
 
 namespace Atune.ViewModels;
 
@@ -268,24 +269,21 @@ public partial class MediaViewModel : ObservableObject
         try
         {
             IsBusy = true;
-            if (Application.Current?.ApplicationLifetime is not IClassicDesktopStyleApplicationLifetime desktop)
-                return;
-
-            var mainWindow = desktop.MainWindow;
-            if (mainWindow == null) 
+            var mainWindow = Application.Current?.ApplicationLifetime?.TryGetTopLevel();
+            if (mainWindow == null)
             {
                 _logger?.LogError("MainWindow is null");
                 return;
             }
 
-            var topLevel = TopLevel.GetTopLevel(mainWindow);
-            if (topLevel == null)
+            var storageProvider = mainWindow.StorageProvider;
+            if (storageProvider == null)
             {
-                _logger?.LogError("TopLevel is null");
+                _logger?.LogError("StorageProvider недоступен");
                 return;
             }
 
-            var folders = await topLevel.StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions
+            var folders = await storageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions
             {
                 Title = "Выберите папки с музыкой",
                 AllowMultiple = true
@@ -294,10 +292,17 @@ public partial class MediaViewModel : ObservableObject
             var allFiles = new List<string>();
             foreach (var folder in folders)
             {
-                var folderPath = folder.Path.LocalPath;
-                var files = Directory.EnumerateFiles(folderPath, "*.*", SearchOption.AllDirectories)
-                    .Where(f => _supportedFormats.Contains(Path.GetExtension(f).ToLower()));
-                allFiles.AddRange(files);
+                try 
+                {
+                    var folderPath = folder.Path.LocalPath;
+                    var files = Directory.EnumerateFiles(folderPath, "*.*", SearchOption.AllDirectories)
+                        .Where(f => _supportedFormats.Contains(Path.GetExtension(f).ToLower()));
+                    allFiles.AddRange(files);
+                }
+                catch(Exception ex)
+                {
+                    _logger?.LogError($"Ошибка доступа к папке: {ex.Message}");
+                }
             }
 
             var existingPaths = await _unitOfWork.Media.GetExistingPathsAsync(allFiles);
