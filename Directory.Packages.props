@@ -15,7 +15,7 @@
     <PackageVersion Include="Avalonia.Browser" Version="11.2.3" />
     <PackageVersion Include="Avalonia.Android" Version="11.2.3" />
     <PackageVersion Include="ReactiveUI" Version="20.1.63" />
-    <PackageVersion Include="CommunityToolkit.Mvvm" Version="8.2.2" />
+    <PackageVersion Include="CommunityToolkit.Mvvm" Version="8.4.0" />  
     <PackageVersion Include="Xamarin.AndroidX.Core.SplashScreen" Version="1.0.1.1" />
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
     <PackageVersion Include="Microsoft.Extensions.Hosting" Version="8.0.0" />
@@ -33,5 +33,6 @@
     <PackageVersion Include="Xamarin.AndroidX.Core" Version="1.13.0" />
     <PackageVersion Include="Xamarin.AndroidX.DocumentFile" Version="1.0.1" />
     <PackageVersion Include="Z440.ATL.Core" Version="6.15.0" />
+    <PackageVersion Include="Avalonia.Build.Tasks" Version="11.2.3" /> 
   </ItemGroup>
 </Project>

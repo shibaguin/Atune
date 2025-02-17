@@ -15,6 +15,10 @@
     <RuntimeIdentifiers>linux-x64;win-x64</RuntimeIdentifiers>
     <!-- Подавляем предупреждения о COM-активации для Windows -->
     <SuppressTrimAnalysisWarnings>IL2026</SuppressTrimAnalysisWarnings>
+    <!-- Добавляем путь к Avalonia Build Tasks -->
+    <AvaloniaBuildTasksLocation>$(NuGetPackageRoot)avalonia.build.tasks\11.2.3\build\</AvaloniaBuildTasksLocation>
+
+    <AvaloniaVersion>11.2.3</AvaloniaVersion>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -22,6 +26,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Avalonia" />
     <PackageReference Include="Avalonia.Desktop" />
     <!--Condition below is needed to remove Avalonia.Diagnostics package from build output in Release configuration.-->
     <PackageReference Include="Avalonia.Diagnostics" >

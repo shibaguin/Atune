@@ -19,7 +19,7 @@
                  HorizontalAlignment="Center"
                  HorizontalContentAlignment="Center">
             <TabItem.Header>
-                <TextBlock Text="Основные" FontSize="24" FontWeight="Bold"/>
+                <TextBlock Text="{DynamicResource Settings_General}" FontSize="24" FontWeight="Bold"/>
             </TabItem.Header>
             <ScrollViewer HorizontalAlignment="Stretch" 
                           VerticalScrollBarVisibility="Auto"
@@ -36,7 +36,7 @@
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
 
-                            <TextBlock Text="Тема приложения:" 
+                            <TextBlock Text="{DynamicResource Settings_Theme}" 
                                        FontSize="20"
                                        VerticalAlignment="Center"
                                        Margin="0,10,0,0"/>
@@ -49,10 +49,27 @@
                                       HorizontalAlignment="Right"
                                       Margin="0,10,0,0"
                                       SelectionChanged="ThemeComboBox_SelectionChanged">
-                                <ComboBoxItem Content="Системная"/>
-                                <ComboBoxItem Content="Светлая"/>
-                                <ComboBoxItem Content="Тёмная"/>
+                                <ComboBoxItem Content="System"/>
+                                <ComboBoxItem Content="Light"/>
+                                <ComboBoxItem Content="Dark"/>
                             </ComboBox>
+                        </Grid>
+                        <Grid HorizontalAlignment="Stretch" Margin="0,20,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            
+                            <TextBlock Text="{DynamicResource Settings_Language}" 
+                                       FontSize="20"
+                                       VerticalAlignment="Center"/>
+                            
+                            <ComboBox Grid.Column="1"
+                                      ItemsSource="{Binding AvailableLanguages}"
+                                      SelectedItem="{Binding SelectedLanguage, Mode=TwoWay}"
+                                      Width="200"
+                                      HorizontalAlignment="Right"
+                                      SelectionChanged="LanguageComboBox_SelectionChanged"/>
                         </Grid>
                     </StackPanel>
                 </Grid>

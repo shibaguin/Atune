@@ -47,13 +47,7 @@ namespace Atune.Views
 
         private void ThemeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (_settingsService == null || ThemeComboBox == null) return;
-            
-            var vm = (DataContext as SettingsViewModel)!;
-            _settingsService.SaveSettings(new AppSettings { 
-                ThemeVariant = (ThemeVariant)ThemeComboBox.SelectedIndex 
-            });
-            ApplyTheme((ThemeVariant)ThemeComboBox.SelectedIndex);
+            SaveSettings();
         }
 
         private void ApplyTheme(ThemeVariant theme)
@@ -74,6 +68,35 @@ namespace Atune.Views
             }
         }
 
+        private void LanguageComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (_settingsService == null)
+                return;
+
+            // Получаем модель представления
+            var vm = DataContext as SettingsViewModel;
+            if (vm == null)
+                return;
+
+            // Преобразуем выбранное отображаемое название в код языка
+            string languageCode = vm.SelectedLanguage switch
+            {
+                "Русская" => "ru",
+                "English" => "en",
+                _ => vm.SelectedLanguage
+            };
+
+            // Сохраняем настройки с учетом выбранного языка и текущего варианта темы
+            _settingsService.SaveSettings(new AppSettings
+            {
+                ThemeVariant = (ThemeVariant)ThemeComboBox.SelectedIndex,
+                Language = languageCode
+            });
+
+            // Обновляем локализацию (метод UpdateLocalization должен обновлять глобальные ресурсы)
+            (Application.Current as App)?.UpdateLocalization();
+        }
+
         private void ApplySettings_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
         {
             if (_settingsService == null) return;
@@ -82,6 +105,17 @@ namespace Atune.Views
             _settingsService.SaveSettings(new AppSettings { 
                 ThemeVariant = (ThemeVariant)vm.SelectedThemeIndex 
             });
+        }
+
+        private void SaveSettings()
+        {
+            if (_settingsService == null || ThemeComboBox == null) return;
+            
+            var vm = (DataContext as SettingsViewModel)!;
+            _settingsService.SaveSettings(new AppSettings { 
+                ThemeVariant = (ThemeVariant)ThemeComboBox.SelectedIndex 
+            });
+            ApplyTheme((ThemeVariant)ThemeComboBox.SelectedIndex);
         }
     }
 }

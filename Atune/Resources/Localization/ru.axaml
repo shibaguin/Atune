@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=mscorlib">
+    <sys:String x:Key="Settings_General">Основные настройки</sys:String>
+    <sys:String x:Key="Settings_Theme">Тема приложения:</sys:String>
+    <sys:String x:Key="Settings_Language">Язык:</sys:String>
+</ResourceDictionary> 

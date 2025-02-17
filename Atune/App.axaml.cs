@@ -93,10 +93,20 @@ public partial class App : Application
         var services = new ServiceCollection();
         // Регистрируем сервис для платформенно-специфичных путей
         services.AddSingleton<IPlatformPathService, PlatformPathService>();
-        // Регистрируем SettingsService, который теперь зависит от IPlatformPathService
+        // Регистрируем MemoryCache для SettingsService
+        services.AddMemoryCache();
+        // Регистрируем реализацию логгера (убедитесь, что LoggerService реализует ILoggerService)
+        services.AddSingleton<ILoggerService, LoggerService>();
+        // Регистрируем SettingsService, который требует IMemoryCache, IPlatformPathService и ILoggerService
         services.AddSingleton<ISettingsService, SettingsService>();
-        // регистрация других сервисов (если есть)
+        // Регистрируем LocalizationService
+        services.AddSingleton<LocalizationService>();
+
+        // Собираем провайдер зависимостей
         Services = services.BuildServiceProvider();
+
+        // Получаем сервис через зарегистрированный провайдер
+        var localizationService = Services.GetRequiredService<LocalizationService>();
     }
 
     public new static App? Current => Application.Current as App;
@@ -181,6 +191,7 @@ public partial class App : Application
         services.AddSingleton<IPlatformPathService, PlatformPathService>();
         services.AddSingleton<ISettingsService, SettingsService>();
         services.AddSingleton<ILoggerService, LoggerService>();
+        services.AddSingleton<LocalizationService>();
 
         // Явная регистрация ViewModels
         services.AddTransient<MainViewModel>();
@@ -329,6 +340,16 @@ public partial class App : Application
         {
             Log.Error(ex, "FATAL RECREATION ERROR");
             throw new InvalidOperationException("Cannot initialize database", ex);
+        }
+    }
+
+    public void UpdateLocalization()
+    {
+        var settingsService = Services?.GetRequiredService<ISettingsService>();
+        var localizationService = Services?.GetRequiredService<LocalizationService>();
+        if (settingsService != null && localizationService != null)
+        {
+            localizationService.SetLanguage(settingsService.LoadSettings().Language);
         }
     }
 }

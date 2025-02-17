@@ -91,7 +91,8 @@ public class SettingsService : ISettingsService
 
                 var lines = new List<string>
                 {
-                    $"ThemeVariant={(int)settings.ThemeVariant}"
+                    $"ThemeVariant={(int)settings.ThemeVariant}",
+                    $"Language={settings.Language}"
                 };
 
                 // Для Android используем специальное хранилище
@@ -151,6 +152,9 @@ public class SettingsService : ISettingsService
                                 2 => ThemeVariant.Dark,
                                 _ => ThemeVariant.System
                             };
+                            break;
+                        case "Language":
+                            settings.Language = parts[1];
                             break;
                         case "LastUsedProfile":
                             settings.LastUsedProfile = parts[1];
