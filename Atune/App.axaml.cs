@@ -59,7 +59,7 @@ public partial class App : Application
         }
         catch 
         {
-            // Игнорируем таймауты
+            // Ignore timeouts
         }
     }
 
@@ -85,27 +85,28 @@ public partial class App : Application
 
     public override void Initialize()
     {
-        Log.Information("Инициализация приложения");
+        // Log the start of base initialization: loading XAML and setting up DI services
+        Log.Information("Starting base initialization: loading XAML and setting up services");
         
         AvaloniaXamlLoader.Load(this);
         base.Initialize();
 
         var services = new ServiceCollection();
-        // Регистрируем сервис для платформенно-специфичных путей
+        // Register the service for platform-specific paths
         services.AddSingleton<IPlatformPathService, PlatformPathService>();
-        // Регистрируем MemoryCache для SettingsService
+        // Register MemoryCache for SettingsService
         services.AddMemoryCache();
-        // Регистрируем реализацию логгера (убедитесь, что LoggerService реализует ILoggerService)
+        // Register the logger implementation (ensure LoggerService implements ILoggerService)
         services.AddSingleton<ILoggerService, LoggerService>();
-        // Регистрируем SettingsService, который требует IMemoryCache, IPlatformPathService и ILoggerService
+        // Register SettingsService, which requires IMemoryCache, IPlatformPathService and ILoggerService
         services.AddSingleton<ISettingsService, SettingsService>();
-        // Регистрируем LocalizationService
+        // Register LocalizationService
         services.AddSingleton<LocalizationService>();
 
-        // Собираем провайдер зависимостей
+        // Build the dependency provider
         Services = services.BuildServiceProvider();
 
-        // Получаем сервис через зарегистрированный провайдер
+        // Get the service through the registered provider
         var localizationService = Services.GetRequiredService<LocalizationService>();
     }
 
@@ -114,28 +115,28 @@ public partial class App : Application
 
     public override async void OnFrameworkInitializationCompleted()
     {
-        Log.Information("Инициализация приложения");
+        // Log the completion of full initialization: the main window has been created, the database and services are configured
+        Log.Information("Full initialization completed: the main window has been created, the database and services are configured");
+        
         try 
         {
             var services = new ServiceCollection();
-            ConfigureServices(services); // Сначала конфигурируем сервисы
+            ConfigureServices(services); // сначала конфигурируем сервисы
             var serviceProvider = services.BuildServiceProvider();
-            Services = serviceProvider; // Затем присваиваем свойство Services
+            Services = serviceProvider; // затем присваиваем свойство Services
 
-            // Применяем миграции и создаем БД
+            // Apply migrations and create the database
             await InitializeDatabaseAsync();
 
-            // Остальная инициализация
+            // Initialize application windows
             if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
             {
                 DisableAvaloniaDataAnnotationValidation();
                 desktop.MainWindow = serviceProvider.GetRequiredService<MainWindow>();
                 desktop.Exit += OnAppExit;
-                desktop.Startup += (s, e) => 
+                desktop.Startup += (s, e) =>
                 {
-                    // Убрать удаление директории
-                    // var dbDir = Path.Combine(AppContext.BaseDirectory, "Data");
-                    // if (Directory.Exists(dbDir)) Directory.Delete(dbDir, true);
+                    // Additional actions when the application starts (if necessary)
                 };
             }
             else if (ApplicationLifetime is ISingleViewApplicationLifetime singleView)
@@ -155,7 +156,7 @@ public partial class App : Application
                 UpdateTheme(settings.ThemeVariant);
             }
 
-            // Добавляем тестовую запись в БД
+            // Example of adding a test entry to the database
             var testItem = new MediaItem(
                 "Test Title", 
                 "Test Artist", 
@@ -167,7 +168,7 @@ public partial class App : Application
         }
         catch (Exception ex)
         {
-            Log.Fatal(ex, "Fatal initialization error");
+            Log.Fatal(ex, "Fatal error during full application initialization");
             File.WriteAllText("crash.log", $"CRITICAL ERROR: {ex}");
             Environment.Exit(1);
         }
@@ -179,28 +180,28 @@ public partial class App : Application
         services.AddDbContext<AppDbContext>();
         services.AddDbContextFactory<AppDbContext>();
         
-        // Остальные сервисы
+        // Other services
         services.AddMemoryCache(options =>
         {
-            options.SizeLimit = 100 * 1024 * 1024; // 100 MB лимит
-            options.CompactionPercentage = 0.25; // Освобождаем 25% места при достижении лимита
-            options.ExpirationScanFrequency = TimeSpan.FromMinutes(5); // Частота проверки экспирации
+            options.SizeLimit = 100 * 1024 * 1024; // 100 MB limit
+            options.CompactionPercentage = 0.25; // Free up 25% space when the limit is reached
+            options.ExpirationScanFrequency = TimeSpan.FromMinutes(5); // Frequency of checking expiration
         });
         services.AddSingleton<ViewLocator>();
-        // Регистрируем платформенно-специфичный сервис и сервис настроек
+        // Register the platform-specific service and settings service
         services.AddSingleton<IPlatformPathService, PlatformPathService>();
         services.AddSingleton<ISettingsService, SettingsService>();
         services.AddSingleton<ILoggerService, LoggerService>();
         services.AddSingleton<LocalizationService>();
 
-        // Явная регистрация ViewModels
+        // Explicit registration of ViewModels
         services.AddTransient<MainViewModel>();
         services.AddTransient<HomeViewModel>();
         services.AddTransient<MediaViewModel>();
         services.AddTransient<HistoryViewModel>();
         services.AddTransient<SettingsViewModel>();
 
-        // Явная регистрация Views с конструкторами
+        // Explicit registration of Views with constructors
         services.AddTransient<MainView>(sp => new MainView());
         services.AddTransient<HomeView>(sp => new HomeView(sp.GetRequiredService<HomeViewModel>()));
         services.AddTransient<MediaView>(sp => 
@@ -218,7 +219,7 @@ public partial class App : Application
         );
         services.AddTransient<MainWindow>();
 
-        // Фабрики
+        // Factories
         services.AddSingleton<Func<Type, ViewModelBase>>(provider => type => 
             (ViewModelBase)provider.GetRequiredService(type));
 
@@ -230,7 +231,7 @@ public partial class App : Application
             builder.AddSerilog(dispose: true);
         });
 
-        // Добавляем новые сервисы
+        // Add new services
         services.AddScoped<IUnitOfWork>(provider => 
             new UnitOfWork(
                 provider.GetRequiredService<AppDbContext>(),
@@ -266,7 +267,7 @@ public partial class App : Application
 
     public void UpdateTheme(ThemeVariant theme)
     {
-        // Добавляем отложенное выполнение для корректного определения системной темы
+        // Add delayed execution for correct system theme determination
         Dispatcher.UIThread.Post(() =>
         {
             var actualTheme = theme switch
@@ -297,14 +298,14 @@ public partial class App : Application
     {
         if (Services?.GetService<IMemoryCache>() is MemoryCache memoryCache)
         {
-            // Используем стандартный метод очистки кэша
+            // Use the standard cache cleanup method
             memoryCache.Compact(percentage: 0.25);
         }
     }
     
     private void OnAppExit(object? sender, ControlledApplicationLifetimeExitEventArgs e)
     {
-        Log.Information("Завершение работы приложения");
+        Log.Information("Application shutdown");
         Log.CloseAndFlush();
     }
 
@@ -318,7 +319,7 @@ public partial class App : Application
             Log.Information("Initializing database...");
             await db.Database.EnsureCreatedAsync();
             
-            // Простая проверка работоспособности
+            // Simple check of functionality
             var exists = await db.MediaItems.AnyAsync();
             Log.Information($"Database status: {(exists ? "OK" : "EMPTY")}");
         }

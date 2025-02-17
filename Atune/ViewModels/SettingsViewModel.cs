@@ -13,11 +13,11 @@ public partial class SettingsViewModel : ViewModelBase
     [ObservableProperty]
     private int selectedThemeIndex;
     
-    // Значение по умолчанию – отображаемое название языка
+    // Default value - displayed language name
     [ObservableProperty]
     private string selectedLanguage = "Русская";
 
-    // Список для выбора: отображаемые названия языков
+    // List for selection: displayed language names
     public List<string> AvailableLanguages { get; } = new() { "Русская", "English" };
 
     private readonly ISettingsService _settingsService;
@@ -25,11 +25,11 @@ public partial class SettingsViewModel : ViewModelBase
     public SettingsViewModel(ISettingsService settingsService)
     {
         _settingsService = settingsService;
-        // Загрузка сохранённых настроек
+        // Loading saved settings
         var settings = _settingsService.LoadSettings();
         SelectedThemeIndex = (int)settings.ThemeVariant;
 
-        // Преобразуем сохранённый код языка в отображаемое название
+        // Convert the saved language code to the displayed language name
         SelectedLanguage = settings.Language switch
         {
             "ru" => "Русская",
@@ -41,7 +41,7 @@ public partial class SettingsViewModel : ViewModelBase
     [RelayCommand]
     private void SaveSettings()
     {
-        // Преобразуем выбранное отображаемое название в код языка для сохранения
+        // Convert the selected display name to a language code for saving
         string languageCode = SelectedLanguage switch
         {
             "Русская" => "ru",

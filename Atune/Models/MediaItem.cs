@@ -16,7 +16,7 @@ public class MediaItem
     public string Artist { get; set; } = string.Empty;
     
     public string Album { get; set; } = string.Empty;
-    [Range(1900u, 2100u, ErrorMessage = "Недопустимый год")]
+    [Range(1900u, 2100u, ErrorMessage = "Invalid year")]
     public uint Year { get; set; }
     public string Genre { get; set; } = string.Empty;
     
@@ -25,7 +25,7 @@ public class MediaItem
     
     public TimeSpan Duration { get; set; }
     
-    // Добавим конструктор для удобства
+    // Add a constructor for convenience
     public MediaItem(string title, string artist, string album, uint year, string genre, string path, TimeSpan duration)
     {
         Title = title;
@@ -37,6 +37,6 @@ public class MediaItem
         Duration = duration;
     }
     
-    // Пустой конструктор для EF Core
+    // Empty constructor for EF Core
     public MediaItem() { }
 } 

@@ -47,7 +47,7 @@ public partial class MediaViewModel : ObservableObject
         _logger = logger;
         LoadMediaContent();
         
-        // Добавляем автоматическую загрузку при инициализации
+        // Add automatic loading when initializing
         RefreshMediaCommand.ExecuteAsync(null!);
     }
 
@@ -67,7 +67,7 @@ public partial class MediaViewModel : ObservableObject
                 .SetPriority(CacheItemPriority.Normal)
                 .SetSlidingExpiration(TimeSpan.FromMinutes(15));
             
-            // Для Android уменьшаем время кэширования
+            // For Android, we reduce the caching time
             if (OperatingSystem.IsAndroid())
             {
                 cacheOptions.SetSlidingExpiration(TimeSpan.FromMinutes(5));
@@ -80,7 +80,7 @@ public partial class MediaViewModel : ObservableObject
 
     private List<MediaItem> LoadFromDataSource()
     {
-        // Загрузка данных из внешнего источника
+        // Loading data from an external source
         return new List<MediaItem>();
     }
 
@@ -110,11 +110,11 @@ public partial class MediaViewModel : ObservableObject
             var files = await topLevel.StorageProvider.OpenFilePickerAsync(
                 new FilePickerOpenOptions
                 {
-                    Title = "Выберите аудиофайлы",
+                    Title = "Select audio files",
                     AllowMultiple = true,
                     FileTypeFilter = new[]
                     {
-                        new FilePickerFileType("Аудио файлы")
+                        new FilePickerFileType("Audio files")
                         {
                             Patterns = new[] { "*.mp3", "*.flac" },
                             MimeTypes = new[] { "audio/mpeg", "audio/flac" }
@@ -162,7 +162,7 @@ public partial class MediaViewModel : ObservableObject
                 catch (Exception ex)
                 {
                     errorCount++;
-                    Console.WriteLine($"Ошибка: {ex.Message}");
+                    Console.WriteLine($"Error: {ex.Message}");
                 }
             }
 
@@ -194,7 +194,7 @@ public partial class MediaViewModel : ObservableObject
         {
             MediaItems.Clear();
             
-            // Пакетное добавление для плавного обновления
+            // Batch addition for gradual updating
             var batchSize = OperatingSystem.IsAndroid() ? 50 : 200;
             var count = 0;
             
@@ -206,7 +206,7 @@ public partial class MediaViewModel : ObservableObject
                 if (count % batchSize == 0)
                 {
                     OnPropertyChanged(nameof(MediaItems));
-                    await Task.Delay(10); // Задержка для рендеринга
+                    await Task.Delay(10); // Delay for rendering
                 }
             }
             
@@ -222,7 +222,7 @@ public partial class MediaViewModel : ObservableObject
             IsBusy = true;
             var items = await _unitOfWork.Media.GetAllWithDetailsAsync();
             
-            // Универсальный способ обновления для всех платформ
+            // Universal way to update for all platforms
             await Dispatcher.UIThread.InvokeAsync(() =>
             {
                 MediaItems.Clear();
@@ -230,13 +230,13 @@ public partial class MediaViewModel : ObservableObject
                 {
                     MediaItems.Add(item);
                 }
-                // Форсируем обновление UI
+                    // Force update UI
                 OnPropertyChanged(nameof(MediaItems));
             });
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Ошибка загрузки: {ex.Message}");
+            Console.WriteLine($"Error loading: {ex.Message}");
         }
         finally
         {
@@ -259,7 +259,7 @@ public partial class MediaViewModel : ObservableObject
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Ошибка при удалении: {ex.Message}");
+            Console.WriteLine($"Error deleting: {ex.Message}");
         }
     }
 
@@ -279,13 +279,13 @@ public partial class MediaViewModel : ObservableObject
             var storageProvider = mainWindow.StorageProvider;
             if (storageProvider == null)
             {
-                _logger?.LogError("StorageProvider недоступен");
+                _logger?.LogError("StorageProvider is not available");
                 return;
             }
 
             var folders = await storageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions
             {
-                Title = "Выберите папки с музыкой",
+                Title = "Select folders with music",
                 AllowMultiple = true
             });
 
@@ -301,7 +301,7 @@ public partial class MediaViewModel : ObservableObject
                 }
                 catch(Exception ex)
                 {
-                    _logger?.LogError($"Ошибка доступа к папке: {ex.Message}");
+                    _logger?.LogError($"Error accessing folder: {ex.Message}");
                 }
             }
 
@@ -333,7 +333,7 @@ public partial class MediaViewModel : ObservableObject
 
     private MediaItem CreateMediaItemFromPath(string path)
     {
-        var tagInfo = GetDesktopTagInfo(path); // Используем метод из MediaView
+        var tagInfo = GetDesktopTagInfo(path); // Use the method from MediaView
         return new MediaItem(
             Path.GetFileNameWithoutExtension(path),
             tagInfo.Artist ?? "Unknown Artist",
@@ -391,7 +391,7 @@ public partial class MediaViewModel : ObservableObject
         }
         catch (Exception ex)
         {
-            _logger?.LogError($"Ошибка при поиске: {ex.Message}", ex);
+            _logger?.LogError($"Error searching: {ex.Message}", ex);
         }
         finally
         {

@@ -29,7 +29,7 @@ namespace Atune.Data.Repositories
             }) ?? new List<MediaItem>();
         }
 
-        // Остальные методы прозрачно делегируем
+        // Other methods transparently delegate
         public async Task<MediaItem?> GetByIdAsync(int id) => await _decorated.GetByIdAsync(id);
         public async Task<IEnumerable<MediaItem>> GetAllAsync() => await _decorated.GetAllAsync();
         public async Task AddAsync(MediaItem entity)

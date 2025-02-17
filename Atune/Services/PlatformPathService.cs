@@ -9,10 +9,10 @@ namespace Atune.Services
         {
             if (OperatingSystem.IsAndroid())
             {
-                // Для Android используем MyDocuments для хранения настроек
+                // For Android, use MyDocuments for storing settings
                 return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), fileName);
             }
-            // Для десктопных ОС используем ApplicationData + папку приложения
+            // For desktop OS, use ApplicationData + application folder
             return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Atune", fileName);
         }
 
@@ -20,7 +20,7 @@ namespace Atune.Services
         {
             if (OperatingSystem.IsAndroid())
             {
-                // Для Android используем Personal для хранения базы данных
+                // For Android, use Personal for storing database
                 return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Personal), databaseFileName);
             }
             return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Atune", "Data", databaseFileName);

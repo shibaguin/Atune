@@ -20,10 +20,10 @@ public partial class HomeViewModel : ViewModelBase
     {
         _cache = cache;
         _logger = logger;
-        _logger.LogInformation("Инициализация HomeViewModel");
+        _logger.LogInformation("Initialization HomeViewModel");
         
         try {
-            Title = "Главная страница";
+            Title = "Main page";
             
             WelcomeMessage = _cache.GetOrCreate("WelcomeMessage", entry => 
             {
@@ -33,14 +33,14 @@ public partial class HomeViewModel : ViewModelBase
             })!;
         }
         catch (Exception ex) {
-            _logger.LogError(ex, "Ошибка загрузки приветствия");
+            _logger.LogError(ex, "Error loading welcome message");
         }
     }
 
     private string GenerateWelcomeMessage()
     {
-        // Тяжёлые вычисления или загрузка данных
-        return "Добро пожаловать в Atune!";
+        // Heavy calculations or data loading
+        return "Welcome to Atune!";
     }
 
     public async Task LoadWelcomeMessageAsync()
@@ -56,6 +56,6 @@ public partial class HomeViewModel : ViewModelBase
     private async Task<string> GenerateWelcomeMessageAsync()
     {
         await Task.CompletedTask;
-        return "Добро пожаловать в Atune!";
+        return "Welcome to Atune!";
     }
 } 

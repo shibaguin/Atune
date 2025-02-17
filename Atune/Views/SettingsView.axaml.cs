@@ -13,7 +13,7 @@ namespace Atune.Views
     {
         private readonly ISettingsService? _settingsService;
 
-        // Конструктор для DI
+        // Constructor for DI
         public SettingsView(SettingsViewModel viewModel, ISettingsService settingsService)
         {
             InitializeComponent();
@@ -22,7 +22,7 @@ namespace Atune.Views
             InitializePlatformSpecificSettings();
         }
 
-        // Конструктор для XAML (только для дизайнера)
+        // Constructor for XAML (only for designer)
         public SettingsView()
         {
             if (!Design.IsDesignMode)
@@ -56,12 +56,12 @@ namespace Atune.Views
             {
                 app.UpdateTheme(theme);
                 
-                // Для Android используем условную компиляцию
+                // For Android, use conditional compilation
 #if ANDROID
                 var window = TopLevel.GetTopLevel(this) as Window;
                 if (window?.PlatformImpl != null)
                 {
-                    // Используем правильный метод для Android
+                    // Use the correct method for Android
                     (window.PlatformImpl as Avalonia.Android.AndroidWindow)?.UpdateSystemTheme();
                 }
 #endif
@@ -73,12 +73,12 @@ namespace Atune.Views
             if (_settingsService == null)
                 return;
 
-            // Получаем модель представления
+            // Get the view model
             var vm = DataContext as SettingsViewModel;
             if (vm == null)
                 return;
 
-            // Преобразуем выбранное отображаемое название в код языка
+            // Convert the selected display name to a language code
             string languageCode = vm.SelectedLanguage switch
             {
                 "Русская" => "ru",
@@ -86,17 +86,17 @@ namespace Atune.Views
                 _ => vm.SelectedLanguage
             };
 
-            // Сохраняем настройки с учетом выбранного языка и текущего варианта темы
+            // Save settings with the selected language and current theme variant
             _settingsService.SaveSettings(new AppSettings
             {
                 ThemeVariant = (ThemeVariant)ThemeComboBox.SelectedIndex,
                 Language = languageCode
             });
 
-            // Обновляем локализацию (метод UpdateLocalization должен обновлять глобальные ресурсы)
+            // Update localization (the UpdateLocalization method must update global resources)
             (Application.Current as App)?.UpdateLocalization();
             
-            // Пересоздаем выбранный элемент ComboBox, чтобы отобразить новые ресурсы
+            // Recreate the selected ComboBox item to display new resources
             RefreshSelectedTheme();
         }
 
@@ -123,11 +123,11 @@ namespace Atune.Views
 
         private void RefreshSelectedTheme()
         {
-            // Сохраняем текущий индекс
+            // Save the current index
             int currentIndex = ThemeComboBox.SelectedIndex;
-            // Сбрасываем выбор
+            // Reset the selection
             ThemeComboBox.SelectedIndex = -1;
-            // Восстанавливаем выбор, что вызовет перерисовку и обновление текста элемента
+            // Restore the selection, which will trigger a redraw and update the text of the item
             ThemeComboBox.SelectedIndex = currentIndex;
         }
     }

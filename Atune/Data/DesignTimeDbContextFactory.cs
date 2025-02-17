@@ -14,7 +14,7 @@ public class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<AppDbConte
         
         var context = new AppDbContext(optionsBuilder.Options);
         
-        // Синхронное выполнение миграций
+        // Synchronous execution of migrations
         if (context.Database.GetPendingMigrationsAsync().GetAwaiter().GetResult().Any())
         {
             context.Database.MigrateAsync().GetAwaiter().GetResult();

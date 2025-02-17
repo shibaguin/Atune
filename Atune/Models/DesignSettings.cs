@@ -14,7 +14,7 @@ namespace Atune.Models
             
             static Dimensions()
             {
-                // Инициализация значений
+                // Initialization values
                 HeaderFontSize = 24;
                 NavigationDividerWidth = 3;
                 BarHeight = 50;
@@ -23,7 +23,7 @@ namespace Atune.Models
                 NavigationFontSize = 14;
                 BarPadding = 8;
 
-                // Валидация значений
+                // Validation values
                 ValidateValues();
             }
 
@@ -32,13 +32,13 @@ namespace Atune.Models
                 if (HeaderFontSize > TopDockHeight)
                 {
                     throw new System.InvalidOperationException(
-                        $"HeaderFontSize ({HeaderFontSize}) не может быть больше TopDockHeight ({TopDockHeight})");
+                        $"HeaderFontSize ({HeaderFontSize}) cannot be greater than TopDockHeight ({TopDockHeight})");
                 }
 
                 if (NavigationDividerHeight > BarHeight)
                 {
                     throw new System.InvalidOperationException(
-                        $"NavigationDividerHeight ({NavigationDividerHeight}) не может быть больше BarHeight ({BarHeight})");
+                        $"NavigationDividerHeight ({NavigationDividerHeight}) cannot be greater than BarHeight ({BarHeight})");
                 }
             }
         }

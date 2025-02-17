@@ -7,5 +7,5 @@ public partial class ViewModelBase : ObservableObject
     [ObservableProperty]
     private string _title = string.Empty;
     
-    // Добавляем базовую функциональность
+    // Add basic functionality
 }

@@ -35,7 +35,7 @@ namespace Atune.Data
             }
             catch (Exception ex)
             {
-                _logger.LogError("Ошибка сохранения изменений", ex);
+                _logger.LogError("Error saving changes", ex);
                 await RollbackAsync();
                 throw;
             }

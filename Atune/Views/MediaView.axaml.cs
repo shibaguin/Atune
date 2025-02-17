@@ -46,22 +46,22 @@ public partial class MediaView : UserControl
     private async void AddToLibrary_Click(object sender, RoutedEventArgs e)
     {
         const string logHeader = "[MediaView]";
-        _logger?.LogInformation($"{logHeader} Кнопка нажата");
+        _logger?.LogInformation($"{logHeader} Button clicked");
         
         var dbContext = _dbContextFactory?.CreateDbContext();
         if (dbContext is null)
         {
-            _logger?.LogError($"{logHeader} Не удалось создать контекст БД");
+            _logger?.LogError($"{logHeader} Failed to create database context");
             return;
         }
         using (dbContext)
         {
             try
             {
-                // Добавляем проверку доступности БД
+                // Add a check for the database availability
                 if (!await dbContext.Database.CanConnectAsync())
                 {
-                    _logger?.LogWarning($"{logHeader} Нет подключения к БД");
+                    _logger?.LogWarning($"{logHeader} No database connection");
                     return;
                 }
 
@@ -70,13 +70,13 @@ public partial class MediaView : UserControl
                 
                 if (storageProvider is null)
                 {
-                    _logger?.LogWarning($"{logHeader} StorageProvider недоступен");
+                    _logger?.LogWarning($"{logHeader} StorageProvider is not available");
                     return;
                 }
 
                 var files = await storageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
                 {
-                    Title = "Выберите аудиофайлы",
+                    Title = "Select audio files",
                     AllowMultiple = true,
                     FileTypeFilter = new[] 
                     {
@@ -100,22 +100,22 @@ public partial class MediaView : UserControl
                         if (OperatingSystem.IsAndroid())
                         {
 #if ANDROID
-                            Android.Util.Log.Debug("MediaView", $"Начало копирования файла: {file.Name}");
+                            Android.Util.Log.Debug("MediaView", $"Start copying file: {file.Name}");
 #endif
-                            // Формируем путь к папке AtuneMedia внутри MyDocuments
+                            // Form the path to the AtuneMedia folder inside MyDocuments
                             var destFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "AtuneMedia");
                             if (!Directory.Exists(destFolder))
                                 Directory.CreateDirectory(destFolder);
-                            // Формируем путь назначения с именем файла
+                            // Form the destination path with the file name
                             var destPath = Path.Combine(destFolder, file.Name);
-                            // Копируем файл с использованием потока
+                            // Copy the file using a stream
                             using (var sourceStream = await file.OpenReadAsync())
                             using (var destStream = File.Create(destPath))
                             {
                                 await sourceStream.CopyToAsync(destStream);
                             }
 #if ANDROID
-                            Android.Util.Log.Debug("MediaView", $"Файл скопирован в: {destPath}");
+                            Android.Util.Log.Debug("MediaView", $"File copied to: {destPath}");
 #endif
                             realPath = destPath;
                         }
@@ -124,7 +124,7 @@ public partial class MediaView : UserControl
                             realPath = file.Path.LocalPath;
                         }
                         
-                        _logger?.LogInformation($"{logHeader} Обработка файла: {realPath}");
+                        _logger?.LogInformation($"{logHeader} Processing file: {realPath}");
                         
                         if (await dbContext.ExistsByPathAsync(realPath))
                         {
@@ -132,19 +132,19 @@ public partial class MediaView : UserControl
                             continue;
                         }
                         
-                        // Для десктопных систем проверяем существование файла
+                        // For desktop systems, check if the file exists
                         if (!OperatingSystem.IsAndroid())
                         {
                             if (!System.IO.File.Exists(realPath))
                             {
-                                _logger?.LogWarning($"{logHeader} Файл не существует: {realPath}");
+                                _logger?.LogWarning($"{logHeader} File does not exist: {realPath}");
                                 errorCount++;
                                 continue;
                             }
                         }
                         else 
                         {
-                            // Оригинальная обработка для Android
+                            // Original processing for Android
                             #if ANDROID
                             if (file.Path.Scheme != "content")
                             {
@@ -159,18 +159,18 @@ public partial class MediaView : UserControl
                             var fileExists = await FileExists(realPath);
                             if (!fileExists)
                             {
-                                _logger?.LogWarning($"{logHeader} Файл не существует: {realPath}");
+                                _logger?.LogWarning($"{logHeader} File does not exist: {realPath}");
                                 errorCount++;
                                 continue;
                             }
                             #endif
                         }
 
-                        // Для Android можно использовать универсальный метод GetDesktopTagInfo,
-                        // так как теперь realPath указывает на локально скопированный файл
+                        // For Android, you can use the universal method GetDesktopTagInfo,
+                        // since now realPath points to the locally copied file
                         var tagInfo = GetDesktopTagInfo(realPath);
 #if ANDROID
-                        Android.Util.Log.Debug("MediaView", $"Теги получены: Artist={tagInfo.Artist}, Album={tagInfo.Album}, Year={tagInfo.Year}");
+                        Android.Util.Log.Debug("MediaView", $"Tags received: Artist={tagInfo.Artist}, Album={tagInfo.Album}, Year={tagInfo.Year}");
 #endif
                         var duration = tagInfo.Duration;
                        
@@ -193,13 +193,13 @@ public partial class MediaView : UserControl
                     catch (Exception ex)
                     {
                         errorCount++;
-                        _logger?.LogError($"Ошибка: {ex.Message}", ex);
+                        _logger?.LogError($"Error: {ex.Message}", ex);
                     }
                 }
 
                 if (successCount > 0)
                 {
-                    _logger?.LogInformation($"{logHeader} Успешно добавлено {successCount} файлов");
+                    _logger?.LogInformation($"{logHeader} Successfully added {successCount} files");
                     
                     if (DataContext is MediaViewModel vm)
                     {
@@ -207,13 +207,13 @@ public partial class MediaView : UserControl
                     }
                 }
 
-                _logger?.LogInformation($"{logHeader} Обработка завершена. Успешно: {successCount}, Ошибок: {errorCount}, Дубликатов: {duplicateCount}");
+                _logger?.LogInformation($"{logHeader} Processing completed. Success: {successCount}, Errors: {errorCount}, Duplicates: {duplicateCount}");
             }
             catch (Exception ex)
             {
                 if (_logger != null)
                 {
-                    _logger.LogError($"{logHeader} Критическая ошибка", ex);
+                    _logger.LogError($"{logHeader} Critical error", ex);
                 }
             }
         }
@@ -243,7 +243,7 @@ public partial class MediaView : UserControl
         AvaloniaXamlLoader.Load(this);
     }
 
-    // Переносим методы внутрь класса
+    // Move methods inside the class
 #if ANDROID
     private async Task<string> GetAndroidRealPath(IStorageFile file)
     {
@@ -279,7 +279,7 @@ public partial class MediaView : UserControl
         }
         catch (Exception ex)
         {
-            _logger?.LogError("Ошибка чтения тегов ATL", ex);
+            _logger?.LogError("Error reading ATL tags", ex);
             return ("Unknown Artist", "Unknown Album", (uint)DateTime.Now.Year, "Unknown Genre");
         }
     }
@@ -323,23 +323,23 @@ public partial class MediaView : UserControl
 
     private void ShowDbPath_Click(object sender, RoutedEventArgs e)
     {
-        // Используем фабрику для создания контекста
+        // Use the factory to create the context
         if (_dbContextFactory is null)
         {
-            _logger?.LogWarning("DbContextFactory не доступна");
+            _logger?.LogWarning("DbContextFactory is not available");
             return;
         }
 
         using var db = _dbContextFactory.CreateDbContext();
-        var path = db?.Database.GetDbConnection().DataSource ?? "не определен";
+        var path = db?.Database.GetDbConnection().DataSource ?? "not defined";
         
         if (_logger != null)
         {
-            _logger.LogInformation($"Текущий путь к БД: {path}");
+            _logger.LogInformation($"Current database path: {path}");
         }
         
         var vm = DataContext as MediaViewModel;
-        vm?.UpdateStatusMessage?.Invoke($"Путь к БД: {path}");
+        vm?.UpdateStatusMessage?.Invoke($"Current database path: {path}");
     }
 
     private (string Artist, string Album, uint Year, string Genre, TimeSpan Duration) GetDesktopTagInfo(string path)
@@ -357,7 +357,7 @@ public partial class MediaView : UserControl
         }
         catch (Exception ex)
         {
-            _logger?.LogError("Ошибка чтения тегов ATL", ex);
+            _logger?.LogError("Error reading ATL tags", ex);
             return ("Unknown Artist", "Unknown Album", (uint)DateTime.Now.Year, "Unknown Genre", TimeSpan.Zero);
         }
     }

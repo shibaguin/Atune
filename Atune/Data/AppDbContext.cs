@@ -19,8 +19,8 @@ public class AppDbContext : DbContext
         : base(options) 
     {
         var dbPath = Database.GetDbConnection().DataSource;
-        Console.WriteLine($"Используемая БД: {Path.GetFullPath(dbPath)}");
-        Console.WriteLine($"Директория приложения: {AppContext.BaseDirectory}");
+        Console.WriteLine($"Using DB: {Path.GetFullPath(dbPath)}");
+        Console.WriteLine($"Application directory: {AppContext.BaseDirectory}");
     }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
@@ -41,7 +41,7 @@ public class AppDbContext : DbContext
     {
         if (OperatingSystem.IsAndroid())
         {
-            // Используем специальный путь для Android
+            // Use a special path for Android
             return Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.Personal),
                 "atune_media.db");
@@ -99,7 +99,7 @@ public class AppDbContext : DbContext
             entity.ToTable("MediaItems");
             entity.HasKey(e => e.Id);
             
-            // Добавляем индексы для часто используемых полей
+            // Add indexes for frequently used fields
             entity.HasIndex(e => e.Path)
                   .IsUnique()
                   .HasDatabaseName("IX_MediaItems_Path");
@@ -113,7 +113,7 @@ public class AppDbContext : DbContext
             entity.HasIndex(e => new { e.Artist, e.Title })
                   .HasDatabaseName("IX_MediaItems_Artist_Title");
 
-            // Существующие настройки
+            // Existing settings
             entity.Property(e => e.Title).IsRequired().HasMaxLength(200);
             entity.Property(e => e.Artist).IsRequired().HasMaxLength(100);
             entity.Property(e => e.Path).IsRequired();
@@ -124,7 +124,7 @@ public class AppDbContext : DbContext
                 .HasColumnType("BIGINT");
         });
 
-        // Явно создаем таблицу если не существует
+        // Explicitly create a table if it doesn't exist
         modelBuilder.Entity<MediaItem>().ToTable(nameof(MediaItems), t => 
             t.ExcludeFromMigrations(false));
 

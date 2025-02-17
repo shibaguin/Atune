@@ -30,7 +30,7 @@ public partial class HistoryViewModel : ViewModelBase
 
     private List<HistoryItem> FetchHistoryFromStorage()
     {
-        // Загрузка истории из хранилища
+        // Loading history from storage
         return new List<HistoryItem>();
     }
 } 

@@ -61,10 +61,10 @@ namespace Atune.Data.Repositories
 
         public async Task BulkInsertAsync(IEnumerable<MediaItem> items, Action<IEnumerable<MediaItem>>? onBatchProcessed = null)
         {
-            // Настройки для разных платформ
+            // Settings for different platforms
             var (batchSize, delayMs) = OperatingSystem.IsAndroid() 
-                ? (200, 20)    // Большие батчи с сохранением задержки
-                : (500, 50);  // Крупные батчи для десктопа
+                ? (200, 20)    // Larger batches with delay
+                : (500, 50);  // Large batches for desktop
 
             var batches = items.Chunk(batchSize);
             
@@ -83,7 +83,7 @@ namespace Atune.Data.Repositories
                 onBatchProcessed?.Invoke(items);
                 
                 if (OperatingSystem.IsAndroid())
-                    await Task.Delay(delayMs); // Плавность UI
+                    await Task.Delay(delayMs); // Smoothness UI
             }
             finally
             {

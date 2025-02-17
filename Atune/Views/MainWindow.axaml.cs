@@ -5,13 +5,13 @@ namespace Atune.Views;
 
 public partial class MainWindow : Window
 {
-    // Конструктор для XAML
+    // Constructor for XAML
     public MainWindow()
     {
         InitializeComponent();
     }
     
-    // Конструктор для DI
+    // Constructor for DI
     public MainWindow(MainViewModel vm) : this()
     {
         DataContext = vm;

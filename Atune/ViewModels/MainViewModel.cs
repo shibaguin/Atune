@@ -68,22 +68,20 @@ public partial class MainViewModel : ViewModelBase
         CurrentView = _views[SectionType.Home];
         HeaderText = _localizationService["Nav_Home"];
 
-        // Подписываемся на событие изменения локализации.
+        // Subscribe to localization change event.
         _localizationService.PropertyChanged += LocalizationService_PropertyChanged;
     }
 
     private void LocalizationService_PropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        // При изменении локализации (например, PropertyName == "Item") обновляем заголовок.
+        // When localization changes (for example, PropertyName == "Item") update the header.
         if (string.IsNullOrEmpty(e.PropertyName) || e.PropertyName == "Item")
         {
             UpdateHeaderText();
         }
     }
 
-    /// <summary>
-    /// Обновляет значение HeaderText в зависимости от текущего выбранного раздела и локализации.
-    /// </summary>
+    // Updates the HeaderText value depending on the current selected section and localization.
     private void UpdateHeaderText()
     {
         switch (SelectedSection)
@@ -109,7 +107,7 @@ public partial class MainViewModel : ViewModelBase
     private void LoadInitialSettings()
     {
         var settings = _settingsService.LoadSettings();
-        // Применяем настройки
+        // Apply settings
     }
 
     [RelayCommand]
@@ -169,7 +167,7 @@ public partial class MainViewModel : ViewModelBase
         if (string.IsNullOrEmpty(query))
             return;
 
-        // Пытаемся выполнить навигационную команду по запросу с использованием fuzzy matching
+        // Try to execute the navigation command using fuzzy matching
         if (TryGetNavigationCommand(query, out var navigationAction))
         {
             navigationAction!();
@@ -177,7 +175,7 @@ public partial class MainViewModel : ViewModelBase
             return;
         }
 
-        // Если текущий вид связан с MediaViewModel, выполняем поиск в базе данных
+        // If the current view is associated with MediaViewModel, perform a search in the database
         if (CurrentView is UserControl view && view.DataContext is MediaViewModel mediaVM)
         {
             await mediaVM.SearchMediaCommand.ExecuteAsync(query);
@@ -194,7 +192,7 @@ public partial class MainViewModel : ViewModelBase
         }
         else
         {
-            // Если текущий вид не соответствует, переключаемся на MediaView
+            // If the current view does not match, switch to MediaView
             GoMedia();
             if (CurrentView is UserControl newView && newView.DataContext is MediaViewModel newMediaVM)
             {
@@ -213,13 +211,11 @@ public partial class MainViewModel : ViewModelBase
         }
     }
 
-    /// <summary>
-    /// Пытается сопоставить введённый запрос с одной из навигационных команд.
-    /// Используются ключевые слова для каждого раздела с fuzzy-сравнением.
-    /// </summary>
-    /// <param name="query">Преобразованный в нижний регистр запрос пользователя.</param>
-    /// <param name="navigationAction">Возвращаемое действие навигации, если сопоставление удалось.</param>
-    /// <returns>True, если найдено подходящее совпадение, иначе false.</returns>
+    // Tries to match the entered query with one of the navigation commands.
+    // Uses keywords for each section with fuzzy comparison.
+    // <param name="query">The user's query converted to lowercase.</param>
+    // <param name="navigationAction">The returned navigation action if a match is found.</param>
+    // <returns>True, if a suitable match is found, otherwise false.</returns>
     private bool TryGetNavigationCommand(string query, out Action? navigationAction)
     {
         var navigationDict = new Dictionary<SectionType, Action>
@@ -230,11 +226,11 @@ public partial class MainViewModel : ViewModelBase
             { SectionType.Home, GoHome }
         };
 
-        // Получаем ключевые слова через провайдер
+        // Get keywords through the provider
         var navigationKeywords = _keywordProvider.GetNavigationKeywords();
 
         double bestSimilarity = 0;
-        SectionType bestMatch = SectionType.Home; // Значение по умолчанию
+        SectionType bestMatch = SectionType.Home; // Default value
         bool found = false;
 
         foreach (var kvp in navigationKeywords)
@@ -261,10 +257,8 @@ public partial class MainViewModel : ViewModelBase
         return false;
     }
 
-    /// <summary>
-    /// Рассчитывает нормализованное значение похожести между двумя строками (от 0 до 1),
-    /// где 1 означает полное совпадение.
-    /// </summary>
+    // Calculates the normalized similarity value between two strings (from 0 to 1),
+    // where 1 means full match.
     private double CalculateSimilarity(string source, string target)
     {
         int distance = LevenshteinDistance(source, target);
@@ -273,8 +267,8 @@ public partial class MainViewModel : ViewModelBase
             return 1.0;
         double similarity = 1.0 - (double)distance / maxLength;
 
-        // Если ключевое слово начинается с запроса (при длине запроса >= 2 символов),
-        // повышаем коэффициент похожести.
+        // If the keyword starts with the query (if the query length >= 2 characters),
+        // increase the similarity coefficient.
         if (source.Length >= 2 && target.StartsWith(source, StringComparison.InvariantCultureIgnoreCase))
         {
             similarity = Math.Max(similarity, 0.9);
@@ -283,9 +277,7 @@ public partial class MainViewModel : ViewModelBase
         return similarity;
     }
 
-    /// <summary>
-    /// Вычисляет расстояние Левенштейна между двумя строками.
-    /// </summary>
+    // Calculates the Levenshtein distance between two strings.
     private static int LevenshteinDistance(string s, string t)
     {
         if (string.IsNullOrEmpty(s))
@@ -314,7 +306,7 @@ public partial class MainViewModel : ViewModelBase
         return d[s.Length, t.Length];
     }
 
-    // Метод для получения вариантов запроса на основе схожести
+    // Method for getting query variants based on similarity
     private IEnumerable<string> GetSearchSuggestions(string query)
     {
         var navigationKeywords = _keywordProvider.GetNavigationKeywords();
@@ -325,7 +317,7 @@ public partial class MainViewModel : ViewModelBase
             foreach (var keyword in kvp.Value)
             {
                 double similarity = CalculateSimilarity(query, keyword);
-                if (similarity > 0.3) // порог для показа подсказок (можно настроить)
+                if (similarity > 0.3) // threshold for showing suggestions (can be adjusted)
                 {
                     suggestionsList.Add((keyword, similarity));
                 }
@@ -350,7 +342,7 @@ public partial class MainViewModel : ViewModelBase
         }
         else
         {
-            // Получаем подсказки на основе введённого запроса.
+            // Get suggestions based on the entered query.
             var suggestions = GetSearchSuggestions(value.ToLowerInvariant());
             SearchSuggestions.Clear();
             foreach (var suggestion in suggestions)
