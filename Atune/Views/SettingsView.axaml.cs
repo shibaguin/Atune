@@ -102,23 +102,45 @@ namespace Atune.Views
 
         private void ApplySettings_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
         {
-            if (_settingsService == null) return;
+            if (_settingsService == null)
+                return;
             
-            var vm = (DataContext as SettingsViewModel)!;
-            _settingsService.SaveSettings(new AppSettings { 
-                ThemeVariant = (ThemeVariant)vm.SelectedThemeIndex 
+            var vm = DataContext as SettingsViewModel;
+            if (vm == null)
+                return;
+            
+            string languageCode = vm.SelectedLanguage switch
+            {
+                "Русская" => "ru",
+                "English" => "en",
+                _ => vm.SelectedLanguage
+            };
+
+            _settingsService.SaveSettings(new AppSettings 
+            { 
+                ThemeVariant = (ThemeVariant)vm.SelectedThemeIndex,
+                Language = languageCode
             });
         }
 
         private void SaveSettings()
         {
-            if (_settingsService == null || ThemeComboBox == null) return;
+            if (_settingsService == null || ThemeComboBox == null)
+                return;
             
-            var vm = (DataContext as SettingsViewModel)!;
+            var vm = DataContext as SettingsViewModel;
+            if (vm == null)
+                return;
+            
             _settingsService.SaveSettings(new AppSettings { 
-                ThemeVariant = (ThemeVariant)ThemeComboBox.SelectedIndex 
+                ThemeVariant = (ThemeVariant)ThemeComboBox.SelectedIndex,
+                Language = vm.SelectedLanguage switch
+                {
+                    "Русская" => "ru",
+                    "English" => "en",
+                    _ => vm.SelectedLanguage
+                }
             });
-            ApplyTheme((ThemeVariant)ThemeComboBox.SelectedIndex);
         }
 
         private void RefreshSelectedTheme()
