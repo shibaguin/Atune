@@ -246,6 +246,8 @@ public partial class App : Application
                 provider.GetRequiredService<IMemoryCache>()
             );
         });
+
+        services.AddSingleton<INavigationKeywordProvider, NavigationKeywordProvider>();
     }
 
     [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "Disabled for Avalonia compatibility")]

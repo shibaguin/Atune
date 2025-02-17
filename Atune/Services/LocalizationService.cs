@@ -31,23 +31,47 @@ public class LocalizationService : INotifyPropertyChanged
 
     private void LoadLanguage(string languageCode)
     {
-        var uri = new Uri($"avares://Atune/Resources/Localization/{languageCode}.axaml");
-        var rd = AvaloniaXamlLoader.Load(uri) as ResourceDictionary;
-        if (rd == null)
+        // Загружаем основной ресурсный словарь (например, "en.axaml" или "ru.axaml")
+        var primaryUri = new Uri($"avares://Atune/Resources/Localization/{languageCode}.axaml");
+        var primaryRd = AvaloniaXamlLoader.Load(primaryUri) as ResourceDictionary;
+        if (primaryRd == null)
         {
-            throw new FileNotFoundException($"Localization file not found: {uri}");
+            throw new FileNotFoundException($"Основной файл локализации не найден: {primaryUri}");
         }
-        
-        // Дополнительная проверка на null для Application.Current и его ресурсов
+
+        // Определяем fallback язык: если выбран «en» – fallback будет «ru» и наоборот
+        string? fallbackLanguage = null;
+        if (languageCode.Equals("en", StringComparison.OrdinalIgnoreCase))
+            fallbackLanguage = "ru";
+        else if (languageCode.Equals("ru", StringComparison.OrdinalIgnoreCase))
+            fallbackLanguage = "en";
+
+        ResourceDictionary fallbackRd;
+        if (fallbackLanguage != null)
+        {
+            var fallbackUri = new Uri($"avares://Atune/Resources/Localization/{fallbackLanguage}.axaml");
+            fallbackRd = AvaloniaXamlLoader.Load(fallbackUri) as ResourceDictionary ?? new ResourceDictionary();
+        }
+        else
+        {
+            fallbackRd = new ResourceDictionary();
+        }
+
+        // Проверяем наличие Application.Current.Resources.MergedDictionaries
         if (Application.Current?.Resources?.MergedDictionaries == null)
         {
             throw new NullReferenceException("Application.Current или его Resources/MergedDictionaries равны null.");
         }
-        
+
         // Очищаем предыдущие ресурсные словари локализации
-        Application.Current!.Resources.MergedDictionaries.Clear();
-        // Добавляем новый ресурсный словарь
-        Application.Current!.Resources.MergedDictionaries.Add(rd);
+        Application.Current.Resources.MergedDictionaries.Clear();
+        // Добавляем fallback словарь первым. При динамическом поиске ресурсов сначала проверяется fallback.
+        Application.Current.Resources.MergedDictionaries.Add(fallbackRd);
+        // Затем добавляем основной словарь, чтобы его значения имели приоритет, если ключ присутствует.
+        Application.Current.Resources.MergedDictionaries.Add(primaryRd);
+
+        // Если необходимо, можно сохранить основной словарь локально
+        _currentResources = primaryRd;
     }
 
     public void Refresh() => 

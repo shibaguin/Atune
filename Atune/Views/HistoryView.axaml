@@ -8,8 +8,8 @@
              xmlns:vm="clr-namespace:Atune.ViewModels"
              x:Class="Atune.Views.HistoryView">
     <Grid>
-        <!-- Устанавливаем выравнивание содержимого по центру -->
-        <TextBlock Text="История запросов будет здесь"
+        <!-- Локализованный текст для представления истории -->
+        <TextBlock Text="{DynamicResource History_ViewContent}"
                    HorizontalAlignment="Center"
                    VerticalAlignment="Center"
                    FontSize="24"

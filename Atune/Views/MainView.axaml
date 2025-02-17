@@ -109,14 +109,14 @@
         <Border DockPanel.Dock="Top"
                 Background="{DynamicResource HeaderBackground}"
                 Height="{DynamicResource TopDockHeight}">
-            <Grid Margin="10,0">
+            <Grid Margin="10,0" VerticalAlignment="Center">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
 
-                <!-- Заголовок Header -->
+                <!-- Заголовок приложения (слева) -->
                 <TextBlock Grid.Column="0"
                            Text="{Binding HeaderText}"
                            Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
@@ -124,12 +124,39 @@
                            FontWeight="Bold"
                            VerticalAlignment="Center"/>
 
-                <Button Grid.Column="2"
-                        Content="Добавить музыку"
-                        Command="{Binding AddMediaCommand}"
-                        Padding="15 5"
-                        FontSize="16"
-                        IsVisible="{Binding CurrentPageIsMedia}"/>
+                <!-- Контейнер для строки поиска и кнопки (по центру) -->
+                <StackPanel Grid.Column="1"
+                            Orientation="Horizontal"
+                            VerticalAlignment="Center">
+                    <Grid>
+                        <TextBox x:Name="SearchTextBox"
+                                 Watermark="{DynamicResource Search_Watermark}"
+                                 Text="{Binding SearchQuery, UpdateSourceTrigger=PropertyChanged}"
+                                 Width="200"
+                                 KeyDown="SearchTextBox_KeyDown"/>
+                        <Popup IsOpen="{Binding IsSuggestionsOpen, Mode=TwoWay}"
+                               Placement="Bottom"
+                               PlacementTarget="{Binding ElementName=SearchTextBox}"
+                               IsLightDismissEnabled="True">
+                            <Border Background="White" Padding="5">
+                                <ListBox ItemsSource="{Binding SearchSuggestions}"
+                                         SelectionChanged="SearchSuggestions_SelectionChanged">
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding}" />
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                            </Border>
+                        </Popup>
+                    </Grid>
+                    <Button Content="🔍"
+                            Command="{Binding SearchCommand}"
+                            VerticalAlignment="Center"/>
+                </StackPanel>
+
+                <!-- Пустая колонка справа для центрирования -->
+                <Grid Grid.Column="2"/>
             </Grid>
         </Border>
 
@@ -155,7 +182,7 @@
                         HorizontalAlignment="Stretch">
                     <StackPanel HorizontalAlignment="Center">
                         <PathIcon Data="M13.4508 2.53318C12.6128 1.82618 11.3872 1.82618 10.5492 2.53318L3.79916 8.22772C3.29241 8.65523 3 9.28447 3 9.94747V19.2526C3 20.2191 3.7835 21.0026 4.75 21.0026H7.75C8.7165 21.0026 9.5 20.2191 9.5 19.2526V15.25C9.5 14.5707 10.0418 14.018 10.7169 14.0004H13.2831C13.9582 14.018 14.5 14.5707 14.5 15.25V19.2526C14.5 20.2191 15.2835 21.0026 16.25 21.0026H19.25C20.2165 21.0026 21 20.2191 21 19.2526V9.94747C21 9.28447 20.7076 8.65523 20.2008 8.22772L13.4508 2.53318Z"/>
-                        <TextBlock Text="Главная"/>
+                        <TextBlock Text="{DynamicResource Nav_Home}"/>
                     </StackPanel>
                 </Button>
 
@@ -165,7 +192,7 @@
                         HorizontalAlignment="Stretch">
                     <StackPanel HorizontalAlignment="Center">
                         <PathIcon Data="M5.5 3C6.328 3 7 3.672 7 4.5V19.5C7 20.328 6.328 21 5.5 21H3.5C2.672 21 2 20.328 2 19.5V4.5C2 3.672 2.672 3 3.5 3H5.5ZM11.5 3C12.328 3 13 3.672 13 4.5V19.5C13 20.328 12.328 21 11.5 21H9.5C8.672 21 8 20.328 8 19.5V4.5C8 3.672 8.672 3 9.5 3H11.5ZM18.781 6.1238L21.995 18.6428C22.201 19.4448 21.718 20.2628 20.915 20.4688L19.039 20.9498C18.236 21.1558 17.419 20.6728 17.213 19.8698L13.999 7.3528C13.793 6.5498 14.276 5.7328 15.079 5.5268L16.955 5.0438C17.758 4.8388 18.575 5.3228 18.781 6.1238Z"/>
-                        <TextBlock Text="Медиатека"/>
+                        <TextBlock Text="{DynamicResource Nav_Media}"/>
                     </StackPanel>
                 </Button>
 
@@ -175,7 +202,7 @@
                         HorizontalAlignment="Stretch">
                     <StackPanel HorizontalAlignment="Center">
                         <PathIcon Data="M12 5C15.866 5 19 8.13401 19 12C19 15.866 15.866 19 12 19C8.13401 19 5 15.866 5 12C5 11.7028 5.01846 11.4104 5.05421 11.1237C5.12255 10.5757 4.73367 10.076 4.18563 10.0077C3.63759 9.93935 3.13792 10.3282 3.06958 10.8763C3.02362 11.2448 3 11.6199 3 12C3 16.9706 7.02944 21 12 21C16.9706 21 21 16.9706 21 12C21 7.02944 16.9706 3 12 3C10.15 3 8.42985 3.5588 7 4.51575V4C7 3.44772 6.55228 3 6 3C5.44772 3 5 3.44772 5 4V7C5 7.55228 5.44772 8 6 8H9C9.55228 8 10 7.55228 10 7C10 6.44772 9.55228 6 9 6H8.39202C9.4458 5.36484 10.68 5 12 5ZM13 8C13 7.44772 12.5523 7 12 7C11.4477 7 11 7.44772 11 8V12C11 12.5523 11.4477 13 12 13H14.5C15.0523 13 15.5 12.5523 15.5 12C15.5 11.4477 15.0523 11 14.5 11H13V8Z"/>
-                        <TextBlock Text="История"/>
+                        <TextBlock Text="{DynamicResource Nav_History}"/>
                     </StackPanel>
                 </Button>
 
@@ -187,7 +214,7 @@
                         HorizontalAlignment="Stretch">
                     <StackPanel HorizontalAlignment="Center">
                         <PathIcon Data="M12.0122 2.25C12.7462 2.25846 13.4773 2.34326 14.1937 2.50304C14.5064 2.57279 14.7403 2.83351 14.7758 3.15196L14.946 4.67881C15.0231 5.37986 15.615 5.91084 16.3206 5.91158C16.5103 5.91188 16.6979 5.87238 16.8732 5.79483L18.2738 5.17956C18.5651 5.05159 18.9055 5.12136 19.1229 5.35362C20.1351 6.43464 20.8889 7.73115 21.3277 9.14558C21.4223 9.45058 21.3134 9.78203 21.0564 9.9715L19.8149 10.8866C19.4607 11.1468 19.2516 11.56 19.2516 11.9995C19.2516 12.4389 19.4607 12.8521 19.8157 13.1129L21.0582 14.0283C21.3153 14.2177 21.4243 14.5492 21.3297 14.8543C20.8911 16.2685 20.1377 17.5649 19.1261 18.6461C18.9089 18.8783 18.5688 18.9483 18.2775 18.8206L16.8712 18.2045C16.4688 18.0284 16.0068 18.0542 15.6265 18.274C15.2463 18.4937 14.9933 18.8812 14.945 19.3177L14.7759 20.8444C14.741 21.1592 14.5122 21.4182 14.204 21.4915C12.7556 21.8361 11.2465 21.8361 9.79803 21.4915C9.48991 21.4182 9.26105 21.1592 9.22618 20.8444L9.05736 19.32C9.00777 18.8843 8.75434 18.498 8.37442 18.279C7.99451 18.06 7.5332 18.0343 7.1322 18.2094L5.72557 18.8256C5.43422 18.9533 5.09403 18.8833 4.87678 18.6509C3.86462 17.5685 3.11119 16.2705 2.6732 14.8548C2.57886 14.5499 2.68786 14.2186 2.94485 14.0293L4.18818 13.1133C4.54232 12.8531 4.75147 12.4399 4.75147 12.0005C4.75147 11.561 4.54232 11.1478 4.18771 10.8873L2.94516 9.97285C2.6878 9.78345 2.5787 9.45178 2.67337 9.14658C3.11212 7.73215 3.86594 6.43564 4.87813 5.35462C5.09559 5.12236 5.43594 5.05259 5.72724 5.18056L7.12762 5.79572C7.53056 5.97256 7.9938 5.94585 8.37577 5.72269C8.75609 5.50209 9.00929 5.11422 9.05817 4.67764L9.22824 3.15196C9.26376 2.83335 9.49786 2.57254 9.8108 2.50294C10.5281 2.34342 11.26 2.25865 12.0122 2.25ZM11.9997 8.99995C10.3428 8.99995 8.9997 10.3431 8.9997 12C8.9997 13.6568 10.3428 15 11.9997 15C13.6565 15 14.9997 13.6568 14.9997 12C14.9997 10.3431 13.6565 8.99995 11.9997 8.99995Z"/>
-                        <TextBlock Text="Настройки"/>
+                        <TextBlock Text="{DynamicResource Nav_Settings}"/>
                     </StackPanel>
                 </Button>
 
@@ -218,18 +245,20 @@
                 <ColumnDefinition Width="Auto"/>   <!-- Для обложки -->
                 <ColumnDefinition Width="*"/>      <!-- Для кнопок управления -->
             </Grid.ColumnDefinitions>
-            <!-- Обложка (заглушка) -->
+
+            <!-- Обложка (заглушка) с использованием динамического ресурса для локализации -->
             <Border Width="80"
                     Height="80"
                     Background="Gray"
                     Margin="10"
                     CornerRadius="5"
                     Grid.Column="0">
-                <TextBlock Text="Обложка"
+                <TextBlock Text="{DynamicResource Media_Cover}"
                            HorizontalAlignment="Center"
                            VerticalAlignment="Center"
                            Foreground="White"/>
             </Border>
+
             <!-- Панель с кнопками управления мультимедиа (центрированный бар) -->
             <Grid Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center">
                 <Grid.ColumnDefinitions>

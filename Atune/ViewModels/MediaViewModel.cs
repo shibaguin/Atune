@@ -364,4 +364,38 @@ public partial class MediaViewModel : ObservableObject
     }
 
     private static readonly string[] _supportedFormats = { ".mp3", ".flac", ".wav", ".ogg" };
+
+    [RelayCommand]
+    private async Task SearchMedia(string query)
+    {
+        try
+        {
+            IsBusy = true;
+            var allItems = await _unitOfWork.Media.GetAllWithDetailsAsync();
+            var filtered = allItems.Where(item =>
+                (!string.IsNullOrEmpty(item.Title) && item.Title.ToLower().Contains(query)) ||
+                (!string.IsNullOrEmpty(item.Artist) && item.Artist.ToLower().Contains(query)) ||
+                (!string.IsNullOrEmpty(item.Album) && item.Album.ToLower().Contains(query)) ||
+                (!string.IsNullOrEmpty(item.Genre) && item.Genre.ToLower().Contains(query)) ||
+                (!string.IsNullOrEmpty(item.Path) && item.Path.ToLower().Contains(query))
+            ).ToList();
+            await Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                MediaItems.Clear();
+                foreach (var item in filtered)
+                {
+                    MediaItems.Add(item);
+                }
+                OnPropertyChanged(nameof(MediaItems));
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogError($"Ошибка при поиске: {ex.Message}", ex);
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
 } 

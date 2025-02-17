@@ -2,9 +2,40 @@
 <ResourceDictionary xmlns="https://github.com/avaloniaui"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:sys="clr-namespace:System;assembly=mscorlib">
-  <!-- Ключи локализации на английском языке -->
+  <!-- Localization keys for English language -->
   <sys:String x:Key="Settings_General">General Settings</sys:String>
   <sys:String x:Key="Settings_Theme">Application Theme:</sys:String>
   <sys:String x:Key="Settings_Language">Language:</sys:String>
+  <sys:String x:Key="Settings_ViewTitle">Appearance</sys:String>
+  <sys:String x:Key="Settings_ViewContent">Configure view settings.</sys:String>
+  <sys:String x:Key="Settings_SoundTitle">Sound</sys:String>
+  <sys:String x:Key="Settings_SoundContent">Configure sound settings.</sys:String>
+  <sys:String x:Key="Settings_OtherTitle">Other</sys:String>
+  <sys:String x:Key="Settings_OtherContent">Other settings.</sys:String>
+  <!-- Новые ключи для названий тем -->
+  <sys:String x:Key="Theme_System">System</sys:String>
+  <sys:String x:Key="Theme_Light">Light</sys:String>
+  <sys:String x:Key="Theme_Dark">Dark</sys:String>
+  <!-- Новые ключи для навигационных заголовков -->
+  <sys:String x:Key="Nav_Home">Home</sys:String>
+  <sys:String x:Key="Nav_Media">Media Library</sys:String>
+  <sys:String x:Key="Nav_History">History</sys:String>
+  <sys:String x:Key="Nav_Settings">Settings</sys:String>
+  
+  <!-- Новые ключи для представления History и Media -->
+  <sys:String x:Key="History_ViewContent">History of requests will be shown here</sys:String>
+  
+  <sys:String x:Key="Media_AddMusic">Add Music</sys:String>
+  <sys:String x:Key="Media_AddFolder">Add Folder</sys:String>
+  <sys:String x:Key="Media_Refresh">Refresh</sys:String>
+  <sys:String x:Key="Media_Drop">Drop</sys:String>
+  
   <!-- Добавьте и другие необходимые ключи для вашего приложения -->
+  <!-- Ключ для приветственного сообщения на домашней странице -->
+  <sys:String x:Key="Home_WelcomeMessage">Welcome to Atune!</sys:String>
+  
+  <!-- Ключ для строки поиска -->
+  <sys:String x:Key="Search_Watermark">Search...</sys:String>
+  <!-- Ключ для обложки -->
+  <sys:String x:Key="Media_Cover">Cover</sys:String>
 </ResourceDictionary> 

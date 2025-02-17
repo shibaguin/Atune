@@ -54,13 +54,13 @@
             </Grid.ColumnDefinitions>
             
             <Button Grid.Column="1"
-                    Content="Добавить музыку" 
+                    Content="{DynamicResource Media_AddMusic}" 
                     Click="AddToLibrary_Click"
                     Padding="15 5"
                     FontSize="16"
                     HorizontalAlignment="Right"/>
             <Button Grid.Column="2"
-                    Content="Добавить папку"
+                    Content="{DynamicResource Media_AddFolder}"
                     Command="{Binding AddFolderCommand}"
                     Margin="5,0"
                     Padding="15 5"
@@ -72,13 +72,13 @@
                     VerticalAlignment="Bottom"
                     Margin="10"
                     Grid.Row="1">
-            <Button Content="Обновить" 
+            <Button Content="{DynamicResource Media_Refresh}" 
                     Command="{Binding RefreshMediaCommand}"
                     Margin="0"
                     Padding="10 5"
                     HorizontalAlignment="Left"
                     VerticalAlignment="Bottom"/>
-            <Button Content="Drop" 
+            <Button Content="{DynamicResource Media_Drop}" 
                     Command="{Binding DropMediaRecordsCommand}"
                     Margin="10,0,0,0"
                     Padding="10 5"

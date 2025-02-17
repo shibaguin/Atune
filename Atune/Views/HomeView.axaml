@@ -10,8 +10,8 @@
              x:DataType="vm:HomeViewModel"
              vm:ViewModelLocator.AutoHookedUpViewModel="True">
     <Grid>
-        <!-- Устанавливаем выравнивание содержимого по центру -->
-        <TextBlock Text="{Binding WelcomeMessage}" 
+        <!-- Локализованное приветствие -->
+        <TextBlock Text="{DynamicResource Home_WelcomeMessage}" 
                    HorizontalAlignment="Center"
                    VerticalAlignment="Center"
                    FontSize="24"

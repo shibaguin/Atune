@@ -49,9 +49,9 @@
                                       HorizontalAlignment="Right"
                                       Margin="0,10,0,0"
                                       SelectionChanged="ThemeComboBox_SelectionChanged">
-                                <ComboBoxItem Content="System"/>
-                                <ComboBoxItem Content="Light"/>
-                                <ComboBoxItem Content="Dark"/>
+                                <ComboBoxItem Content="{DynamicResource Theme_System}" />
+                                <ComboBoxItem Content="{DynamicResource Theme_Light}" />
+                                <ComboBoxItem Content="{DynamicResource Theme_Dark}" />
                             </ComboBox>
                         </Grid>
                         <Grid HorizontalAlignment="Stretch" Margin="0,20,0,0">
@@ -80,7 +80,7 @@
                  HorizontalAlignment="Center"
                  HorizontalContentAlignment="Center">
             <TabItem.Header>
-                <TextBlock Text="Вид" FontSize="24" FontWeight="Bold"/>
+                <TextBlock Text="{DynamicResource Settings_ViewTitle}" FontSize="24" FontWeight="Bold"/>
             </TabItem.Header>
             <ScrollViewer HorizontalAlignment="Stretch" 
                           VerticalScrollBarVisibility="Auto"
@@ -89,7 +89,7 @@
                       MinWidth="300" 
                       MaxWidth="600"
                       HorizontalAlignment="Stretch">
-                    <TextBlock Text="Настройки внешнего вида" 
+                    <TextBlock Text="{DynamicResource Settings_ViewContent}" 
                                FontSize="20"
                                FontWeight="Bold"
                                HorizontalAlignment="Center"
@@ -102,7 +102,7 @@
                  HorizontalAlignment="Center"
                  HorizontalContentAlignment="Center">
             <TabItem.Header>
-                <TextBlock Text="Звук" FontSize="24" FontWeight="Bold"/>
+                <TextBlock Text="{DynamicResource Settings_SoundTitle}" FontSize="24" FontWeight="Bold"/>
             </TabItem.Header>
             <ScrollViewer HorizontalAlignment="Stretch" 
                           VerticalScrollBarVisibility="Auto"
@@ -111,7 +111,7 @@
                       MinWidth="300" 
                       MaxWidth="600"
                       HorizontalAlignment="Stretch">
-                    <TextBlock Text="Настройки звука" 
+                    <TextBlock Text="{DynamicResource Settings_SoundContent}" 
                                FontSize="20"
                                FontWeight="Bold"
                                HorizontalAlignment="Center"
@@ -124,7 +124,7 @@
                  HorizontalAlignment="Center"
                  HorizontalContentAlignment="Center">
             <TabItem.Header>
-                <TextBlock Text="Прочие" FontSize="24" FontWeight="Bold"/>
+                <TextBlock Text="{DynamicResource Settings_OtherTitle}" FontSize="24" FontWeight="Bold"/>
             </TabItem.Header>
             <ScrollViewer HorizontalAlignment="Stretch" 
                           VerticalScrollBarVisibility="Auto"
@@ -133,7 +133,7 @@
                       MinWidth="300" 
                       MaxWidth="600"
                       HorizontalAlignment="Stretch">
-                    <TextBlock Text="Дополнительные настройки" 
+                    <TextBlock Text="{DynamicResource Settings_OtherContent}" 
                                FontSize="20"
                                FontWeight="Bold"
                                HorizontalAlignment="Center"

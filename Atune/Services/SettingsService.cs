@@ -20,9 +20,9 @@ public class SettingsService : ISettingsService
     private readonly MemoryCacheEntryOptions _cacheOptions;
     private static readonly SemaphoreSlim _fileLockAsync = new SemaphoreSlim(1, 1);
 
-    // Добавляем внедрение сервиса для платформенно-специфичных путей
+    // Add dependency injection for platform-specific paths
     private readonly IPlatformPathService _platformPathService;
-    // Путь к файлу настроек теперь хранится в экземпляре
+    // The settings file path is now stored in an instance
     private readonly string _settingsPath;
 
     private readonly ILoggerService _logger;
@@ -32,11 +32,11 @@ public class SettingsService : ISettingsService
         _cache = cache;
         _platformPathService = platformPathService;
         _cacheOptions = new MemoryCacheEntryOptions()
-            .SetSize(1024) // Размер записи в байтах (~1KB на настройки)
+            .SetSize(1024) // Size of the record in bytes (~1KB for settings)
             .SetPriority(CacheItemPriority.High)
             .SetSlidingExpiration(TimeSpan.FromMinutes(30));
 
-        // Инициализируем путь к файлу настроек через наш сервис
+        // Initialize the path to the settings file through our service
         _settingsPath = _platformPathService.GetSettingsPath();
 
         _logger = logger;
@@ -46,9 +46,12 @@ public class SettingsService : ISettingsService
     {
         if (OperatingSystem.IsAndroid() || OperatingSystem.IsIOS())
         {
-            return 50 * 1024 * 1024; // 50 MB для мобильных устройств
+            return 50 * 1024 * 1024; // 50 MB for mobile devices
         }
-        return 100 * 1024 * 1024; // 100 MB для десктопа
+        else
+        {
+            return 100 * 1024 * 1024; // 100 MB for desktop
+        }
     }
 
     public void SaveSettings(AppSettings settings)
@@ -69,22 +72,22 @@ public class SettingsService : ISettingsService
                 {
                     try
                     {
-                        // Directory.CreateDirectory создаст директорию, если её не существует,
-                        // и не вызовет исключения, если директория уже создана.
+                        // Directory.CreateDirectory will create the directory if it doesn't exist,
+                        // and will not throw an exception if the directory already exists.
                         Directory.CreateDirectory(directory);
                     }
                     catch (UnauthorizedAccessException ex)
                     {
-                        Debug.WriteLine("Недостаточно прав для создания директории: " + directory);
-                        throw new InvalidOperationException("Недостаточно прав для доступа к директории " + directory, ex);
+                        Debug.WriteLine("Not enough permissions to create directory: " + directory);
+                        throw new InvalidOperationException("Not enough permissions to access directory " + directory, ex);
                     }
                     catch (IOException ex)
                     {
-                        // Если ошибка возникла из-за гонок, проверяем наличие директории повторно.
+                        // If the error occurred due to a race condition, check the directory again.
                         if (!Directory.Exists(directory))
                         {
-                            Debug.WriteLine("Ошибка при создании директории: " + directory);
-                            throw new InvalidOperationException("Не удалось создать директорию " + directory, ex);
+                            Debug.WriteLine("Error creating directory: " + directory);
+                            throw new InvalidOperationException("Failed to create directory " + directory, ex);
                         }
                     }
                 }
@@ -95,7 +98,7 @@ public class SettingsService : ISettingsService
                     $"Language={settings.Language}"
                 };
 
-                // Для Android используем специальное хранилище
+                // For Android, we use a special storage
                 if (OperatingSystem.IsAndroid())
                 {
                     using var stream = File.Create(_settingsPath);
@@ -107,13 +110,13 @@ public class SettingsService : ISettingsService
                     File.WriteAllLines(_settingsPath, lines);
                 }
             }
-            _logger.LogInformation("Настройки успешно сохранены");
+            _logger.LogInformation("Settings saved successfully");
         }
         catch (Exception ex)
         {
-            _logger.LogError("Ошибка сохранения настроек", ex);
+            _logger.LogError("Error saving settings", ex);
             _cache.Remove("AppSettings");
-            throw new SettingsException("Не удалось сохранить настройки", ex);
+            throw new SettingsException("Failed to save settings", ex);
         }
     }
 
@@ -170,13 +173,13 @@ public class SettingsService : ISettingsService
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Ошибка загрузки настроек: {ex.Message}");
+                Debug.WriteLine($"Error loading settings: {ex.Message}");
                 return new AppSettings();
             }
         }
     }
 
-    // Добавим кастомное исключение
+    // Add custom exception
     public class SettingsException : Exception
     {
         public SettingsException(string message, Exception inner) 
@@ -187,9 +190,9 @@ public class SettingsService : ISettingsService
     {
         if (_cache is MemoryCache memoryCache)
         {
-            return $"Кэш настроек: {memoryCache.Count} записей";
+            return $"Settings cache: {memoryCache.Count} records";
         }
-        return "Статистика кэша недоступна";
+        return "Cache statistics are not available";
     }
 
     public void BackupDatabase(string backupPath)

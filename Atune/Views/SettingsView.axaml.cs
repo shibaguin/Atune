@@ -95,6 +95,9 @@ namespace Atune.Views
 
             // Обновляем локализацию (метод UpdateLocalization должен обновлять глобальные ресурсы)
             (Application.Current as App)?.UpdateLocalization();
+            
+            // Пересоздаем выбранный элемент ComboBox, чтобы отобразить новые ресурсы
+            RefreshSelectedTheme();
         }
 
         private void ApplySettings_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
@@ -116,6 +119,16 @@ namespace Atune.Views
                 ThemeVariant = (ThemeVariant)ThemeComboBox.SelectedIndex 
             });
             ApplyTheme((ThemeVariant)ThemeComboBox.SelectedIndex);
+        }
+
+        private void RefreshSelectedTheme()
+        {
+            // Сохраняем текущий индекс
+            int currentIndex = ThemeComboBox.SelectedIndex;
+            // Сбрасываем выбор
+            ThemeComboBox.SelectedIndex = -1;
+            // Восстанавливаем выбор, что вызовет перерисовку и обновление текста элемента
+            ThemeComboBox.SelectedIndex = currentIndex;
         }
     }
 }
