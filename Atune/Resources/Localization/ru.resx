@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- Стандартное пространство для .resx файлов -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+              xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0"/>
+                <xsd:element name="comment" type="xsd:string" minOccurs="0"/>
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required"/>
+              <xsd:attribute name="xml:space" default="preserve"/>
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0"/>
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required"/>
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Settings_General" xml:space="preserve">
+    <value>Основные</value>
+  </data>
+  <data name="Settings_Theme" xml:space="preserve">
+    <value>Тема приложения:</value>
+  </data>
+  <data name="Settings_Language" xml:space="preserve">
+    <value>Язык:</value>
+  </data>
+  <data name="Settings_ViewTitle" xml:space="preserve">
+    <value>Вид</value>
+  </data>
+  <data name="Settings_ViewContent" xml:space="preserve">
+    <value>Настройка внешнего вида.</value>
+  </data>
+  <data name="Settings_SoundTitle" xml:space="preserve">
+    <value>Звук</value>
+  </data>
+  <data name="Settings_SoundContent" xml:space="preserve">
+    <value>Настройка звука.</value>
+  </data>
+  <data name="Settings_OtherTitle" xml:space="preserve">
+    <value>Прочие</value>
+  </data>
+  <data name="Settings_OtherContent" xml:space="preserve">
+    <value>Другие настройки.</value>
+  </data>
+  <data name="Theme_System" xml:space="preserve">
+    <value>Системная</value>
+  </data>
+  <data name="Theme_Light" xml:space="preserve">
+    <value>Светлая</value>
+  </data>
+  <data name="Theme_Dark" xml:space="preserve">
+    <value>Тёмная</value>
+  </data>
+  <data name="Nav_Home" xml:space="preserve">
+    <value>Главная</value>
+  </data>
+  <data name="Nav_Media" xml:space="preserve">
+    <value>Медиатека</value>
+  </data>
+  <data name="Nav_History" xml:space="preserve">
+    <value>История</value>
+  </data>
+  <data name="Nav_Settings" xml:space="preserve">
+    <value>Настройки</value>
+  </data>
+  <data name="History_ViewContent" xml:space="preserve">
+    <value>История запросов будет здесь</value>
+  </data>
+  <data name="Media_AddMusic" xml:space="preserve">
+    <value>Добавить музыку</value>
+  </data>
+  <data name="Media_AddFolder" xml:space="preserve">
+    <value>Добавить папку</value>
+  </data>
+  <data name="Media_Refresh" xml:space="preserve">
+    <value>Обновить</value>
+  </data>
+  <data name="Media_Drop" xml:space="preserve">
+    <value>Drop</value>
+  </data>
+  <data name="Home_WelcomeMessage" xml:space="preserve">
+    <value>Добро пожаловать в Atune!</value>
+  </data>
+  <data name="Search_Watermark" xml:space="preserve">
+    <value>Поиск...</value>
+  </data>
+  <data name="Media_Cover" xml:space="preserve">
+    <value>Обложка</value>
+  </data>
+</root> 

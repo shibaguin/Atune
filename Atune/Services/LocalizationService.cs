@@ -6,6 +6,7 @@ using Avalonia.Controls;
 using Avalonia;
 using System.IO;
 using Avalonia.Markup.Xaml;
+using System.Resources;
 
 public class LocalizationService : INotifyPropertyChanged
 {
@@ -31,15 +32,14 @@ public class LocalizationService : INotifyPropertyChanged
 
     private void LoadLanguage(string languageCode)
     {
-        // Load the main resource dictionary (e.g., "en.axaml" or "ru.axaml")
-        var primaryUri = new Uri($"avares://Atune/Resources/Localization/{languageCode}.axaml");
-        var primaryRd = AvaloniaXamlLoader.Load(primaryUri) as ResourceDictionary;
+        // Загрузка основного словаря ресурсов из .resx файла вместо .axaml
+        var primaryRd = LoadResxAsResourceDictionary(languageCode);
         if (primaryRd == null)
         {
-            throw new FileNotFoundException($"Main localization file not found: {primaryUri}");
+            throw new FileNotFoundException($"Resx localization file not found for language: {languageCode}");
         }
 
-        // Determine fallback language: if "en" is selected, fallback will be "ru" and vice versa
+        // Определение резервного языка: если выбран "en", резервный "ru" и наоборот
         string? fallbackLanguage = null;
         if (languageCode.Equals("en", StringComparison.OrdinalIgnoreCase))
             fallbackLanguage = "ru";
@@ -49,29 +49,54 @@ public class LocalizationService : INotifyPropertyChanged
         ResourceDictionary fallbackRd;
         if (fallbackLanguage != null)
         {
-            var fallbackUri = new Uri($"avares://Atune/Resources/Localization/{fallbackLanguage}.axaml");
-            fallbackRd = AvaloniaXamlLoader.Load(fallbackUri) as ResourceDictionary ?? new ResourceDictionary();
+            fallbackRd = LoadResxAsResourceDictionary(fallbackLanguage) ?? new ResourceDictionary();
         }
         else
         {
             fallbackRd = new ResourceDictionary();
         }
 
-        // Check if Application.Current.Resources.MergedDictionaries is null
+        // Проверка, что Application.Current.Resources.MergedDictionaries не равен null
         if (Application.Current?.Resources?.MergedDictionaries == null)
         {
-            throw new NullReferenceException("Application.Current or its Resources/MergedDictionaries are null.");
+            throw new NullReferenceException("Application.Current или его Resources/MergedDictionaries равны null.");
         }
 
-        // Clear previous localization resource dictionaries
+        // Очистка предыдущих словарей и добавление новых:
         Application.Current.Resources.MergedDictionaries.Clear();
-        // Add the fallback dictionary first. When dynamically searching for resources, the fallback is checked first.
+        // Добавляем резервный словарь первым (резервные ресурсы доступны, если основной не содержит нужного ключа)
         Application.Current.Resources.MergedDictionaries.Add(fallbackRd);
-        // Then add the main dictionary so its values have priority if the key is present.
+        // Затем основной словарь, значения из которого имеют приоритет
         Application.Current.Resources.MergedDictionaries.Add(primaryRd);
 
-        // If necessary, you can save the main dictionary locally
+        // Сохранение основного словаря локализации для доступа через индексатор (this[string key])
         _currentResources = primaryRd;
+    }
+
+    // Новый вспомогательный метод для загрузки .resx файла и преобразования его в ResourceDictionary
+    private ResourceDictionary? LoadResxAsResourceDictionary(string languageCode)
+    {
+        var resourceDictionary = new ResourceDictionary();
+        try
+        {
+            // Формируем имя базового ресурса, например "Atune.Resources.Localization.en" или "Atune.Resources.Localization.ru"
+            var baseName = $"Atune.Resources.Localization.{languageCode}";
+            var rm = new ResourceManager(baseName, typeof(LocalizationService).Assembly);
+            var resourceSet = rm.GetResourceSet(System.Globalization.CultureInfo.InvariantCulture, true, true);
+            if (resourceSet == null)
+            {
+                return null;
+            }
+            foreach (System.Collections.DictionaryEntry entry in resourceSet)
+            {
+                resourceDictionary[entry.Key] = entry.Value;
+            }
+            return resourceDictionary;
+        }
+        catch (Exception)
+        {
+            return null;
+        }
     }
 
     public void Refresh() => 

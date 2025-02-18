@@ -11,8 +11,8 @@
   
   <ItemGroup>
     <AvaloniaResource Include="Assets\**" />
-    <AvaloniaResource Include="Resources/Localization/ru.axaml" />
-    <AvaloniaResource Include="Resources/Localization/en.axaml" />
+    <AvaloniaResource Include="Resources/Localization/ru.resx" />
+    <AvaloniaResource Include="Resources/Localization/en.resx" />
   </ItemGroup>
 
   <ItemGroup>
