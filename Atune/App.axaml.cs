@@ -267,7 +267,6 @@ public partial class App : Application
 
     public void UpdateTheme(ThemeVariant theme)
     {
-        // Add delayed execution for correct system theme determination
         Dispatcher.UIThread.Post(() =>
         {
             var actualTheme = theme switch
@@ -286,6 +285,7 @@ public partial class App : Application
                 _ => Avalonia.Styling.ThemeVariant.Default
             };
 
+            // Принудительно обновляем все окна
             if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
             {
                 desktop.MainWindow?.InvalidateVisual();

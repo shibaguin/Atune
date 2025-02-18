@@ -141,6 +141,9 @@ namespace Atune.Views
                     _ => vm.SelectedLanguage
                 }
             });
+            
+            // Добавляем вызов ApplyTheme
+            ApplyTheme((ThemeVariant)ThemeComboBox.SelectedIndex);
         }
 
         private void RefreshSelectedTheme()

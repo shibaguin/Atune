@@ -43,7 +43,7 @@
 
                             <ComboBox x:Name="ThemeComboBox" 
                                       Grid.Column="1"
-                                      SelectedIndex="{Binding SelectedThemeIndex}"
+                                      SelectedIndex="{Binding SelectedThemeIndex, Mode=TwoWay}"
                                       Width="200"
                                       MaxDropDownHeight="300"
                                       HorizontalAlignment="Right"
