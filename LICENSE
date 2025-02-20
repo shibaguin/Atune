@@ -1,0 +1,91 @@
+                    GNU LESSER GENERAL PUBLIC LICENSE
+                       Version 3, 29 June 2007
+
+Copyright (C) 2007 Free Software Foundation, Inc.
+Everyone is permitted to copy and distribute verbatim copies
+of this license document, but changing it is not allowed.
+
+                            Preamble
+
+The GNU Lesser General Public License is a free software license published by the
+Free Software Foundation (FSF). It is a more permissive license than the GNU General
+Public License (GPL) and is designed primarily for software libraries. This License
+allows developers and companies to use and integrate the Library into their own
+software (even proprietary software) without being required to release the source code
+of their non-library components. However, any modifications to the Library itself must
+be released under the terms of this License.
+
+You should have received a copy of the GNU Lesser General Public License along with
+this Library; if not, see <https://www.gnu.org/licenses/>.
+
+----------------------------------------------------------------------
+TERMS AND CONDITIONS
+----------------------------------------------------------------------
+
+0. Definitions.
+
+   “This License” refers to version 3 of the GNU Lesser General Public License.
+   “The Library” means a covered work governed by this License, other than an Application
+   or a Combined Work as defined below.
+   “A Covered Work” is either the Library or any work that incorporates a portion of the
+   Library.
+   “Modified Version” means any work containing the Library or a portion of it, either
+   unmodified or with modifications, and in which the Library is recast or recombined
+   with other code not covered by this License.
+   “Combined Work” means a work produced by combining or linking an Application with the Library.
+   “Corresponding Source” for a work in object code form means all the source code needed,
+   in a reasonable time and without undue burden, to copy, modify, and reinstall the work,
+   including the scripts used to control compilation and installation of the object code.
+      
+1. Exception to Section 3 of the GNU General Public License.
+
+   You may convey a Covered Work under sections 3 and 4 of this License without being
+   bound by section 3 of the GNU General Public License, provided that you include a
+   written offer, valid for at least three years, to give any third party the Corresponding
+   Source of the Library in accordance with this License.
+
+2. Conveying Modified Versions.
+
+   You may modify your copy of the Library, and you may distribute a Modified Version, provided that:
+     a) The Modified Version is itself a Covered Work, and is licensed under the terms of this License;
+     b) You clearly mark the files that you have changed, and the date of any change;
+     c) You license the Modified Version, as a whole, under this License to anyone who comes into possession of a copy;
+     d) You provide, with each copy of the Modified Version, a copy of this License; and
+     e) The Modified Version must include prominent notices stating that you changed the files and the date of any change.
+
+3. Object Code Conveyance.
+
+   You may distribute the object code form of a Modified Version under terms of your choice,
+   provided that you also distribute the Corresponding Source of the Library and any scripts
+   used to control compilation and installation of the object code. The distribution must be
+   in a form that enables the user to modify the Library and to recombine it with other software.
+
+4. Combined Works.
+
+   You may combine the Library with other code to produce a Combined Work, and distribute the
+   Combined Work under terms of your choice, provided that:
+     a) The terms of your distribution permit modification of the portions of the Combined Work
+        that come from the Library; and
+     b) The user is able to replace or modify the Library portion in the Combined Work, for example
+        by providing the Necessary Corresponding Source for the Library.
+
+5. Revised Versions of the GNU Lesser General Public License.
+
+   The Free Software Foundation may publish revised and/or new versions of the GNU Lesser General
+   Public License from time to time. Each version is given a distinguishing version number. If the Library
+   specifies that a certain numbered version of the GNU Lesser General Public License “or any later version”
+   applies to it, you have the option of following the terms and conditions either of that numbered version or
+   of any later version published by the Free Software Foundation.
+
+----------------------------------------------------------------------
+NO WARRANTY
+----------------------------------------------------------------------
+
+THE LIBRARY IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT
+LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT.
+IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY,
+WHETHER IN AN ACTION OF CONTRACT, TORT, OR OTHERWISE, ARISING FROM, OUT OF, OR IN CONNECTION WITH THE LIBRARY
+OR THE USE OR OTHER DEALINGS IN THE LIBRARY.
+
+----------------------------------------------------------------------
+END OF TERMS AND CONDITIONS 
