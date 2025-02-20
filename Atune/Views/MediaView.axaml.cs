@@ -30,6 +30,8 @@ public partial class MediaView : UserControl
 {
     private readonly IDbContextFactory<AppDbContext>? _dbContextFactory;
     private readonly ILoggerService? _logger;
+    private readonly MediaDatabaseService _mediaDatabaseService = default!;
+    private readonly MediaFileService _mediaFileService = new MediaFileService();
 
     public MediaView()
     {
@@ -41,6 +43,7 @@ public partial class MediaView : UserControl
         DataContext = vm;
         _dbContextFactory = dbContextFactory;
         _logger = logger;
+        _mediaDatabaseService = new MediaDatabaseService(dbContextFactory, logger);
     }
 
     private async void AddToLibrary_Click(object sender, RoutedEventArgs e)
@@ -48,194 +51,153 @@ public partial class MediaView : UserControl
         const string logHeader = "[MediaView]";
         _logger?.LogInformation($"{logHeader} Button clicked");
         
-        var dbContext = _dbContextFactory?.CreateDbContext();
-        if (dbContext is null)
+        if (!await _mediaDatabaseService.CanConnectAsync())
         {
-            _logger?.LogError($"{logHeader} Failed to create database context");
+            _logger?.LogWarning($"{logHeader} No database connection");
             return;
         }
-        using (dbContext)
+
+        var topLevel = TopLevel.GetTopLevel(this);
+        var storageProvider = topLevel?.StorageProvider;
+        
+        if (storageProvider is null)
         {
+            _logger?.LogWarning($"{logHeader} StorageProvider is not available");
+            return;
+        }
+
+        var files = await storageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+        {
+            Title = "Select audio files",
+            AllowMultiple = true,
+            FileTypeFilter = new[] 
+            {
+                new FilePickerFileType("Audio files")
+                {
+                    Patterns = new[] { "*.mp3", "*.flac", "*.wav" },
+                    MimeTypes = new[] { "audio/*" }
+                }
+            }
+        });
+
+        int errorCount = 0;
+        int successCount = 0;
+        int duplicateCount = 0;
+
+        foreach (var file in files ?? Enumerable.Empty<IStorageFile>())
+        {
+            string realPath;
             try
             {
-                // Add a check for the database availability
-                if (!await dbContext.Database.CanConnectAsync())
+                if (OperatingSystem.IsAndroid())
                 {
-                    _logger?.LogWarning($"{logHeader} No database connection");
-                    return;
+#if ANDROID
+                    Android.Util.Log.Debug("MediaView", $"Start copying file: {file.Name}");
+#endif
+                    var destFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "AtuneMedia");
+                    if (!Directory.Exists(destFolder))
+                        Directory.CreateDirectory(destFolder);
+                    var destPath = Path.Combine(destFolder, file.Name);
+                    using (var sourceStream = await file.OpenReadAsync())
+                    using (var destStream = File.Create(destPath))
+                    {
+                        await sourceStream.CopyToAsync(destStream);
+                    }
+#if ANDROID
+                    Android.Util.Log.Debug("MediaView", $"File copied to: {destPath}");
+#endif
+                    realPath = destPath;
                 }
-
-                var topLevel = TopLevel.GetTopLevel(this);
-                var storageProvider = topLevel?.StorageProvider;
+                else
+                {
+                    realPath = file.Path.LocalPath;
+                }
                 
-                if (storageProvider is null)
+                _logger?.LogInformation($"{logHeader} Processing file: {realPath}");
+                
+                if (await _mediaDatabaseService.ExistsByPathAsync(realPath))
                 {
-                    _logger?.LogWarning($"{logHeader} StorageProvider is not available");
-                    return;
+                    duplicateCount++;
+                    continue;
                 }
-
-                var files = await storageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+                
+                if (!OperatingSystem.IsAndroid())
                 {
-                    Title = "Select audio files",
-                    AllowMultiple = true,
-                    FileTypeFilter = new[] 
+                    if (!await _mediaFileService.FileExistsAsync(realPath))
                     {
-                        new FilePickerFileType("Audio files")
-                        {
-                            Patterns = new[] { "*.mp3", "*.flac", "*.wav" },
-                            MimeTypes = new[] { "audio/*" }
-                        }
-                    }
-                });
-
-                int errorCount = 0;
-                int successCount = 0;
-                int duplicateCount = 0;
-
-                foreach (var file in files ?? Enumerable.Empty<IStorageFile>())
-                {
-                    string realPath;
-                    try
-                    {
-                        if (OperatingSystem.IsAndroid())
-                        {
-#if ANDROID
-                            Android.Util.Log.Debug("MediaView", $"Start copying file: {file.Name}");
-#endif
-                            // Form the path to the AtuneMedia folder inside MyDocuments
-                            var destFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "AtuneMedia");
-                            if (!Directory.Exists(destFolder))
-                                Directory.CreateDirectory(destFolder);
-                            // Form the destination path with the file name
-                            var destPath = Path.Combine(destFolder, file.Name);
-                            // Copy the file using a stream
-                            using (var sourceStream = await file.OpenReadAsync())
-                            using (var destStream = File.Create(destPath))
-                            {
-                                await sourceStream.CopyToAsync(destStream);
-                            }
-#if ANDROID
-                            Android.Util.Log.Debug("MediaView", $"File copied to: {destPath}");
-#endif
-                            realPath = destPath;
-                        }
-                        else
-                        {
-                            realPath = file.Path.LocalPath;
-                        }
-                        
-                        _logger?.LogInformation($"{logHeader} Processing file: {realPath}");
-                        
-                        if (await dbContext.ExistsByPathAsync(realPath))
-                        {
-                            duplicateCount++;
-                            continue;
-                        }
-                        
-                        // For desktop systems, check if the file exists
-                        if (!OperatingSystem.IsAndroid())
-                        {
-                            if (!await FileExists(realPath))
-                            {
-                                _logger?.LogWarning($"{logHeader} File does not exist: {realPath}");
-                                errorCount++;
-                                continue;
-                            }
-                        }
-                        else 
-                        {
-                            // Original processing for Android
-                            #if ANDROID
-                            if (file.Path.Scheme != "content")
-                            {
-                                realPath = await ConvertFileUriToContentUri(file.Path.LocalPath);
-                            }
-                            
-                            if (realPath.StartsWith("content://"))
-                            {
-                                realPath = await GetAndroidRealPath(file);
-                            }
-
-                            var fileExists = await FileExists(realPath);
-                            if (!fileExists)
-                            {
-                                _logger?.LogWarning($"{logHeader} File does not exist: {realPath}");
-                                errorCount++;
-                                continue;
-                            }
-                            #endif
-                        }
-
-                        // For Android, you can use the universal method GetDesktopTagInfo,
-                        // since now realPath points to the locally copied file
-                        var tagInfo = GetDesktopTagInfo(realPath);
-#if ANDROID
-                        Android.Util.Log.Debug("MediaView", $"Tags received: Artist={tagInfo.Artist}, Album={tagInfo.Album}, Year={tagInfo.Year}");
-#endif
-                        var duration = tagInfo.Duration;
-                       
-                        var mediaItem = new MediaItem(
-                            Path.GetFileNameWithoutExtension(file.Name),
-                            tagInfo.Artist ?? "Unknown Artist",
-                            tagInfo.Album ?? "Unknown Album",
-                            tagInfo.Year,
-                            tagInfo.Genre ?? "Unknown Genre",
-                            realPath,
-                            duration
-                        );
-                        await dbContext.AddMediaAsync(mediaItem);
-                        successCount++;
-                    }
-                    catch (DbUpdateException ex) when (ex.InnerException?.Message?.Contains("UNIQUE constraint") == true)
-                    {
-                        duplicateCount++;
-                    }
-                    catch (Exception ex)
-                    {
+                        _logger?.LogWarning($"{logHeader} File does not exist: {realPath}");
                         errorCount++;
-                        _logger?.LogError($"Error: {ex.Message}", ex);
+                        continue;
                     }
                 }
-
-                if (successCount > 0)
+                else 
                 {
-                    _logger?.LogInformation($"{logHeader} Successfully added {successCount} files");
-                    
-                    if (DataContext is MediaViewModel vm)
+                    #if ANDROID
+                    if (file.Path.Scheme != "content")
                     {
-                        await vm.RefreshMediaCommand.ExecuteAsync(null);
+                        realPath = await ConvertFileUriToContentUri(file.Path.LocalPath);
                     }
-                }
+                    
+                    if (realPath.StartsWith("content://"))
+                    {
+                        realPath = await GetAndroidRealPath(file);
+                    }
 
-                _logger?.LogInformation($"{logHeader} Processing completed. Success: {successCount}, Errors: {errorCount}, Duplicates: {duplicateCount}");
+                    var fileExists = await FileExists(realPath);
+                    if (!fileExists)
+                    {
+                        _logger?.LogWarning($"{logHeader} File does not exist: {realPath}");
+                        errorCount++;
+                        continue;
+                    }
+                    #endif
+                }
+                
+                var tagInfo = GetDesktopTagInfo(realPath);
+#if ANDROID
+                Android.Util.Log.Debug("MediaView", $"Tags received: Artist={tagInfo.Artist}, Album={tagInfo.Album}, Year={tagInfo.Year}");
+#endif
+                var duration = tagInfo.Duration;
+               
+                var mediaItem = new MediaItem(
+                    Path.GetFileNameWithoutExtension(file.Name),
+                    tagInfo.Artist ?? "Unknown Artist",
+                    tagInfo.Album ?? "Unknown Album",
+                    tagInfo.Year,
+                    tagInfo.Genre ?? "Unknown Genre",
+                    realPath,
+                    duration
+                );
+                await _mediaDatabaseService.AddMediaItemAsync(mediaItem);
+                successCount++;
+            }
+            catch (DbUpdateException ex) when (ex.InnerException?.Message?.Contains("UNIQUE constraint") == true)
+            {
+                duplicateCount++;
             }
             catch (Exception ex)
             {
-                if (_logger != null)
-                {
-                    _logger.LogError($"{logHeader} Critical error", ex);
-                }
+                errorCount++;
+                _logger?.LogError($"Error: {ex.Message}", ex);
             }
         }
+
+        if (successCount > 0)
+        {
+            _logger?.LogInformation($"{logHeader} Successfully added {successCount} files");
+            
+            if (DataContext is MediaViewModel vm)
+            {
+                await vm.RefreshMediaCommand.ExecuteAsync(null);
+            }
+        }
+
+        _logger?.LogInformation($"{logHeader} Processing completed. Success: {successCount}, Errors: {errorCount}, Duplicates: {duplicateCount}");
     }
 
     private async Task ValidateDatabaseRecords()
     {
-        if (_dbContextFactory is null) return;
-
-        await using var dbContext = _dbContextFactory.CreateDbContext();
-        if (dbContext is null) return;
-
-        var invalidRecords = await dbContext.MediaItems
-            .Where(m => string.IsNullOrEmpty(m.Path) || !File.Exists(m.Path))
-            .ToListAsync();
-
-        foreach (var record in invalidRecords)
-        {
-            dbContext.MediaItems.Remove(record);
-        }
-
-        await dbContext.SaveChangesAsync();
+        await _mediaDatabaseService.ValidateDatabaseRecordsAsync();
     }
 
     private void InitializeComponent()
@@ -319,15 +281,7 @@ public partial class MediaView : UserControl
 
     private void ShowDbPath_Click(object sender, RoutedEventArgs e)
     {
-        // Use the factory to create the context
-        if (_dbContextFactory is null)
-        {
-            _logger?.LogWarning("DbContextFactory is not available");
-            return;
-        }
-
-        using var db = _dbContextFactory.CreateDbContext();
-        var path = db?.Database.GetDbConnection().DataSource ?? "not defined";
+        var path = _mediaDatabaseService.GetDatabasePath();
         
         if (_logger != null)
         {
