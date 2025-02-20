@@ -2,11 +2,7 @@
 description: Настройка пакетов
 globs: 
 ---
-
-# Your rule content
 Общие пакеты проекта находятся в [Atune.csproj](mdc:Atune/Atune.csproj)
 Пакеты для Desktop (Windows, Linux, MacOS) в [Atune.Desktop.csproj](mdc:Atune.Desktop/Atune.Desktop.csproj)
 Пакеты для Android в [Atune.Android.csproj](mdc:Atune.Android/Atune.Android.csproj)
 Версии пакетов прописываются в [Directory.Packages.props](mdc:Directory.Packages.props)
-- You can @ files here
-- You can use markdown but dont have to

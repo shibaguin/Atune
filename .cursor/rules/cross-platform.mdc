@@ -2,11 +2,6 @@
 description: Проект разрабатывается для Windows, Linux и Android
 globs: 
 ---
-
-# Your rule content
 При изменении кода учитывай, что проект разрабатывается для Linux, Windows и Android
 Прописывай платформозависимый код через #if ANDROID
 Прописывай using директивы, специфичные для Android также через #ifANDROID
-
-- You can @ files here
-- You can use markdown but dont have to
