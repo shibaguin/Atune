@@ -249,12 +249,17 @@ public partial class MediaViewModel : ObservableObject
     {
         try
         {
-            var allMedia = await _unitOfWork.Media.GetAllAsync();
-            foreach (var media in allMedia)
+            // Выполняем удаление в фоновом потоке, чтобы не блокировать UI
+            await Task.Run(async () =>
             {
-                await _unitOfWork.Media.DeleteAsync(media);
-            }
-            await _unitOfWork.CommitAsync();
+                var allMedia = await _unitOfWork.Media.GetAllAsync();
+                foreach (var media in allMedia)
+                {
+                    await _unitOfWork.Media.DeleteAsync(media);
+                }
+                await _unitOfWork.CommitAsync();
+            });
+            // Обновляем UI после завершения операции удаления
             await RefreshMediaCommand.ExecuteAsync(null);
         }
         catch (Exception ex)
@@ -295,8 +300,11 @@ public partial class MediaViewModel : ObservableObject
                 try 
                 {
                     var folderPath = folder.Path.LocalPath;
-                    var files = Directory.EnumerateFiles(folderPath, "*.*", SearchOption.AllDirectories)
-                        .Where(f => _supportedFormats.Contains(Path.GetExtension(f).ToLower()));
+                    // Асинхронное перечисление файлов для предотвращения блокировки UI
+                    var files = await Task.Run(() =>
+                        Directory.EnumerateFiles(folderPath, "*.*", SearchOption.AllDirectories)
+                            .Where(f => _supportedFormats.Contains(Path.GetExtension(f).ToLower()))
+                            .ToList());
                     allFiles.AddRange(files);
                 }
                 catch(Exception ex)
@@ -312,17 +320,21 @@ public partial class MediaViewModel : ObservableObject
 
             if (newItems.Count > 0)
             {
-                await _unitOfWork.Media.BulkInsertAsync(newItems, batch => 
+                // Переносим тяжелые операции в отдельный поток
+                await Task.Run(async () =>
                 {
-                    Dispatcher.UIThread.Post(() => 
+                    await _unitOfWork.Media.BulkInsertAsync(newItems, batch =>
                     {
-                        foreach (var item in batch)
+                        Dispatcher.UIThread.Post(() =>
                         {
-                            MediaItems.Insert(0, item);
-                        }
+                            foreach (var item in batch)
+                            {
+                                MediaItems.Insert(0, item);
+                            }
+                        });
                     });
+                    await _unitOfWork.CommitAsync();
                 });
-                await _unitOfWork.CommitAsync();
             }
         }
         finally
