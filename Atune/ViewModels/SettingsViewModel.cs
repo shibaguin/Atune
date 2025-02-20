@@ -32,14 +32,18 @@ public partial class SettingsViewModel : ViewModelBase
     {
         _settingsService = settingsService;
         _interfaceSettingsService = interfaceSettingsService;
-        // Loading saved settings
+        
+        // Обновляем настройки интерфейса из файла settings.ini
+        _interfaceSettingsService.LoadSettings();
+        
+        // Загружаем общие пользовательские настройки
         var settings = _settingsService.LoadSettings();
         SelectedThemeIndex = (int)settings.ThemeVariant;
 
         // Преобразуем сохранённый языковой код в отображаемое название
         SelectedLanguage = Atune.Utils.LanguageConverter.CodeToDisplay(settings.Language);
 
-        // Загрузка настроек интерфейса из settings.ini
+        // Загружаем настройки интерфейса (из settings.ini) в свойства модели представления
         HeaderFontSize = _interfaceSettingsService.HeaderFontSize;
         NavigationDividerWidth = _interfaceSettingsService.NavigationDividerWidth;
         NavigationDividerHeight = _interfaceSettingsService.NavigationDividerHeight;

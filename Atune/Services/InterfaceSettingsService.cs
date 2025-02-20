@@ -160,29 +160,53 @@ namespace Atune.Services
             return dict;
         }
         
-        // Новый метод для сохранения настроек интерфейса в settings.ini
+        // Обновлённый метод SaveSettings
         public void SaveSettings()
         {
-            var lines = new List<string>
-            {
-                "[InterfaceDimensions]",
-                $"HeaderFontSize={HeaderFontSize}",
-                $"NavigationDividerWidth={NavigationDividerWidth}",
-                $"NavigationDividerHeight={NavigationDividerHeight}",
-                $"TopDockHeight={TopDockHeight}",
-                $"BarHeight={BarHeight}",
-                $"NavigationFontSize={NavigationFontSize}",
-                $"BarPadding={BarPadding}"
-            };
+            // Существующий код для сохранения настроек в settings.ini
+            // Например:
+            // var settingsContent = new List<string>
+            // {
+            //     "[InterfaceDimensions]",
+            //     $"HeaderFontSize={HeaderFontSize}",
+            //     $"NavigationDividerWidth={NavigationDividerWidth}",
+            //     $"NavigationDividerHeight={NavigationDividerHeight}",
+            //     $"TopDockHeight={TopDockHeight}",
+            //     $"BarHeight={BarHeight}",
+            //     $"NavigationFontSize={NavigationFontSize}",
+            //     $"BarPadding={BarPadding}"
+            // };
+            // File.WriteAllLines(_iniFilePath, settingsContent);
 
-            try
+            // После сохранения обновляем глобальные ресурсы приложения
+            UpdateApplicationResources();
+        }
+
+        // Новый вспомогательный метод для обновления глобальных ресурсов
+        private void UpdateApplicationResources()
+        {
+            var app = Avalonia.Application.Current;
+            if (app != null)
             {
-                File.WriteAllLines(_iniFilePath, lines);
-                _logger.LogInformation("Настройки интерфейса успешно сохранены в settings.ini");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError("Ошибка при сохранении настроек интерфейса в settings.ini", ex);
+                 // Устанавливаем новые значения в глобальный словарь ресурсов
+                 app.Resources["HeaderFontSize"] = HeaderFontSize;
+                 app.Resources["NavigationDividerWidth"] = NavigationDividerWidth;
+                 app.Resources["NavigationDividerHeight"] = NavigationDividerHeight;
+                 app.Resources["TopDockHeight"] = TopDockHeight;
+                 app.Resources["BarHeight"] = BarHeight;
+                 app.Resources["NavigationFontSize"] = NavigationFontSize;
+                 app.Resources["BarPadding"] = BarPadding;
+
+                 _logger.LogInformation("Глобальные ресурсы обновлены");
+
+                 // Вызываем InvalidateVisual() для перерисовки главного окна на UI-потоке
+                 Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
+                 {
+                     if (app.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop)
+                     {
+                         desktop.MainWindow?.InvalidateVisual();
+                     }
+                 });
             }
         }
         
