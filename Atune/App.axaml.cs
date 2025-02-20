@@ -191,6 +191,7 @@ public partial class App : Application
         // Register the platform-specific service and settings service
         services.AddSingleton<IPlatformPathService, PlatformPathService>();
         services.AddSingleton<ISettingsService, SettingsService>();
+        services.AddSingleton<IInterfaceSettingsService, InterfaceSettingsService>();
         services.AddSingleton<ILoggerService, LoggerService>();
         services.AddSingleton<LocalizationService>();
 

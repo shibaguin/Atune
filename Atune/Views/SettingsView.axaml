@@ -80,21 +80,42 @@
                  HorizontalAlignment="Center"
                  HorizontalContentAlignment="Center">
             <TabItem.Header>
-                <TextBlock Text="{DynamicResource Settings_ViewTitle}" FontSize="24" FontWeight="Bold"/>
+                <TextBlock Text="Вид" FontSize="24" FontWeight="Bold"/>
             </TabItem.Header>
-            <ScrollViewer HorizontalAlignment="Stretch" 
-                          VerticalScrollBarVisibility="Auto"
-                          MaxWidth="800">
-                <Grid Margin="0" 
-                      MinWidth="300" 
-                      MaxWidth="600"
-                      HorizontalAlignment="Stretch">
-                    <TextBlock Text="{DynamicResource Settings_ViewContent}" 
-                               FontSize="20"
-                               FontWeight="Bold"
-                               HorizontalAlignment="Center"
-                               VerticalAlignment="Center"/>
-                </Grid>
+            <ScrollViewer HorizontalAlignment="Stretch" VerticalScrollBarVisibility="Auto" MaxWidth="800">
+                <StackPanel Margin="10" Spacing="10">
+                    <StackPanel Orientation="Horizontal" Spacing="5">
+                        <TextBlock Text="Размер заголовка:" VerticalAlignment="Center" Width="200"/>
+                        <NumericUpDown Minimum="21.6" Maximum="26.4" Value="{Binding HeaderFontSize, Mode=TwoWay}" Width="100"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Spacing="5">
+                        <TextBlock Text="Ширина разделителя навигации:" VerticalAlignment="Center" Width="200"/>
+                        <NumericUpDown Minimum="2.7" Maximum="3.3" Value="{Binding NavigationDividerWidth, Mode=TwoWay}" Width="100"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Spacing="5">
+                        <TextBlock Text="Высота разделителя навигации:" VerticalAlignment="Center" Width="200"/>
+                        <NumericUpDown Minimum="45" Maximum="55" Value="{Binding NavigationDividerHeight, Mode=TwoWay}" Width="100"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Spacing="5">
+                        <TextBlock Text="Высота верхней панели:" VerticalAlignment="Center" Width="200"/>
+                        <NumericUpDown Minimum="45" Maximum="55" Value="{Binding TopDockHeight, Mode=TwoWay}" Width="100"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Spacing="5">
+                        <TextBlock Text="Высота панели:" VerticalAlignment="Center" Width="200"/>
+                        <NumericUpDown Minimum="45" Maximum="55" Value="{Binding BarHeight, Mode=TwoWay}" Width="100"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Spacing="5">
+                        <TextBlock Text="Размер шрифта навигации:" VerticalAlignment="Center" Width="200"/>
+                        <NumericUpDown Minimum="12.6" Maximum="15.4" Value="{Binding NavigationFontSize, Mode=TwoWay}" Width="100"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Spacing="5">
+                        <TextBlock Text="Отступы панели:" VerticalAlignment="Center" Width="200"/>
+                        <NumericUpDown Minimum="7.2" Maximum="8.8" Value="{Binding BarPadding, Mode=TwoWay}" Width="100"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="10,20,10,0">
+                        <Button Content="Восстановить по умолчанию" Command="{Binding RestoreDefaultsCommand}" />
+                    </StackPanel>
+                </StackPanel>
             </ScrollViewer>
         </TabItem>
 

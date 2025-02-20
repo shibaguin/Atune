@@ -5,6 +5,7 @@ using Atune.Services;
 using Atune.Views;
 using ThemeVariant = Atune.Models.ThemeVariant;
 using System.Collections.Generic;
+using System.Timers;
 
 namespace Atune.ViewModels;
 
@@ -21,17 +22,54 @@ public partial class SettingsViewModel : ViewModelBase
     public List<string> AvailableLanguages { get; } = new() { "Русская", "English" };
 
     private readonly ISettingsService _settingsService;
+    private readonly IInterfaceSettingsService _interfaceSettingsService;
 
-    public SettingsViewModel(ISettingsService settingsService)
+    // Новое поле для таймера debounce
+    private Timer? _autoSaveTimer;
+
+    public SettingsViewModel(ISettingsService settingsService,
+                             IInterfaceSettingsService interfaceSettingsService)
     {
         _settingsService = settingsService;
+        _interfaceSettingsService = interfaceSettingsService;
         // Loading saved settings
         var settings = _settingsService.LoadSettings();
         SelectedThemeIndex = (int)settings.ThemeVariant;
 
         // Преобразуем сохранённый языковой код в отображаемое название
         SelectedLanguage = Atune.Utils.LanguageConverter.CodeToDisplay(settings.Language);
+
+        // Загрузка настроек интерфейса из settings.ini
+        HeaderFontSize = _interfaceSettingsService.HeaderFontSize;
+        NavigationDividerWidth = _interfaceSettingsService.NavigationDividerWidth;
+        NavigationDividerHeight = _interfaceSettingsService.NavigationDividerHeight;
+        TopDockHeight = _interfaceSettingsService.TopDockHeight;
+        BarHeight = _interfaceSettingsService.BarHeight;
+        NavigationFontSize = _interfaceSettingsService.NavigationFontSize;
+        BarPadding = _interfaceSettingsService.BarPadding;
     }
+
+    // Новые свойства для настроек интерфейса
+    [ObservableProperty]
+    private double headerFontSize;
+    
+    [ObservableProperty]
+    private double navigationDividerWidth;
+    
+    [ObservableProperty]
+    private double navigationDividerHeight;
+    
+    [ObservableProperty]
+    private double topDockHeight;
+    
+    [ObservableProperty]
+    private double barHeight;
+    
+    [ObservableProperty]
+    private double navigationFontSize;
+    
+    [ObservableProperty]
+    private double barPadding;
 
     [RelayCommand]
     private void SaveSettings()
@@ -44,5 +82,71 @@ public partial class SettingsViewModel : ViewModelBase
             ThemeVariant = (ThemeVariant)SelectedThemeIndex,
             Language = languageCode
         });
+    }
+
+    // Существующий метод для сохранения настроек интерфейса
+    private void AutoSaveInterfaceSettings()
+    {
+        _interfaceSettingsService.UpdateInterfaceSettings(HeaderFontSize,
+                                                          NavigationDividerWidth,
+                                                          NavigationDividerHeight,
+                                                          TopDockHeight,
+                                                          BarHeight,
+                                                          NavigationFontSize,
+                                                          BarPadding);
+    }
+
+    // Новый метод для отложенного (debounce) сохранения настроек
+    private void ScheduleAutoSave()
+    {
+        // Если таймер уже запущен, перезапускаем его
+        if (_autoSaveTimer != null)
+        {
+            _autoSaveTimer.Stop();
+            _autoSaveTimer.Dispose();
+            _autoSaveTimer = null;
+        }
+        _autoSaveTimer = new Timer(500)  // задержка 500 мс
+        {
+            AutoReset = false
+        };
+        _autoSaveTimer.Elapsed += (sender, args) =>
+        {
+            AutoSaveInterfaceSettings();
+            _autoSaveTimer?.Dispose();
+            _autoSaveTimer = null;
+        };
+        _autoSaveTimer.Start();
+    }
+
+    // Изменяем вызовы авто-сохранения в partial-методах:
+    partial void OnHeaderFontSizeChanged(double oldValue, double newValue) => ScheduleAutoSave();
+
+    partial void OnNavigationDividerWidthChanged(double oldValue, double newValue) => ScheduleAutoSave();
+
+    partial void OnNavigationDividerHeightChanged(double oldValue, double newValue) => ScheduleAutoSave();
+
+    partial void OnTopDockHeightChanged(double oldValue, double newValue) => ScheduleAutoSave();
+
+    partial void OnBarHeightChanged(double oldValue, double newValue) => ScheduleAutoSave();
+
+    partial void OnNavigationFontSizeChanged(double oldValue, double newValue) => ScheduleAutoSave();
+
+    partial void OnBarPaddingChanged(double oldValue, double newValue) => ScheduleAutoSave();
+
+    // Новый метод для восстановления настроек интерфейса до значений по умолчанию
+    [RelayCommand]
+    private void RestoreDefaults()
+    {
+        _interfaceSettingsService.RestoreDefaults();
+
+        // Обновляем свойства модели представления после восстановления настроек
+        HeaderFontSize = _interfaceSettingsService.HeaderFontSize;
+        NavigationDividerWidth = _interfaceSettingsService.NavigationDividerWidth;
+        NavigationDividerHeight = _interfaceSettingsService.NavigationDividerHeight;
+        TopDockHeight = _interfaceSettingsService.TopDockHeight;
+        BarHeight = _interfaceSettingsService.BarHeight;
+        NavigationFontSize = _interfaceSettingsService.NavigationFontSize;
+        BarPadding = _interfaceSettingsService.BarPadding;
     }
 } 
