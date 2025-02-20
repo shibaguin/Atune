@@ -1,0 +1,21 @@
+---
+description: Работа с путями
+globs: 
+---
+1. **Кроссплатформенные пути**:
+   ```csharp
+   // Для Desktop
+   Path.Combine(Environment.SpecialFolder.ApplicationData, "Atune");
+   
+   // Для Android
+   Android.OS.Environment.GetExternalStoragePublicDirectory(
+       Android.OS.Environment.DirectoryMusic);
+   ```
+
+2. **Запрещено**:
+   - Жёстко заданные разделители (`\` или `/`)
+   - Прямой доступ к системным путям без проверок
+
+3. **Проверки**:
+   - Все пути проверяй через `File.Exists()`/`Directory.Exists()`
+   - Для Android используй `ContentResolver` при работе с SAF

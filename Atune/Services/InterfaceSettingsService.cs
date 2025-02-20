@@ -54,7 +54,9 @@ namespace Atune.Services
             // чтобы файл содержал размеры интерфейса с первого запуска.
             if (!File.Exists(_iniFilePath))
             {
-                _logger.LogInformation($"Файл настроек не найден по пути: {_iniFilePath}. Создаем файл с дефолтными значениями.");
+                // Если файл настроек не найден, создаем файл с дефолтными значениями
+                // If the settings file is not found, create a file with default values
+                _logger.LogInformation($"Settings file not found at {_iniFilePath}. Creating new file with default values.");
                 HeaderFontSize = DefaultHeaderFontSize;
                 NavigationDividerWidth = DefaultNavigationDividerWidth;
                 NavigationDividerHeight = DefaultNavigationDividerHeight;
@@ -127,7 +129,9 @@ namespace Atune.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError("Ошибка при загрузке настроек интерфейса", ex);
+                // Логирование ошибки при загрузке настроек
+                // Logging error during settings load
+                _logger.LogError("Error loading interface settings.", ex);
             }
         }
         
@@ -210,7 +214,17 @@ namespace Atune.Services
             }
         }
         
-        // Новый метод для обновления настроек интерфейса из UI и сохранения в settings.ini
+        /// <summary>
+        /// Обновляет настройки интерфейса через UI, проверяя допустимые диапазоны значений.
+        /// Updates the interface settings via UI, validating acceptable value ranges.
+        /// </summary>
+        /// <param name="headerFontSize">Размер заголовка / Header font size</param>
+        /// <param name="navigationDividerWidth">Ширина разделителя навигации / Navigation divider width</param>
+        /// <param name="navigationDividerHeight">Высота разделителя навигации / Navigation divider height</param>
+        /// <param name="topDockHeight">Высота верхней панели / Top dock height</param>
+        /// <param name="barHeight">Высота панели / Bar height</param>
+        /// <param name="navigationFontSize">Размер шрифта навигации / Navigation font size</param>
+        /// <param name="barPadding">Отступы панели / Bar padding</param>
         public void UpdateInterfaceSettings(double headerFontSize,
                                             double navigationDividerWidth,
                                             double navigationDividerHeight,
@@ -221,73 +235,68 @@ namespace Atune.Services
         {
             try
             {
-                // Задаем числовые ограничения напрямую (±10% от значения по умолчанию)
-                double minHeaderFontSize = 21.6;    // 24 - 2.4
-                double maxHeaderFontSize = 26.4;    // 24 + 2.4
-
-                double minNavigationDividerWidth = 2.7;  // 3 - 0.3
-                double maxNavigationDividerWidth = 3.3;  // 3 + 0.3
-
-                double minNavigationDividerHeight = 45;  // 50 - 5
-                double maxNavigationDividerHeight = 55;  // 50 + 5
-
-                double minTopDockHeight = 45;    // 50 - 5
-                double maxTopDockHeight = 55;    // 50 + 5
-
-                double minBarHeight = 45;        // 50 - 5
-                double maxBarHeight = 55;        // 50 + 5
-
-                double minNavigationFontSize = 12.6;    // 14 - 1.4
-                double maxNavigationFontSize = 15.4;    // 14 + 1.4
-
-                double minBarPadding = 7.2;      // 8 - 0.8
-                double maxBarPadding = 8.8;      // 8 + 0.8
+                // Прямые числовые ограничения (±10% от значения по умолчанию)
+                // Numeric limits (±10% of default value)
+                double minHeaderFontSize = 21.6;
+                double maxHeaderFontSize = 26.4;
+                double minNavigationDividerWidth = 2.7;
+                double maxNavigationDividerWidth = 3.3;
+                double minNavigationDividerHeight = 45;
+                double maxNavigationDividerHeight = 55;
+                double minTopDockHeight = 45;
+                double maxTopDockHeight = 55;
+                double minBarHeight = 45;
+                double maxBarHeight = 55;
+                double minNavigationFontSize = 12.6;
+                double maxNavigationFontSize = 15.4;
+                double minBarPadding = 7.2;
+                double maxBarPadding = 8.8;
 
                 if (headerFontSize <= 0 || headerFontSize < minHeaderFontSize || headerFontSize > maxHeaderFontSize)
                 {
-                    _logger.LogError($"Неверное значение HeaderFontSize ({headerFontSize}). Должно быть от {minHeaderFontSize} до {maxHeaderFontSize}. Используется значение по умолчанию: {DefaultHeaderFontSize}.");
+                    _logger.LogError($"Invalid value for HeaderFontSize ({headerFontSize}). Must be between {minHeaderFontSize} and {maxHeaderFontSize}. Using default: {DefaultHeaderFontSize}.");
                     headerFontSize = DefaultHeaderFontSize;
                 }
                 if (navigationDividerWidth <= 0 || navigationDividerWidth < minNavigationDividerWidth || navigationDividerWidth > maxNavigationDividerWidth)
                 {
-                    _logger.LogError($"Неверное значение NavigationDividerWidth ({navigationDividerWidth}). Должно быть от {minNavigationDividerWidth} до {maxNavigationDividerWidth}. Используется значение по умолчанию: {DefaultNavigationDividerWidth}.");
+                    _logger.LogError($"Invalid value for NavigationDividerWidth ({navigationDividerWidth}). Must be between {minNavigationDividerWidth} and {maxNavigationDividerWidth}. Using default: {DefaultNavigationDividerWidth}.");
                     navigationDividerWidth = DefaultNavigationDividerWidth;
                 }
                 if (navigationDividerHeight <= 0 || navigationDividerHeight < minNavigationDividerHeight || navigationDividerHeight > maxNavigationDividerHeight)
                 {
-                    _logger.LogError($"Неверное значение NavigationDividerHeight ({navigationDividerHeight}). Должно быть от {minNavigationDividerHeight} до {maxNavigationDividerHeight}. Используется значение по умолчанию: {DefaultNavigationDividerHeight}.");
+                    _logger.LogError($"Invalid value for NavigationDividerHeight ({navigationDividerHeight}). Must be between {minNavigationDividerHeight} and {maxNavigationDividerHeight}. Using default: {DefaultNavigationDividerHeight}.");
                     navigationDividerHeight = DefaultNavigationDividerHeight;
                 }
                 if (topDockHeight <= 0 || topDockHeight < minTopDockHeight || topDockHeight > maxTopDockHeight)
                 {
-                    _logger.LogError($"Неверное значение TopDockHeight ({topDockHeight}). Должно быть от {minTopDockHeight} до {maxTopDockHeight}. Используется значение по умолчанию: {DefaultTopDockHeight}.");
+                    _logger.LogError($"Invalid value for TopDockHeight ({topDockHeight}). Must be between {minTopDockHeight} and {maxTopDockHeight}. Using default: {DefaultTopDockHeight}.");
                     topDockHeight = DefaultTopDockHeight;
                 }
                 if (barHeight <= 0 || barHeight < minBarHeight || barHeight > maxBarHeight)
                 {
-                    _logger.LogError($"Неверное значение BarHeight ({barHeight}). Должно быть от {minBarHeight} до {maxBarHeight}. Используется значение по умолчанию: {DefaultBarHeight}.");
+                    _logger.LogError($"Invalid value for BarHeight ({barHeight}). Must be between {minBarHeight} and {maxBarHeight}. Using default: {DefaultBarHeight}.");
                     barHeight = DefaultBarHeight;
                 }
                 if (navigationFontSize <= 0 || navigationFontSize < minNavigationFontSize || navigationFontSize > maxNavigationFontSize)
                 {
-                    _logger.LogError($"Неверное значение NavigationFontSize ({navigationFontSize}). Должно быть от {minNavigationFontSize} до {maxNavigationFontSize}. Используется значение по умолчанию: {DefaultNavigationFontSize}.");
+                    _logger.LogError($"Invalid value for NavigationFontSize ({navigationFontSize}). Must be between {minNavigationFontSize} and {maxNavigationFontSize}. Using default: {DefaultNavigationFontSize}.");
                     navigationFontSize = DefaultNavigationFontSize;
                 }
                 if (barPadding <= 0 || barPadding < minBarPadding || barPadding > maxBarPadding)
                 {
-                    _logger.LogError($"Неверное значение BarPadding ({barPadding}). Должно быть от {minBarPadding} до {maxBarPadding}. Используется значение по умолчанию: {DefaultBarPadding}.");
+                    _logger.LogError($"Invalid value for BarPadding ({barPadding}). Must be between {minBarPadding} and {maxBarPadding}. Using default: {DefaultBarPadding}.");
                     barPadding = DefaultBarPadding;
                 }
 
-                // Дополнительные логические проверки
+                // Дополнительные логические проверки / Additional logical checks
                 if (headerFontSize > topDockHeight)
                 {
-                    _logger.LogError($"Неверное соотношение: HeaderFontSize ({headerFontSize}) не может быть больше TopDockHeight ({topDockHeight}). Используется значение по умолчанию: {DefaultHeaderFontSize}.");
+                    _logger.LogError($"Invalid relation: HeaderFontSize ({headerFontSize}) cannot be greater than TopDockHeight ({topDockHeight}). Using default: {DefaultHeaderFontSize}.");
                     headerFontSize = DefaultHeaderFontSize;
                 }
                 if (navigationDividerHeight > barHeight)
                 {
-                    _logger.LogError($"Неверное соотношение: NavigationDividerHeight ({navigationDividerHeight}) не может быть больше BarHeight ({barHeight}). Используем значение равное BarHeight.");
+                    _logger.LogError($"Invalid relation: NavigationDividerHeight ({navigationDividerHeight}) cannot be greater than BarHeight ({barHeight}). Using value equal to BarHeight.");
                     navigationDividerHeight = barHeight;
                 }
                 
@@ -303,11 +312,14 @@ namespace Atune.Services
             }
             catch(Exception ex)
             {
-                _logger.LogError("Ошибка при обновлении настроек интерфейса", ex);
+                _logger.LogError("Error updating interface settings.", ex);
             }
         }
 
-        // Новый метод для восстановления настроек интерфейса по умолчанию
+        /// <summary>
+        /// Восстанавливает настройки интерфейса до значений по умолчанию.
+        /// Restores the interface settings to the default values.
+        /// </summary>
         public void RestoreDefaults()
         {
             HeaderFontSize = DefaultHeaderFontSize;
@@ -318,7 +330,8 @@ namespace Atune.Services
             NavigationFontSize = DefaultNavigationFontSize;
             BarPadding = DefaultBarPadding;
 
-            _logger.LogInformation("Настройки интерфейса восстановлены до значений по умолчанию.");
+            // Логирование восстановления настроек / Logging settings reset
+            _logger.LogInformation("Interface settings restored to default values.");
             SaveSettings();
         }
     }

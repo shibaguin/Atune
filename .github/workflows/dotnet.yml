@@ -1,47 +1,35 @@
-name: .NET CI
+name: .NET CI/CD
 
 on:
   push:
     branches: [ main ]
   pull_request:
     branches: [ main ]
-  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
+    strategy:
+      matrix:
+        target:
+          - Atune
+          - Atune.Desktop
+          - Atune.Android
+
     steps:
-      - name: Checkout репозитория
-        uses: actions/checkout@v3
-
-      - name: Кеширование NuGet пакетов
-        uses: actions/cache@v3
-        with:
-          path: ~/.nuget/packages
-          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
-          restore-keys: |
-            ${{ runner.os }}-nuget-
-
-      - name: Настройка .NET
+      - uses: actions/checkout@v3
+      - name: Setup .NET
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: '8.0.x'
-
-      - name: Восстановление зависимостей
-        run: dotnet restore
-
-      - name: Сборка решения
-        run: dotnet build Atune.sln --no-restore --configuration Release
-
-      - name: Запуск тестов с покрытием кода
-        run: dotnet test Atune.sln --no-restore --configuration Release /p:CollectCoverage=true /p:CoverletOutput=coverage/ /p:CoverletOutputFormat=opencover --verbosity normal
-
-      - name: Загрузка отчёта покрытия
-        uses: actions/upload-artifact@v3
-        with:
-          name: coverage-report
-          path: coverage/
+      - name: Restore dependencies
+        run: dotnet restore ${{ matrix.target }}.csproj
+      - name: Build
+        run: dotnet build ${{ matrix.target }}.csproj --configuration Release --no-restore
+      - name: Test (for core project)
+        if: matrix.target == 'Atune'
+        run: dotnet test Atune.Tests/Atune.Tests.csproj --no-restore --configuration Release
 
   debug-linux:
     runs-on: ubuntu-latest

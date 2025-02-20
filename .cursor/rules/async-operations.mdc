@@ -1,0 +1,41 @@
+---
+description: Асинхронные операции
+globs: 
+---
+1. **Основные принципы**:
+   - Все IO-операции и долгие вычисления делай асинхронными
+   - Используй async/await вместо Task.Run для CPU-bound операций
+   - В Android-коде избегай ConfigureAwait(false)
+
+2. **Паттерны использования**:
+   ```csharp
+   // Правильно
+   public async Task ProcessDataAsync()
+   {
+       var data = await LoadDataAsync();
+       await ProcessAsync(data);
+   }
+
+   // Неправильно (риск дедлоков)
+   public void ProcessData()
+   {
+       LoadDataAsync().Result; 
+   }
+   ```
+
+3. **Обработка исключений**:
+   ```csharp
+   try
+   {
+       await SomeAsyncOperation();
+   }
+   catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+   {
+       Log.Error(ex, "File operation failed");
+       throw new AppException("Ошибка доступа к файлу", ex);
+   }
+   ```
+
+4. **Особенности**:
+   - В UI-методах используй Dispatcher.UIThread.Post для обновления интерфейса
+   - Для параллельной обработки используй Parallel.ForEachAsync в .NET 6+
