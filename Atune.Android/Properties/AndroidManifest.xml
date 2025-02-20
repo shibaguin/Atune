@@ -1,5 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:tools="http://schemas.android.com/tools"
 	android:installLocation="auto"
 	android:versionCode="1"
 	android:versionName="1.0"
@@ -21,11 +22,115 @@
 	<uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
 		android:maxSdkVersion="32" />
 
+	<!-- Дополнительные разрешения из Auxio -->
+	<uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+	<uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+	<uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+	<uses-permission android:name="android.permission.WAKE_LOCK" />
+	<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+	<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" tools:node="remove" />
+
+	<!-- Добавлен тег queries -->
+	<queries />
+
 	<application
-		android:label="Atune"
+		android:name=".Atune"
+		android:allowBackup="true"
+		android:fullBackupContent="@xml/backup_descriptor"
+		android:dataExtractionRules="@xml/data_extraction_rules"
 		android:icon="@drawable/Icon"
-		android:requestLegacyExternalStorage="true"
-		android:preserveLegacyExternalStorage="true">
+		android:label="@string/info_app_name"
+		android:roundIcon="@mipmap/ic_launcher"
+		android:supportsRtl="true"
+		android:theme="@style/Theme.Auxio.App"
+		android:appCategory="audio"
+		android:enableOnBackInvokedCallback="true"
+		tools:ignore="UnusedAttribute">
+
+		<!-- Основная активность с фильтрами для аудиоплеера (позаимствовано из Auxio) -->
+		<activity
+			android:name=".MainActivity"
+			android:exported="true"
+			android:icon="@mipmap/ic_launcher"
+			android:launchMode="singleTask"
+			android:allowCrossUidActivitySwitchFromBelow="false"
+			android:roundIcon="@mipmap/ic_launcher"
+			android:windowSoftInputMode="adjustPan">
+			<intent-filter>
+				<!-- Определяем, что приложение является аудиоплеером -->
+				<action android:name="android.intent.action.MAIN" />
+				<action android:name="android.intent.action.MUSIC_PLAYER" />
+				<category android:name="android.intent.category.DEFAULT" />
+				<category android:name="android.intent.category.LAUNCHER" />
+				<category android:name="android.intent.category.APP_MUSIC" />
+			</intent-filter>
+			<intent-filter>
+				<!-- Поддержка открытия аудиофайлов любых форматов -->
+				<action android:name="android.intent.action.VIEW" />
+				<category android:name="android.intent.category.DEFAULT" />
+				<category android:name="android.intent.category.BROWSABLE" />
+				<data android:scheme="content" />
+				<data android:scheme="file" />
+				<data android:mimeType="audio/*" />
+				<data android:mimeType="application/ogg" />
+				<data android:mimeType="application/x-ogg" />
+				<data android:mimeType="application/itunes" />
+			</intent-filter>
+		</activity>
+		
+		<!-- Сервис для воспроизведения аудио (адаптировано из Auxio) -->
+		<service
+			android:name=".AtuneService"
+			android:foregroundServiceType="mediaPlayback"
+			android:icon="@mipmap/ic_launcher"
+			android:exported="true"
+			android:roundIcon="@mipmap/ic_launcher"
+			tools:ignore="ExportedService">
+			<intent-filter>
+				<action android:name="android.media.browse.MediaBrowserService"/>
+			</intent-filter>
+		</service>
+		
+		<!-- Провайдер для обложек аудио (как в Auxio) -->
+		<provider
+			android:name=".image.CoverProvider"
+			android:authorities="@string/pkg_authority_cover"
+			android:exported="true"
+			tools:ignore="ExportedContentProvider" />
+		
+		<!-- Ресивер для нажатий медиа-кнопок -->
+		<receiver
+			android:name=".playback.service.MediaButtonReceiver"
+			android:exported="true">
+			<intent-filter>
+				<action android:name="android.intent.action.MEDIA_BUTTON" />
+			</intent-filter>
+		</receiver>
+		
+		<!-- Ресивер для "Now Playing" виджета -->
+		<receiver
+			android:name=".widgets.WidgetProvider"
+			android:exported="false"
+			android:label="@string/lbl_playback">
+			<intent-filter>
+				<action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+			</intent-filter>
+			<meta-data
+				android:name="android.appwidget.provider"
+				android:resource="@xml/widget_info" />
+		</receiver>
+		
+		<!-- Activity для интеграции с Tasker (start service) -->
+		<activity
+			android:name=".tasker.ActivityConfigStartAction"
+			android:exported="true"
+			android:icon="@mipmap/ic_launcher"
+			android:label="@string/lbl_start_playback">
+			<intent-filter>
+				<action android:name="com.twofortyfouram.locale.intent.action.EDIT_SETTING" />
+			</intent-filter>
+		</activity>
+		
 	</application>
 
 </manifest>
