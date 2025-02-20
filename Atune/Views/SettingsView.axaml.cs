@@ -6,6 +6,7 @@ using Atune.ViewModels;
 using Atune.Services;
 using ThemeVariant = Atune.Models.ThemeVariant;
 using Atune.Models;
+using Atune.Utils;
 
 namespace Atune.Views
 {
@@ -73,30 +74,25 @@ namespace Atune.Views
             if (_settingsService == null)
                 return;
 
-            // Get the view model
+            // Получаем VM
             var vm = DataContext as SettingsViewModel;
             if (vm == null)
                 return;
 
-            // Convert the selected display name to a language code
-            string languageCode = vm.SelectedLanguage switch
-            {
-                "Русская" => "ru",
-                "English" => "en",
-                _ => vm.SelectedLanguage
-            };
+            // Преобразуем выбранное отображаемое название в код языка для сохранения
+            string languageCode = LanguageConverter.DisplayToCode(vm.SelectedLanguage);
 
-            // Save settings with the selected language and current theme variant
+            // Сохраняем настройки с текущей темой и выбранным языком
             _settingsService.SaveSettings(new AppSettings
             {
                 ThemeVariant = (ThemeVariant)ThemeComboBox.SelectedIndex,
                 Language = languageCode
             });
 
-            // Update localization (the UpdateLocalization method must update global resources)
+            // Обновляем локализацию
             (Application.Current as App)?.UpdateLocalization();
-            
-            // Recreate the selected ComboBox item to display new resources
+
+            // Перерисовываем выбранный элемент для отображения обновлённых ресурсов
             RefreshSelectedTheme();
         }
 
@@ -109,12 +105,7 @@ namespace Atune.Views
             if (vm == null)
                 return;
             
-            string languageCode = vm.SelectedLanguage switch
-            {
-                "Русская" => "ru",
-                "English" => "en",
-                _ => vm.SelectedLanguage
-            };
+            string languageCode = LanguageConverter.DisplayToCode(vm.SelectedLanguage);
 
             _settingsService.SaveSettings(new AppSettings 
             { 
@@ -134,12 +125,7 @@ namespace Atune.Views
             
             _settingsService.SaveSettings(new AppSettings { 
                 ThemeVariant = (ThemeVariant)ThemeComboBox.SelectedIndex,
-                Language = vm.SelectedLanguage switch
-                {
-                    "Русская" => "ru",
-                    "English" => "en",
-                    _ => vm.SelectedLanguage
-                }
+                Language = LanguageConverter.DisplayToCode(vm.SelectedLanguage)
             });
             
             // Добавляем вызов ApplyTheme

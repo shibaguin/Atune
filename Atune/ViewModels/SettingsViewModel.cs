@@ -29,25 +29,15 @@ public partial class SettingsViewModel : ViewModelBase
         var settings = _settingsService.LoadSettings();
         SelectedThemeIndex = (int)settings.ThemeVariant;
 
-        // Convert the saved language code to the displayed language name
-        SelectedLanguage = settings.Language switch
-        {
-            "ru" => "Русская",
-            "en" => "English",
-            _ => settings.Language
-        };
+        // Преобразуем сохранённый языковой код в отображаемое название
+        SelectedLanguage = Atune.Utils.LanguageConverter.CodeToDisplay(settings.Language);
     }
 
     [RelayCommand]
     private void SaveSettings()
     {
-        // Convert the selected display name to a language code for saving
-        string languageCode = SelectedLanguage switch
-        {
-            "Русская" => "ru",
-            "English" => "en",
-            _ => SelectedLanguage
-        };
+        // Преобразуем выбранное отображаемое название в код языка для сохранения
+        string languageCode = Atune.Utils.LanguageConverter.DisplayToCode(SelectedLanguage);
 
         _settingsService.SaveSettings(new AppSettings
         { 
