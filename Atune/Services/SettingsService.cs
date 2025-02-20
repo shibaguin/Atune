@@ -145,12 +145,17 @@ public class SettingsService : ISettingsService
             try
             {
                 if (!File.Exists(_settingsPath))
+                {
+                    _logger.LogWarning($"Settings file not found at {_settingsPath}. Using default settings.");
                     return new AppSettings();
+                }
 
-                // Разбираем файл на секции
                 var sections = ParseIniFile();
                 if (!sections.ContainsKey("AppSettings"))
+                {
+                    _logger.LogWarning("Section [AppSettings] not found in settings file. Using default settings.");
                     return new AppSettings();
+                }
 
                 var appSection = sections["AppSettings"];
                 var settings = new AppSettings();
@@ -158,26 +163,49 @@ public class SettingsService : ISettingsService
                 {
                     var parts = line.Split('=', 2);
                     if (parts.Length != 2)
+                    {
+                        _logger.LogWarning($"Ignoring malformed line in settings file: '{line}'");
                         continue;
+                    }
+
                     switch (parts[0])
                     {
-                        case "ThemeVariant" when int.TryParse(parts[1], out var theme):
-                            settings.ThemeVariant = theme switch
+                        case "ThemeVariant":
+                            if (!int.TryParse(parts[1], out var theme))
                             {
-                                0 => ThemeVariant.System,
-                                1 => ThemeVariant.Light,
-                                2 => ThemeVariant.Dark,
-                                _ => ThemeVariant.System
-                            };
+                                _logger.LogWarning($"Invalid value for ThemeVariant: '{parts[1]}'. Using default.");
+                                settings.ThemeVariant = ThemeVariant.System;
+                            }
+                            else
+                            {
+                                settings.ThemeVariant = theme switch
+                                {
+                                    0 => ThemeVariant.System,
+                                    1 => ThemeVariant.Light,
+                                    2 => ThemeVariant.Dark,
+                                    _ => ThemeVariant.System
+                                };
+                            }
                             break;
                         case "Language":
-                            settings.Language = parts[1];
+                            settings.Language = string.IsNullOrWhiteSpace(parts[1]) ? "en" : parts[1];
                             break;
                         case "LastUsedProfile":
                             settings.LastUsedProfile = parts[1];
                             break;
-                        case "LastUpdated" when DateTimeOffset.TryParse(parts[1], out var date):
-                            settings.LastUpdated = date;
+                        case "LastUpdated":
+                            if (!DateTimeOffset.TryParse(parts[1], out var date))
+                            {
+                                _logger.LogWarning($"Invalid value for LastUpdated: '{parts[1]}'. Using current date.");
+                                settings.LastUpdated = DateTimeOffset.Now;
+                            }
+                            else
+                            {
+                                settings.LastUpdated = date;
+                            }
+                            break;
+                        default:
+                            _logger.LogWarning($"Unknown key '{parts[0]}' encountered in settings file.");
                             break;
                     }
                 }
@@ -187,7 +215,7 @@ public class SettingsService : ISettingsService
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Error loading settings: {ex.Message}");
+                _logger.LogError("Error loading settings from INI file.", ex);
                 return new AppSettings();
             }
         }
