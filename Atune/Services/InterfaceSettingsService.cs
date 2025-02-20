@@ -1,13 +1,14 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Runtime.InteropServices; // Добавлено для проверки платформы
+using System.Runtime.InteropServices; // Added for platform check / Добавлено для проверки платформы
 
 namespace Atune.Services
 {
     public class InterfaceSettingsService : IInterfaceSettingsService
     {
-        // Default значения, соответствующие текущим параметрам
+        // Значения по умолчанию, соответствующие текущим параметрам
+        // Default values corresponding to the current parameters
         private const double DefaultHeaderFontSize = 24;
         private const double DefaultNavigationDividerWidth = 3;
         private const double DefaultBarHeight = 50;
@@ -28,6 +29,7 @@ namespace Atune.Services
         public double BarPadding { get; private set; }
         
         // Обновлённый конструктор для задания пути к settings.ini в зависимости от платформы
+        // Updated constructor to set the path to settings.ini depending on the platform
         public InterfaceSettingsService(ILoggerService logger)
         {
             _logger = logger;
@@ -44,6 +46,7 @@ namespace Atune.Services
                 _iniFilePath = Path.Combine(AppContext.BaseDirectory, "settings.ini");
             }
             // Создаем директорию, если она не существует
+            // Create the directory if it does not exist
             Directory.CreateDirectory(Path.GetDirectoryName(_iniFilePath)!);
             LoadSettings();
         }
@@ -52,6 +55,8 @@ namespace Atune.Services
         {
             // Если файл настроек не найден, устанавливаем дефолтные значения и сразу сохраняем их,
             // чтобы файл содержал размеры интерфейса с первого запуска.
+            // If the settings file is not found, set default values and save them immediately,
+            // so that the file contains the interface sizes from the first launch.
             if (!File.Exists(_iniFilePath))
             {
                 // Если файл настроек не найден, создаем файл с дефолтными значениями
@@ -70,10 +75,12 @@ namespace Atune.Services
             }
             
             // Существующая логика загрузки настроек из файла
+            // Existing logic for loading settings from a file
             try
             {
                 var iniData = File.ReadAllLines(_iniFilePath);
                 // Пример парсинга строки (реальная реализация может отличаться)
+                // Example parsing of a line (the actual implementation may differ)
                 foreach (var line in iniData)
                 {
                     if (line.StartsWith("HeaderFontSize="))
@@ -165,10 +172,11 @@ namespace Atune.Services
         }
         
         // Обновлённый метод SaveSettings
+        // Updated SaveSettings method
         public void SaveSettings()
         {
-            // Существующий код для сохранения настроек в settings.ini
-            // Например:
+            // Existing code for saving settings to settings.ini
+            // For example:
             // var settingsContent = new List<string>
             // {
             //     "[InterfaceDimensions]",
@@ -183,16 +191,19 @@ namespace Atune.Services
             // File.WriteAllLines(_iniFilePath, settingsContent);
 
             // После сохранения обновляем глобальные ресурсы приложения
+            // After saving, update the application's global resources
             UpdateApplicationResources();
         }
 
         // Новый вспомогательный метод для обновления глобальных ресурсов
+        // New helper method to update application resources
         private void UpdateApplicationResources()
         {
             var app = Avalonia.Application.Current;
             if (app != null)
             {
                  // Устанавливаем новые значения в глобальный словарь ресурсов
+                 // Sets new values in the global resource dictionary
                  app.Resources["HeaderFontSize"] = HeaderFontSize;
                  app.Resources["NavigationDividerWidth"] = NavigationDividerWidth;
                  app.Resources["NavigationDividerHeight"] = NavigationDividerHeight;
@@ -201,9 +212,10 @@ namespace Atune.Services
                  app.Resources["NavigationFontSize"] = NavigationFontSize;
                  app.Resources["BarPadding"] = BarPadding;
 
-                 _logger.LogInformation("Глобальные ресурсы обновлены");
+                 _logger.LogInformation("Global resources updated");
 
                  // Вызываем InvalidateVisual() для перерисовки главного окна на UI-потоке
+                 // Calls InvalidateVisual() to redraw the main window on the UI thread
                  Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
                  {
                      if (app.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop)
@@ -214,17 +226,26 @@ namespace Atune.Services
             }
         }
         
-        /// <summary>
-        /// Обновляет настройки интерфейса через UI, проверяя допустимые диапазоны значений.
-        /// Updates the interface settings via UI, validating acceptable value ranges.
-        /// </summary>
-        /// <param name="headerFontSize">Размер заголовка / Header font size</param>
-        /// <param name="navigationDividerWidth">Ширина разделителя навигации / Navigation divider width</param>
-        /// <param name="navigationDividerHeight">Высота разделителя навигации / Navigation divider height</param>
-        /// <param name="topDockHeight">Высота верхней панели / Top dock height</param>
-        /// <param name="barHeight">Высота панели / Bar height</param>
-        /// <param name="navigationFontSize">Размер шрифта навигации / Navigation font size</param>
-        /// <param name="barPadding">Отступы панели / Bar padding</param>
+        // Обновляет настройки интерфейса через UI, проверяя допустимые диапазоны значений.
+        // Updates the interface settings via UI, validating acceptable value ranges.
+        
+        // RUS:
+        // <param name="headerFontSize">Размер шрифта заголовка</param>
+        // <param name="navigationDividerWidth">Ширина разделителя навигации</param>
+        // <param name="navigationDividerHeight">Высота разделителя навигации</param>
+        // <param name="topDockHeight">Высота верхней панели</param>
+        // <param name="barHeight">Высота панели</param>
+        // <param name="navigationFontSize">Размер шрифта навигации</param>
+        // <param name="barPadding">Отступы панели</param>
+
+        // ENG:
+        // <param name="headerFontSize">Header font size</param>
+        // <param name="navigationDividerWidth">Navigation divider width</param>
+        // <param name="navigationDividerHeight">Navigation divider height</param>
+        // <param name="topDockHeight">Top dock height</param>
+        // <param name="barHeight">Bar height</param>
+        // <param name="navigationFontSize">Navigation font size</param>
+        // <param name="barPadding">Bar padding</param>
         public void UpdateInterfaceSettings(double headerFontSize,
                                             double navigationDividerWidth,
                                             double navigationDividerHeight,
@@ -288,7 +309,8 @@ namespace Atune.Services
                     barPadding = DefaultBarPadding;
                 }
 
-                // Дополнительные логические проверки / Additional logical checks
+                // Дополнительные логические проверки
+                // Additional logical checks
                 if (headerFontSize > topDockHeight)
                 {
                     _logger.LogError($"Invalid relation: HeaderFontSize ({headerFontSize}) cannot be greater than TopDockHeight ({topDockHeight}). Using default: {DefaultHeaderFontSize}.");
@@ -316,10 +338,8 @@ namespace Atune.Services
             }
         }
 
-        /// <summary>
-        /// Восстанавливает настройки интерфейса до значений по умолчанию.
-        /// Restores the interface settings to the default values.
-        /// </summary>
+        // Восстанавливает настройки интерфейса до значений по умолчанию.
+        // Restores the interface settings to the default values.
         public void RestoreDefaults()
         {
             HeaderFontSize = DefaultHeaderFontSize;
@@ -330,7 +350,8 @@ namespace Atune.Services
             NavigationFontSize = DefaultNavigationFontSize;
             BarPadding = DefaultBarPadding;
 
-            // Логирование восстановления настроек / Logging settings reset
+            // Restore the interface settings to the default values
+            // Восстановление настроек интерфейса до значений по умолчанию
             _logger.LogInformation("Interface settings restored to default values.");
             SaveSettings();
         }

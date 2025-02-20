@@ -25,6 +25,7 @@ public class MediaItem
     
     public TimeSpan Duration { get; set; }
     
+    // Добавляем конструктор для удобства
     // Add a constructor for convenience
     public MediaItem(string title, string artist, string album, uint year, string genre, string path, TimeSpan duration)
     {
@@ -37,6 +38,7 @@ public class MediaItem
         Duration = duration;
     }
     
+    // Пустой конструктор для EF Core
     // Empty constructor for EF Core
     public MediaItem() { }
 } 

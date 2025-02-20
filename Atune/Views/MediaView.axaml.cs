@@ -206,6 +206,7 @@ public partial class MediaView : UserControl
     }
 
     // Move methods inside the class
+    // Переместить методы внутри класса
 #if ANDROID
     private async Task<string> GetAndroidRealPath(IStorageFile file)
     {

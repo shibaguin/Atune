@@ -14,6 +14,7 @@ namespace Atune.Models
             
             static Dimensions()
             {
+                // Инициализация значений
                 // Initialization values
                 HeaderFontSize = 24;
                 NavigationDividerWidth = 3;
@@ -23,6 +24,7 @@ namespace Atune.Models
                 NavigationFontSize = 14;
                 BarPadding = 8;
 
+                // Проверка значений
                 // Validation values
                 ValidateValues();
             }

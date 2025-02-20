@@ -17,13 +17,8 @@ globs:
    - Обработка исключений
 
 3. **Формат XML-документации**:
-   ```csharp
-   /// <summary>
-   /// Получает путь к медиафайлу с обработкой платформозависимых особенностей
-   /// Retrieves media file path with platform-specific handling
-   /// </summary>
-   /// <param name="file">Файл для обработки / File to process</param>
-   /// <returns>Полный путь к файлу / Full file path</returns>
+   ```axaml
+   <!-- Комментарий -->
    ```
 
 4. **Требования**:

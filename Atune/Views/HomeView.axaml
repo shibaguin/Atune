@@ -11,6 +11,7 @@
              vm:ViewModelLocator.AutoHookedUpViewModel="True">
     <Grid>
         <!-- Локализованное приветствие -->
+        <!-- Localized greeting -->
         <TextBlock Text="{DynamicResource Home_WelcomeMessage}" 
                    HorizontalAlignment="Center"
                    VerticalAlignment="Center"

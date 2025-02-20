@@ -9,6 +9,7 @@
              x:Class="Atune.Views.HistoryView">
     <Grid>
         <!-- Локализованный текст для представления истории -->
+        <!-- Localized text for history view -->
         <TextBlock Text="{DynamicResource History_ViewContent}"
                    HorizontalAlignment="Center"
                    VerticalAlignment="Center"

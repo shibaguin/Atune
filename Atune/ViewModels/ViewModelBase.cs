@@ -6,6 +6,4 @@ public partial class ViewModelBase : ObservableObject
 {
     [ObservableProperty]
     private string _title = string.Empty;
-    
-    // Add basic functionality
 }

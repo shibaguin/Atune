@@ -14,6 +14,7 @@ namespace Atune.Views
     {
         private readonly ISettingsService? _settingsService;
 
+        // Конструктор для DI
         // Constructor for DI
         public SettingsView(SettingsViewModel viewModel, ISettingsService settingsService)
         {
@@ -23,6 +24,7 @@ namespace Atune.Views
             InitializePlatformSpecificSettings();
         }
 
+        // Конструктор для XAML (только для дизайнера)
         // Constructor for XAML (only for designer)
         public SettingsView()
         {
@@ -57,11 +59,13 @@ namespace Atune.Views
             {
                 app.UpdateTheme(theme);
                 
+                // Для Android, используйте условное компиляцию
                 // For Android, use conditional compilation
 #if ANDROID
                 var window = TopLevel.GetTopLevel(this) as Window;
                 if (window?.PlatformImpl != null)
                 {
+                    // Используйте правильный метод для Android
                     // Use the correct method for Android
                     (window.PlatformImpl as Avalonia.Android.AndroidWindow)?.UpdateSystemTheme();
                 }
@@ -75,14 +79,17 @@ namespace Atune.Views
                 return;
 
             // Получаем VM
+            // Get VM
             var vm = DataContext as SettingsViewModel;
             if (vm == null)
                 return;
 
             // Преобразуем выбранное отображаемое название в код языка для сохранения
+            // Convert the selected display name to a language code for saving
             string languageCode = LanguageConverter.DisplayToCode(vm.SelectedLanguage);
 
             // Сохраняем настройки с текущей темой и выбранным языком
+            // Save settings with the current theme and selected language
             _settingsService.SaveSettings(new AppSettings
             {
                 ThemeVariant = (ThemeVariant)ThemeComboBox.SelectedIndex,
@@ -93,6 +100,7 @@ namespace Atune.Views
             (Application.Current as App)?.UpdateLocalization();
 
             // Перерисовываем выбранный элемент для отображения обновлённых ресурсов
+            // Redraw the selected item to display the updated resources
             RefreshSelectedTheme();
         }
 
@@ -101,10 +109,14 @@ namespace Atune.Views
             if (_settingsService == null)
                 return;
             
+            // Получаем VM
+            // Get VM
             var vm = DataContext as SettingsViewModel;
             if (vm == null)
                 return;
             
+            // Преобразуем выбранное отображаемое название в код языка для сохранения
+            // Convert the selected display name to a language code for saving
             string languageCode = LanguageConverter.DisplayToCode(vm.SelectedLanguage);
 
             _settingsService.SaveSettings(new AppSettings 
@@ -129,16 +141,20 @@ namespace Atune.Views
             });
             
             // Добавляем вызов ApplyTheme
+            // Add a call to ApplyTheme
             ApplyTheme((ThemeVariant)ThemeComboBox.SelectedIndex);
         }
 
         private void RefreshSelectedTheme()
         {
             // Save the current index
+            // Сохраняем текущий индекс
             int currentIndex = ThemeComboBox.SelectedIndex;
             // Reset the selection
+            // Сбрасываем выбор
             ThemeComboBox.SelectedIndex = -1;
             // Restore the selection, which will trigger a redraw and update the text of the item
+            // Восстанавливаем выбор, который вызовет перерисовку и обновление текста элемента
             ThemeComboBox.SelectedIndex = currentIndex;
         }
     }

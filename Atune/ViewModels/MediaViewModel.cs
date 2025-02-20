@@ -48,6 +48,7 @@ public partial class MediaViewModel : ObservableObject
         LoadMediaContent();
         
         // Add automatic loading when initializing
+        // Добавляем автоматическую загрузку при инициализации
         RefreshMediaCommand.ExecuteAsync(null!);
     }
 
@@ -68,6 +69,7 @@ public partial class MediaViewModel : ObservableObject
                 .SetSlidingExpiration(TimeSpan.FromMinutes(15));
             
             // For Android, we reduce the caching time
+            // Для Android мы уменьшаем время кэширования
             if (OperatingSystem.IsAndroid())
             {
                 cacheOptions.SetSlidingExpiration(TimeSpan.FromMinutes(5));
@@ -81,6 +83,7 @@ public partial class MediaViewModel : ObservableObject
     private List<MediaItem> LoadFromDataSource()
     {
         // Loading data from an external source
+        // Загрузка данных из внешнего источника
         return new List<MediaItem>();
     }
 
@@ -195,6 +198,7 @@ public partial class MediaViewModel : ObservableObject
             MediaItems.Clear();
             
             // Batch addition for gradual updating
+            // Добавление пакета для постепенной обновления
             var batchSize = OperatingSystem.IsAndroid() ? 50 : 200;
             var count = 0;
             
@@ -206,7 +210,7 @@ public partial class MediaViewModel : ObservableObject
                 if (count % batchSize == 0)
                 {
                     OnPropertyChanged(nameof(MediaItems));
-                    await Task.Delay(10); // Delay for rendering
+                    await Task.Delay(10); // Delay for rendering / Задержка для рендеринга
                 }
             }
             
@@ -223,6 +227,7 @@ public partial class MediaViewModel : ObservableObject
             var items = await _unitOfWork.Media.GetAllWithDetailsAsync();
             
             // Universal way to update for all platforms
+            // Универсальный способ обновления для всех платформ
             await Dispatcher.UIThread.InvokeAsync(() =>
             {
                 MediaItems.Clear();
@@ -230,7 +235,8 @@ public partial class MediaViewModel : ObservableObject
                 {
                     MediaItems.Add(item);
                 }
-                    // Force update UI
+                // Force update UI
+                // Принудительное обновление UI
                 OnPropertyChanged(nameof(MediaItems));
             });
         }
@@ -250,6 +256,7 @@ public partial class MediaViewModel : ObservableObject
         try
         {
             // Выполняем удаление в фоновом потоке, чтобы не блокировать UI
+            // Perform deletion in a background thread to prevent UI blocking
             await Task.Run(async () =>
             {
                 var allMedia = await _unitOfWork.Media.GetAllAsync();
@@ -260,6 +267,7 @@ public partial class MediaViewModel : ObservableObject
                 await _unitOfWork.CommitAsync();
             });
             // Обновляем UI после завершения операции удаления
+            // Update UI after deletion operation is complete
             await RefreshMediaCommand.ExecuteAsync(null);
         }
         catch (Exception ex)
@@ -301,6 +309,7 @@ public partial class MediaViewModel : ObservableObject
                 {
                     var folderPath = folder.Path.LocalPath;
                     // Асинхронное перечисление файлов для предотвращения блокировки UI
+                    // Asynchronous enumeration of files to prevent UI blocking
                     var files = await Task.Run(() =>
                         Directory.EnumerateFiles(folderPath, "*.*", SearchOption.AllDirectories)
                             .Where(f => _supportedFormats.Contains(Path.GetExtension(f).ToLower()))
@@ -321,6 +330,7 @@ public partial class MediaViewModel : ObservableObject
             if (newItems.Count > 0)
             {
                 // Переносим тяжелые операции в отдельный поток
+                // Move heavy operations to a separate thread
                 await Task.Run(async () =>
                 {
                     await _unitOfWork.Media.BulkInsertAsync(newItems, batch =>
@@ -345,7 +355,7 @@ public partial class MediaViewModel : ObservableObject
 
     private MediaItem CreateMediaItemFromPath(string path)
     {
-        var tagInfo = GetDesktopTagInfo(path); // Use the method from MediaView
+        var tagInfo = GetDesktopTagInfo(path); // Use the method from MediaView / Используем метод из MediaView
         return new MediaItem(
             Path.GetFileNameWithoutExtension(path),
             tagInfo.Artist ?? "Unknown Artist",

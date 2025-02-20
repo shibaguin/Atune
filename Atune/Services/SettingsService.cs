@@ -21,6 +21,7 @@ public class SettingsService : ISettingsService
     private static readonly SemaphoreSlim _fileLockAsync = new SemaphoreSlim(1, 1);
 
     // Add dependency injection for platform-specific paths
+    // Добавьте зависимость для платформенно-специфичных путей
     private readonly IPlatformPathService _platformPathService;
     // The settings file path is now stored in an instance
     private readonly string _settingsPath;
@@ -32,11 +33,12 @@ public class SettingsService : ISettingsService
         _cache = cache;
         _platformPathService = platformPathService;
         _cacheOptions = new MemoryCacheEntryOptions()
-            .SetSize(1024) // Size of the record in bytes (~1KB for settings)
+            .SetSize(1024) // Size of the record in bytes (~1KB for settings) / Размер записи в байтах (~1KB для настроек)
             .SetPriority(CacheItemPriority.High)
             .SetSlidingExpiration(TimeSpan.FromMinutes(30));
 
         // Initialize the path to the settings file through our service
+        // Инициализируйте путь к файлу настроек через наш сервис
         _settingsPath = _platformPathService.GetSettingsPath();
 
         _logger = logger;
@@ -46,11 +48,11 @@ public class SettingsService : ISettingsService
     {
         if (OperatingSystem.IsAndroid() || OperatingSystem.IsIOS())
         {
-            return 50 * 1024 * 1024; // 50 MB for mobile devices
+            return 50 * 1024 * 1024; // 50 MB for mobile devices / 50 MB для мобильных устройств
         }
         else
         {
-            return 100 * 1024 * 1024; // 100 MB for desktop
+            return 100 * 1024 * 1024; // 100 MB for desktop / 100 MB для настольных устройств   
         }
     }
 
@@ -74,6 +76,8 @@ public class SettingsService : ISettingsService
                     {
                         // Directory.CreateDirectory will create the directory if it doesn't exist,
                         // and will not throw an exception if the directory already exists.
+                        // Directory.CreateDirectory создаст директорию, если она не существует,
+                        // и не выбросит исключение, если директория уже существует.
                         Directory.CreateDirectory(directory);
                     }
                     catch (UnauthorizedAccessException ex)
@@ -83,6 +87,7 @@ public class SettingsService : ISettingsService
                     }
                     catch (IOException ex)
                     {
+                        // Если ошибка произошла из-за состояния гонки, проверьте директорию снова.
                         // If the error occurred due to a race condition, check the directory again.
                         if (!Directory.Exists(directory))
                         {
@@ -99,6 +104,7 @@ public class SettingsService : ISettingsService
                 };
 
                 // For Android, we use a special storage
+                // Для Android мы используем специальное хранилище
                 if (OperatingSystem.IsAndroid())
                 {
                     using var stream = File.Create(_settingsPath);
@@ -180,6 +186,7 @@ public class SettingsService : ISettingsService
     }
 
     // Add custom exception
+    // Добавьте пользовательское исключение
     public class SettingsException : Exception
     {
         public SettingsException(string message, Exception inner) 

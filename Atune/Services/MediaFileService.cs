@@ -12,37 +12,32 @@ using Android.Util;
 
 namespace Atune.Services
 {
-    /// <summary>
-    /// Сервис для выполнения операций с файлами, таких как копирование, проверка существования и конвертация пути.
-    /// </summary>
+    // Сервис для выполнения операций с файлами, таких как копирование, проверка существования и конвертация пути.
+    // Service for performing file operations such as copying, checking existence, and path conversion.
     public class MediaFileService
     {
+        #if ANDROID
         public async Task<string> GetRealPathAsync(IStorageFile file)
         {
-            if (OperatingSystem.IsAndroid())
+            Android.Util.Log.Debug("MediaFileService", $"Start copying file: {file.Name}");
+            var destFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "AtuneMedia");
+            if (!Directory.Exists(destFolder))
+                Directory.CreateDirectory(destFolder);
+            var destPath = Path.Combine(destFolder, file.Name);
+            using (var sourceStream = await file.OpenReadAsync())
+            using (var destStream = File.Create(destPath))
             {
-#if ANDROID
-                Android.Util.Log.Debug("MediaFileService", $"Start copying file: {file.Name}");
-                var destFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "AtuneMedia");
-                if (!Directory.Exists(destFolder))
-                    Directory.CreateDirectory(destFolder);
-                var destPath = Path.Combine(destFolder, file.Name);
-                using (var sourceStream = await file.OpenReadAsync())
-                using (var destStream = File.Create(destPath))
-                {
-                    await sourceStream.CopyToAsync(destStream);
-                }
-                Android.Util.Log.Debug("MediaFileService", $"File copied to: {destPath}");
-                return destPath;
-#else
-                return file.Path.LocalPath;
-#endif
+                await sourceStream.CopyToAsync(destStream);
             }
-            else
-            {
-                return file.Path.LocalPath;
-            }
+            Android.Util.Log.Debug("MediaFileService", $"File copied to: {destPath}");
+            return destPath;
         }
+        #else
+        public Task<string> GetRealPathAsync(IStorageFile file)
+        {
+            return Task.FromResult(file.Path.LocalPath);
+        }
+        #endif
 
         public Task<bool> FileExistsAsync(string path)
         {

@@ -19,6 +19,7 @@ namespace Atune.Tests
             var viewModel = new HomeViewModel(cache, logger);
             
             // Assert – сообщение по умолчанию из конструктора ожидается как "Welcome to Atune!"
+            // Assert – the default message from the constructor is expected as "Welcome to Atune!"
             Assert.Equal("Welcome to Atune!", viewModel.WelcomeMessage);
         }
         

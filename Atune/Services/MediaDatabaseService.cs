@@ -3,15 +3,14 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Atune.Models;
-using Atune.Data; // для AppDbContext
+using Atune.Data;
 using Atune.Services;
 using Microsoft.Extensions.Logging;
 
 namespace Atune.Services
 {
-    /// <summary>
-    /// Сервис для работы с БД медиа-записей, инкапсулирующий логику обращения к AppDbContext.
-    /// </summary>
+    // Сервис для работы с БД медиа-записей, инкапсулирующий логику обращения к AppDbContext.
+    // Service for working with the media database, encapsulating the logic of accessing AppDbContext.  
     public class MediaDatabaseService
     {
         private readonly IDbContextFactory<AppDbContext> _dbContextFactory;

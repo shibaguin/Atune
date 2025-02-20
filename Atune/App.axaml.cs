@@ -180,6 +180,7 @@ public partial class App : Application
         services.AddDbContext<AppDbContext>();
         services.AddDbContextFactory<AppDbContext>();
         
+        // Остальные сервисы
         // Other services
         services.AddMemoryCache(options =>
         {
@@ -188,13 +189,16 @@ public partial class App : Application
             options.ExpirationScanFrequency = TimeSpan.FromMinutes(5); // Frequency of checking expiration
         });
         services.AddSingleton<ViewLocator>();
+        
         // Register the platform-specific service and settings service
+        // Регистрация сервиса для платформенно-специфичных путей и сервиса настроек
         services.AddSingleton<IPlatformPathService, PlatformPathService>();
         services.AddSingleton<ISettingsService, SettingsService>();
         services.AddSingleton<IInterfaceSettingsService, InterfaceSettingsService>();
         services.AddSingleton<ILoggerService, LoggerService>();
         services.AddSingleton<LocalizationService>();
 
+        // Явное регистрация ViewModels
         // Explicit registration of ViewModels
         services.AddTransient<MainViewModel>();
         services.AddTransient<HomeViewModel>();
@@ -202,6 +206,7 @@ public partial class App : Application
         services.AddTransient<HistoryViewModel>();
         services.AddTransient<SettingsViewModel>();
 
+        // Явное регистрация View с конструкторами
         // Explicit registration of Views with constructors
         services.AddTransient<MainView>(sp => new MainView());
         services.AddTransient<HomeView>(sp => new HomeView(sp.GetRequiredService<HomeViewModel>()));
@@ -220,6 +225,7 @@ public partial class App : Application
         );
         services.AddTransient<MainWindow>();
 
+        // Фабрики
         // Factories
         services.AddSingleton<Func<Type, ViewModelBase>>(provider => type => 
             (ViewModelBase)provider.GetRequiredService(type));
@@ -232,6 +238,7 @@ public partial class App : Application
             builder.AddSerilog(dispose: true);
         });
 
+        // Добавляем новые сервисы
         // Add new services
         services.AddScoped<IUnitOfWork>(provider => 
             new UnitOfWork(
@@ -255,11 +262,13 @@ public partial class App : Application
     [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "Disabled for Avalonia compatibility")]
     private void DisableAvaloniaDataAnnotationValidation()
     {
+        // Получаем массив плагинов для удаления
         // Get an array of plugins to remove
         var dataValidationPluginsToRemove =
             BindingPlugins.DataValidators.OfType<DataAnnotationsValidationPlugin>().ToArray();
 
-        // remove each entry found
+        // Удаляем каждый найденный плагин
+        // Remove each entry found
         foreach (var plugin in dataValidationPluginsToRemove)
         {
             BindingPlugins.DataValidators.Remove(plugin);
@@ -287,6 +296,7 @@ public partial class App : Application
             };
 
             // Принудительно обновляем все окна
+            // Forcefully update all windows
             if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
             {
                 desktop.MainWindow?.InvalidateVisual();
@@ -299,6 +309,7 @@ public partial class App : Application
     {
         if (Services?.GetService<IMemoryCache>() is MemoryCache memoryCache)
         {
+            // Используем стандартный метод очистки кэша
             // Use the standard cache cleanup method
             memoryCache.Compact(percentage: 0.25);
         }
@@ -320,7 +331,8 @@ public partial class App : Application
             Log.Information("Initializing database...");
             await db.Database.EnsureCreatedAsync();
             
-            // Simple check of functionality
+            // Простая проверка функциональности
+            // Simple functionality check
             var exists = await db.MediaItems.AnyAsync();
             Log.Information($"Database status: {(exists ? "OK" : "EMPTY")}");
         }

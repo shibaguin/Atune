@@ -40,6 +40,7 @@ public partial class HomeViewModel : ViewModelBase
     private string GenerateWelcomeMessage()
     {
         // Heavy calculations or data loading
+        // Тяжелые вычисления или загрузка данных
         return "Welcome to Atune!";
     }
 
