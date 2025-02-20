@@ -135,7 +135,7 @@ public partial class MediaView : UserControl
                         // For desktop systems, check if the file exists
                         if (!OperatingSystem.IsAndroid())
                         {
-                            if (!System.IO.File.Exists(realPath))
+                            if (!await FileExists(realPath))
                             {
                                 _logger?.LogWarning($"{logHeader} File does not exist: {realPath}");
                                 errorCount++;
@@ -314,11 +314,7 @@ public partial class MediaView : UserControl
 
     private async Task<bool> FileExists(string path)
     {
-        #if ANDROID
-        return await Task.Run(() => System.IO.File.Exists(path));
-        #else
-        return await Task.FromResult(System.IO.File.Exists(path));
-        #endif
+        return await Task.Run(() => File.Exists(path));
     }
 
     private void ShowDbPath_Click(object sender, RoutedEventArgs e)
