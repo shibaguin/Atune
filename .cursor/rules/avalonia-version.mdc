@@ -1,0 +1,10 @@
+---
+description: Текущая версия Avalonia в проекте
+globs: 
+---
+
+# Your rule content
+Не меняй версии пакетов Avalonia в [Directory.Packages.props](mdc:Directory.Packages.props)
+Текущая версия Avalonia UI и соответствущих пакетов = 11.2.3
+- You can @ files here
+- You can use markdown but dont have to

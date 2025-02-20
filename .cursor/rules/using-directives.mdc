@@ -1,0 +1,9 @@
+---
+description: Проверяй using директивы
+globs: 
+---
+
+# Your rule content
+При добавлении нового кода проверяй, не нужно ли добавлять новые using директивы в файл
+- You can @ files here
+- You can use markdown but dont have to

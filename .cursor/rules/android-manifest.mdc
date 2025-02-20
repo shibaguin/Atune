@@ -1,0 +1,10 @@
+---
+description: AndroidManifest
+globs: 
+---
+
+# Your rule content
+Манифест прописывается в файле
+[AndroidManifest.xml](mdc:Atune.Android/Properties/AndroidManifest.xml)
+- You can @ files here
+- You can use markdown but dont have to
