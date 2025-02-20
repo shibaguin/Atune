@@ -1,6 +1,0 @@
----
-description: Текущая версия Avalonia в проекте
-globs: 
----
-Не меняй версии пакетов Avalonia в [Directory.Packages.props](mdc:Directory.Packages.props)
-Текущая версия Avalonia UI и соответствущих пакетов = 11.2.3

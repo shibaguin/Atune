@@ -1,0 +1,7 @@
+---
+description: Работа с базой данных
+globs: 
+---
+1. Миграции выполняй через скрипт `MigrationsRebuild.sh`
+2. Контекст БД: `AppDbContext.cs`
+3. Для запросов используй Entity Framework Core (Microsoft.EntityFrameworkCore.Sqlite)

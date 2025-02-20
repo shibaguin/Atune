@@ -1,7 +1,0 @@
----
-description: Проект разрабатывается для Windows, Linux и Android
-globs: 
----
-При изменении кода учитывай, что проект разрабатывается для Linux, Windows и Android
-Прописывай платформозависимый код через #if ANDROID
-Прописывай using директивы, специфичные для Android также через #ifANDROID

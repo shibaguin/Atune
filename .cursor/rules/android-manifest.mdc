@@ -1,6 +1,0 @@
----
-description: AndroidManifest
-globs: 
----
-Манифест прописывается в файле
-[AndroidManifest.xml](mdc:Atune.Android/Properties/AndroidManifest.xml)
