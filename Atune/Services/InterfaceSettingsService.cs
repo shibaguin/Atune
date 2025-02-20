@@ -171,27 +171,83 @@ namespace Atune.Services
             return dict;
         }
         
-        // Обновлённый метод SaveSettings
-        // Updated SaveSettings method
+        // Новый метод для разбора INI-файла на секции
+        private Dictionary<string, List<string>> ParseIniFile()
+        {
+            var sections = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+            List<string>? currentSectionLines = null;
+            string currentSectionName = string.Empty;
+
+            if (File.Exists(_iniFilePath))
+            {
+                foreach (var line in File.ReadAllLines(_iniFilePath))
+                {
+                    var trimmed = line.Trim();
+                    if (trimmed.StartsWith("[") && trimmed.EndsWith("]"))
+                    {
+                        // Начало новой секции
+                        currentSectionName = trimmed.TrimStart('[').TrimEnd(']');
+                        if (!sections.ContainsKey(currentSectionName))
+                        {
+                            sections[currentSectionName] = new List<string>();
+                        }
+                        currentSectionLines = sections[currentSectionName];
+                    }
+                    else
+                    {
+                        if (currentSectionLines != null)
+                        {
+                            currentSectionLines.Add(line);
+                        }
+                        // Если строка находится вне секции, её можно игнорировать или сохранять в секцию по умолчанию
+                    }
+                }
+            }
+            return sections;
+        }
+
+        // Новый метод для записи словаря секций обратно в INI-файл
+        private void WriteIniFile(Dictionary<string, List<string>> sections)
+        {
+            var lines = new List<string>();
+            foreach (var kvp in sections)
+            {
+                lines.Add($"[{kvp.Key}]");
+                lines.AddRange(kvp.Value);
+                lines.Add(string.Empty); // пустая строка для отделения секций
+            }
+            File.WriteAllLines(_iniFilePath, lines);
+        }
+
+        // Изменяем метод SaveSettings(), чтобы обновлять только секцию [InterfaceDimensions]
         public void SaveSettings()
         {
-            // Existing code for saving settings to settings.ini
-            // For example:
-            // var settingsContent = new List<string>
-            // {
-            //     "[InterfaceDimensions]",
-            //     $"HeaderFontSize={HeaderFontSize}",
-            //     $"NavigationDividerWidth={NavigationDividerWidth}",
-            //     $"NavigationDividerHeight={NavigationDividerHeight}",
-            //     $"TopDockHeight={TopDockHeight}",
-            //     $"BarHeight={BarHeight}",
-            //     $"NavigationFontSize={NavigationFontSize}",
-            //     $"BarPadding={BarPadding}"
-            // };
-            // File.WriteAllLines(_iniFilePath, settingsContent);
+            // Готовим содержимое секции для настроек интерфейса
+            var interfaceSection = new List<string>
+            {
+                $"HeaderFontSize={HeaderFontSize}",
+                $"NavigationDividerWidth={NavigationDividerWidth}",
+                $"NavigationDividerHeight={NavigationDividerHeight}",
+                $"TopDockHeight={TopDockHeight}",
+                $"BarHeight={BarHeight}",
+                $"NavigationFontSize={NavigationFontSize}",
+                $"BarPadding={BarPadding}"
+            };
+
+            // Разбираем текущее содержимое файла на секции (если файл существует)
+            var sections = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+            if (File.Exists(_iniFilePath))
+            {
+                sections = ParseIniFile();
+            }
+
+            // Обновляем (или добавляем) секцию InterfaceDimensions
+            sections["InterfaceDimensions"] = interfaceSection;
+
+            // Записываем обновлённый словарь секций обратно в файл
+            WriteIniFile(sections);
 
             // После сохранения обновляем глобальные ресурсы приложения
-            // After saving, update the application's global resources
             UpdateApplicationResources();
         }
 

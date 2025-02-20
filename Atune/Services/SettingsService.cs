@@ -56,73 +56,76 @@ public class SettingsService : ISettingsService
         }
     }
 
-    public void SaveSettings(AppSettings settings)
+    // Добавляем новые методы для разбора INI‑файла на секции
+    private Dictionary<string, List<string>> ParseIniFile()
     {
-        try
+        var sections = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+        List<string>? currentSectionLines = null;
+        string currentSectionName = string.Empty;
+        if (File.Exists(_settingsPath))
         {
-            lock (_fileLockAsync)
+            foreach (var line in File.ReadAllLines(_settingsPath))
             {
-                var cacheOptions = new MemoryCacheEntryOptions()
-                    .SetSize(1024)
-                    .SetPriority(CacheItemPriority.High)
-                    .SetSlidingExpiration(TimeSpan.FromMinutes(30));
-                
-                _cache.Set("AppSettings", settings, cacheOptions);
-                
-                var directory = Path.GetDirectoryName(_settingsPath);
-                if (!string.IsNullOrWhiteSpace(directory))
+                var trimmed = line.Trim();
+                if (trimmed.StartsWith("[") && trimmed.EndsWith("]"))
                 {
-                    try
+                    // Начало новой секции
+                    currentSectionName = trimmed.TrimStart('[').TrimEnd(']');
+                    if (!sections.ContainsKey(currentSectionName))
                     {
-                        // Directory.CreateDirectory will create the directory if it doesn't exist,
-                        // and will not throw an exception if the directory already exists.
-                        // Directory.CreateDirectory создаст директорию, если она не существует,
-                        // и не выбросит исключение, если директория уже существует.
-                        Directory.CreateDirectory(directory);
+                        sections[currentSectionName] = new List<string>();
                     }
-                    catch (UnauthorizedAccessException ex)
-                    {
-                        Debug.WriteLine("Not enough permissions to create directory: " + directory);
-                        throw new InvalidOperationException("Not enough permissions to access directory " + directory, ex);
-                    }
-                    catch (IOException ex)
-                    {
-                        // Если ошибка произошла из-за состояния гонки, проверьте директорию снова.
-                        // If the error occurred due to a race condition, check the directory again.
-                        if (!Directory.Exists(directory))
-                        {
-                            Debug.WriteLine("Error creating directory: " + directory);
-                            throw new InvalidOperationException("Failed to create directory " + directory, ex);
-                        }
-                    }
-                }
-
-                var lines = new List<string>
-                {
-                    $"ThemeVariant={(int)settings.ThemeVariant}",
-                    $"Language={settings.Language}"
-                };
-
-                // For Android, we use a special storage
-                // Для Android мы используем специальное хранилище
-                if (OperatingSystem.IsAndroid())
-                {
-                    using var stream = File.Create(_settingsPath);
-                    using var writer = new StreamWriter(stream);
-                    lines.ForEach(writer.WriteLine);
+                    currentSectionLines = sections[currentSectionName];
                 }
                 else
                 {
-                    File.WriteAllLines(_settingsPath, lines);
+                    // Добавляем строку, только если она не пустая
+                    if (currentSectionLines != null && !string.IsNullOrWhiteSpace(line))
+                    {
+                        currentSectionLines.Add(line);
+                    }
                 }
             }
-            _logger.LogInformation("Settings saved successfully");
         }
-        catch (Exception ex)
+        return sections;
+    }
+
+    private void WriteIniFile(Dictionary<string, List<string>> sections)
+    {
+        var lines = new List<string>();
+        foreach (var kvp in sections)
         {
-            _logger.LogError("Error saving settings", ex);
-            _cache.Remove("AppSettings");
-            throw new SettingsException("Failed to save settings", ex);
+            lines.Add($"[{kvp.Key}]");
+            lines.AddRange(kvp.Value);
+            lines.Add(string.Empty); // пустая строка для отделения секций
+        }
+        File.WriteAllLines(_settingsPath, lines);
+    }
+
+    // Изменяем метод сохранения основных настроек, чтобы обновлять только секцию [AppSettings]
+    public void SaveSettings(AppSettings settings)
+    {
+        lock (_fileLockAsync)
+        {
+            // Готовим содержимое секции для основных настроек
+            var appSection = new List<string>
+            {
+                $"ThemeVariant={(int)settings.ThemeVariant}",
+                $"Language={settings.Language}"
+            };
+
+            // Разбираем текущее содержимое файла на секции (если файл существует)
+            var sections = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+            if (File.Exists(_settingsPath))
+            {
+                sections = ParseIniFile();
+            }
+
+            // Обновляем (или добавляем) секцию AppSettings
+            sections["AppSettings"] = appSection;
+
+            // Записываем обновлённый INI‑файл
+            WriteIniFile(sections);
         }
     }
 
@@ -144,13 +147,18 @@ public class SettingsService : ISettingsService
                 if (!File.Exists(_settingsPath))
                     return new AppSettings();
 
+                // Разбираем файл на секции
+                var sections = ParseIniFile();
+                if (!sections.ContainsKey("AppSettings"))
+                    return new AppSettings();
+
+                var appSection = sections["AppSettings"];
                 var settings = new AppSettings();
-                
-                foreach (var line in File.ReadAllLines(_settingsPath))
+                foreach (var line in appSection)
                 {
                     var parts = line.Split('=', 2);
-                    if (parts.Length != 2) continue;
-
+                    if (parts.Length != 2)
+                        continue;
                     switch (parts[0])
                     {
                         case "ThemeVariant" when int.TryParse(parts[1], out var theme):
@@ -222,20 +230,30 @@ public class SettingsService : ISettingsService
         await _fileLockAsync.WaitAsync();
         try
         {
-            var cacheOptions = new MemoryCacheEntryOptions()
-                .SetSize(1024)
-                .SetPriority(CacheItemPriority.High)
-                .SetSlidingExpiration(TimeSpan.FromMinutes(30));
-            
-            await Task.Run(() => _cache.Set("AppSettings", settings, cacheOptions));
-            
-            var directory = Path.GetDirectoryName(_settingsPath);
-            if (!string.IsNullOrWhiteSpace(directory))
+            // Обновляем кэш
+            _cache.Set("AppSettings", settings, _cacheOptions);
+
+            // Разбираем существующий INI-файл, если он существует
+            var sections = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+            if (File.Exists(_settingsPath))
             {
-                await Task.Run(() => Directory.CreateDirectory(directory));
+                sections = ParseIniFile();
             }
-            
-            await File.WriteAllTextAsync(_settingsPath, JsonSerializer.Serialize(settings));
+
+            // Готовим секцию для основных настроек (локализации, темы и т.п.)
+            var appSection = new List<string>
+            {
+                $"ThemeVariant={(int)settings.ThemeVariant}",
+                $"Language={settings.Language}",
+                $"LastUsedProfile={settings.LastUsedProfile}",
+                $"LastUpdated={settings.LastUpdated}"
+            };
+
+            // Обновляем (или добавляем) секцию AppSettings
+            sections["AppSettings"] = appSection;
+
+            // Записываем обновлённый INI‑файл (запись запускаем в отдельном таске, чтобы не блокировать поток)
+            await Task.Run(() => WriteIniFile(sections));
         }
         finally
         {
