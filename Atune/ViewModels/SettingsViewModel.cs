@@ -17,11 +17,11 @@ public partial class SettingsViewModel : ViewModelBase
     // Default value - displayed language name
     // Значение по умолчанию - отображаемое название языка
     [ObservableProperty]
-    private string selectedLanguage = "Русская";
+    private string selectedLanguage = "Русский";
 
     // Список для выбора: отображаемые названия языков
     // List for selection: displayed language names
-    public List<string> AvailableLanguages { get; } = new() { "Русская", "English" };
+    public List<string> AvailableLanguages { get; } = new() { "Русский", "English" };
 
     private readonly ISettingsService _settingsService;
     private readonly IInterfaceSettingsService _interfaceSettingsService;
