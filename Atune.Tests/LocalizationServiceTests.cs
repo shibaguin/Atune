@@ -35,9 +35,10 @@ namespace Atune.Tests
         {
             // Arrange
             var mockSettingsService = new Mock<ISettingsService>();
+            var mockLogger = new Mock<ILoggerService>();
             // Возвращаем базовые настройки (например, язык "en"); значение не важно, т.к. далее мы вызовем SetLanguage("ru")
             mockSettingsService.Setup(s => s.LoadSettings()).Returns(new AppSettings { Language = "en" });
-            var localizationService = new LocalizationService(mockSettingsService.Object);
+            var localizationService = new LocalizationService(mockSettingsService.Object, mockLogger.Object);
 
             // Act
             localizationService.SetLanguage("ru");
@@ -52,9 +53,10 @@ namespace Atune.Tests
         {
             // Arrange
             var mockSettingsService = new Mock<ISettingsService>();
+            var mockLogger = new Mock<ILoggerService>();
             // Возвращаем базовые настройки (например, язык "en")
             mockSettingsService.Setup(s => s.LoadSettings()).Returns(new AppSettings { Language = "en" });
-            var localizationService = new LocalizationService(mockSettingsService.Object);
+            var localizationService = new LocalizationService(mockSettingsService.Object, mockLogger.Object);
             
             // Act и Assert
             Assert.Throws<FileNotFoundException>(() => localizationService.SetLanguage("fr"));

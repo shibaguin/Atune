@@ -12,12 +12,14 @@ public class LocalizationService : INotifyPropertyChanged
 {
     private ResourceDictionary _currentResources = new ResourceDictionary();
     private readonly ISettingsService _settingsService;
+    private readonly ILoggerService _logger;
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
-    public LocalizationService(ISettingsService settingsService)
+    public LocalizationService(ISettingsService settingsService, ILoggerService logger)
     {
         _settingsService = settingsService;
+        _logger = logger;
         LoadLanguage(_settingsService.LoadSettings().Language);
     }
 
@@ -36,6 +38,7 @@ public class LocalizationService : INotifyPropertyChanged
         var primaryRd = LoadResxAsResourceDictionary(languageCode);
         if (primaryRd == null)
         {
+            _logger.LogError($"Resx localization file not found for language: {languageCode}");
             throw new FileNotFoundException($"Resx localization file not found for language: {languageCode}");
         }
 
@@ -59,6 +62,7 @@ public class LocalizationService : INotifyPropertyChanged
         // Проверка, что Application.Current.Resources.MergedDictionaries не равен null
         if (Application.Current?.Resources?.MergedDictionaries == null)
         {
+            _logger.LogError("Application.Current или его Resources/MergedDictionaries равны null.");
             throw new NullReferenceException("Application.Current или его Resources/MergedDictionaries равны null.");
         }
 
@@ -93,8 +97,9 @@ public class LocalizationService : INotifyPropertyChanged
             }
             return resourceDictionary;
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            _logger.LogError($"Error loading resource for language: {languageCode}. Exception: {ex.Message}", ex);
             return null;
         }
     }
