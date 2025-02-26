@@ -23,11 +23,12 @@ using Atune.Extensions;
 
 namespace Atune.ViewModels;
 
-public partial class MediaViewModel : ObservableObject
+public partial class MediaViewModel : ObservableObject, IDisposable
 {
     private readonly IMemoryCache _cache;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILoggerService? _logger;
+    private readonly MediaPlayerService _mediaPlayerService;
     
     [ObservableProperty]
     private List<MediaItem> _mediaContent = new List<MediaItem>();
@@ -36,20 +37,40 @@ public partial class MediaViewModel : ObservableObject
     private ObservableCollection<MediaItem> _mediaItems = new();
 
     [ObservableProperty]
+    private MediaItem? _selectedMediaItem;
+
+    [ObservableProperty]
     private bool _isBusy;
 
     public Action<string>? UpdateStatusMessage { get; set; }
 
-    public MediaViewModel(IMemoryCache cache, IUnitOfWork unitOfWork, ILoggerService logger)
+    public IRelayCommand PlayCommand { get; }
+    public IRelayCommand StopCommand { get; }
+
+    private bool _disposed;
+
+    public MediaViewModel(
+        IMemoryCache cache, 
+        IUnitOfWork unitOfWork, 
+        ILoggerService logger,
+        MediaPlayerService mediaPlayerService)
     {
         _cache = cache;
         _unitOfWork = unitOfWork;
         _logger = logger;
-        LoadMediaContent();
+        _mediaPlayerService = mediaPlayerService;
         
-        // Add automatic loading when initializing
-        // Добавляем автоматическую загрузку при инициализации
-        RefreshMediaCommand.ExecuteAsync(null!);
+        // Заменяем команды на релейтед команды из методов
+        PlayCommand = new RelayCommand<MediaItem>(PlayMediaItem);
+        StopCommand = new RelayCommand(StopPlayback);
+
+        _mediaPlayerService.PlaybackEnded += OnPlaybackEnded;
+        
+        // Заменяем вызов LoadMediaContent на прямое обновление
+        Dispatcher.UIThread.Post(async () => 
+        {
+            await RefreshMedia();
+        });
     }
 
     private async Task<List<MediaItem>> LoadFromDatabaseAsync()
@@ -77,7 +98,11 @@ public partial class MediaViewModel : ObservableObject
             
             _cache.Set("MediaContent", content, cacheOptions);
         }
+        
         MediaContent = content ?? new List<MediaItem>();
+        
+        // Синхронизируем с MediaItems
+        await UpdateMediaItemsGradually(MediaContent);
     }
 
     private List<MediaItem> LoadFromDataSource()
@@ -224,9 +249,9 @@ public partial class MediaViewModel : ObservableObject
         try
         {
             IsBusy = true;
+            // Убираем кэширование при обновлении
             var items = await _unitOfWork.Media.GetAllWithDetailsAsync();
             
-            // Universal way to update for all platforms
             // Универсальный способ обновления для всех платформ
             await Dispatcher.UIThread.InvokeAsync(() =>
             {
@@ -235,10 +260,12 @@ public partial class MediaViewModel : ObservableObject
                 {
                     MediaItems.Add(item);
                 }
-                // Force update UI
                 // Принудительное обновление UI
                 OnPropertyChanged(nameof(MediaItems));
             });
+            
+            // Обновляем кэш после загрузки
+            _cache.Set("MediaContent", items, new MemoryCacheEntryOptions().SetSlidingExpiration(TimeSpan.FromMinutes(5)));
         }
         catch (Exception ex)
         {
@@ -419,5 +446,77 @@ public partial class MediaViewModel : ObservableObject
         {
             IsBusy = false;
         }
+    }
+
+    [RelayCommand]
+    private void NextMediaItem()
+    {
+        if (MediaItems.Count == 0) return;
+        
+        int currentIndex = SelectedMediaItem != null 
+            ? MediaItems.IndexOf(SelectedMediaItem) 
+            : -1;
+        
+        int newIndex = (currentIndex + 1) % MediaItems.Count;
+        var nextItem = MediaItems[newIndex];
+        SelectedMediaItem = nextItem;
+        PlayMediaItemCommand.Execute(nextItem);
+    }
+
+    [RelayCommand]
+    private void PreviousMediaItem()
+    {
+        if (MediaItems.Count == 0) return;
+        
+        int currentIndex = SelectedMediaItem != null 
+            ? MediaItems.IndexOf(SelectedMediaItem) 
+            : 0;
+        
+        int newIndex = (currentIndex - 1 + MediaItems.Count) % MediaItems.Count;
+        var previousItem = MediaItems[newIndex];
+        SelectedMediaItem = previousItem;
+        PlayMediaItemCommand.Execute(previousItem);
+    }
+
+    [RelayCommand]
+    private void PlayMediaItem(MediaItem? mediaItem)
+    {
+        if (mediaItem != null && !string.IsNullOrWhiteSpace(mediaItem.Path))
+        {
+            _mediaPlayerService.Stop();
+            SelectedMediaItem = mediaItem;
+            OnPropertyChanged(nameof(SelectedMediaItem));
+            _mediaPlayerService.Play(mediaItem.Path);
+        }
+    }
+
+    [RelayCommand]
+    private void StopPlayback()
+    {
+        _mediaPlayerService.Stop();
+        SelectedMediaItem = null;
+    }
+
+    private void OnPlaybackEnded(object? sender, EventArgs e)
+    {
+        NextMediaItemCommand.Execute(null);
+    }
+
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (_disposed) return;
+        
+        if (disposing)
+        {
+            _mediaPlayerService.PlaybackEnded -= OnPlaybackEnded;
+        }
+        
+        _disposed = true;
     }
 } 

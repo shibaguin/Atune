@@ -3,6 +3,6 @@ description: Работа с медиа
 globs: 
 ---
 1. Основная логика в `MediaViewModel.cs`
-2. Поддерживаемые форматы: .mp3, .flac, .wav, .ogg
+2. Поддерживаемые форматы: .mp3, .flac, .wav, .ogg, .aac, .wma, .alac, .ape
 3. Для метаданных используй Z440.ATL.Core
 4. Воспроизведение через `AtuneService` в Android-версии

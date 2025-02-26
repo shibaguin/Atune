@@ -1,4 +1,5 @@
-<UserControl xmlns="https://github.com/avaloniaui"
+<UserControl x:Name="Root"
+             xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -7,7 +8,8 @@
              d:DesignHeight="450"
              xmlns:vm="clr-namespace:Atune.ViewModels"
              x:Class="Atune.Views.MediaView"
-             x:DataType="vm:MediaViewModel">
+             x:DataType="vm:MediaViewModel"
+             d:DataContext="{d:DesignInstance Type=vm:MediaViewModel, IsDesignTimeCreatable=True}">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -15,6 +17,7 @@
         </Grid.RowDefinitions>
 
         <ListBox ItemsSource="{Binding MediaItems}" 
+                 SelectedItem="{Binding SelectedMediaItem, Mode=TwoWay}"
                  Grid.Row="1">
             <ListBox.ItemsPanel>
                 <ItemsPanelTemplate>
@@ -23,25 +26,30 @@
             </ListBox.ItemsPanel>
             <ListBox.ItemTemplate>
                 <DataTemplate>
-                    <StackPanel Margin="5" Spacing="3">
-                        <TextBlock Text="{Binding Title}" 
-                                   FontWeight="Bold"
-                                   MaxLines="1"/>
-                        <TextBlock Text="{Binding Artist}" 
-                                   MaxLines="1"/>
-                        <StackPanel Orientation="Horizontal" Spacing="5">
-                            <TextBlock Text="{Binding Genre}" 
-                                       Foreground="Gray"
+                    <Button Command="{Binding PlayMediaItemCommand, ElementName=Root}"
+                            CommandParameter="{Binding}"
+                            Background="Transparent" BorderThickness="0"
+                            Focusable="False">
+                        <StackPanel Margin="5" Spacing="3">
+                            <TextBlock Text="{Binding Title}" 
+                                       FontWeight="Bold"
                                        MaxLines="1"/>
-                            <TextBlock Text="{Binding Year}" 
-                                       Foreground="Gray"/>
+                            <TextBlock Text="{Binding Artist}" 
+                                       MaxLines="1"/>
+                            <StackPanel Orientation="Horizontal" Spacing="5">
+                                <TextBlock Text="{Binding Genre}" 
+                                           Foreground="Gray"
+                                           MaxLines="1"/>
+                                <TextBlock Text="{Binding Year}" 
+                                           Foreground="Gray"/>
+                            </StackPanel>
+                            <TextBlock Text="{Binding Path}" 
+                                       FontSize="12"
+                                       Foreground="DarkGray"
+                                       MaxLines="1"
+                                       TextTrimming="CharacterEllipsis"/>
                         </StackPanel>
-                        <TextBlock Text="{Binding Path}" 
-                                   FontSize="12"
-                                   Foreground="DarkGray"
-                                   MaxLines="1"
-                                   TextTrimming="CharacterEllipsis"/>
-                    </StackPanel>
+                    </Button>
                 </DataTemplate>
             </ListBox.ItemTemplate>
         </ListBox>

@@ -37,32 +37,57 @@ public partial class MainViewModel : ViewModelBase
     [ObservableProperty]
     private bool isSuggestionsOpen;
 
+    [ObservableProperty]
+    private bool isPlaying;
+
+    [ObservableProperty]
+    private int volume = 50;
+
+    [ObservableProperty]
+    private string currentMediaPath = string.Empty;
+
+    public IRelayCommand PlayCommand { get; }
+    public IRelayCommand StopCommand { get; }
+    public IRelayCommand TogglePlayPauseCommand { get; }
+    public IRelayCommand NextCommand { get; }
+    public IRelayCommand PreviousCommand { get; }
+
     private readonly ISettingsService _settingsService;
     private readonly Dictionary<SectionType, Control> _views;
     private readonly Func<Type, ViewModelBase> _viewModelFactory;
     private readonly Func<Type, Control> _viewFactory;
     private readonly INavigationKeywordProvider _keywordProvider;
     private readonly LocalizationService _localizationService;
+    private readonly MediaPlayerService _mediaPlayerService;
+
+    // Константы с векторными данными для иконок
+    private const string PlayIconPath = "M2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10S2 17.523 2 12Zm8.856-3.845A1.25 1.25 0 0 0 9 9.248v5.504a1.25 1.25 0 0 0 1.856 1.093l5.757-3.189a.75.75 0 0 0 0-1.312l-5.757-3.189Z";
+    private const string PauseIconPath = "M5.746 3a1.75 1.75 0 0 0-1.75 1.75v14.5c0 .966.784 1.75 1.75 1.75h3.5a1.75 1.75 0 0 0 1.75-1.75V4.75A1.75 1.75 0 0 0 9.246 3h-3.5ZM14.746 3a1.75 1.75 0 0 0-1.75 1.75v14.5c0 .966.784 1.75 1.75 1.75h3.5a1.75 1.75 0 0 0 1.75-1.75V4.75A1.75 1.75 0 0 0 18.246 3h-3.5Z";
+
+    // Вычисляемое свойство для передачи в XAML
+    public string PlayIconData => IsPlaying ? PauseIconPath : PlayIconPath;
 
     public MainViewModel(
         ISettingsService settingsService,
         Func<Type, ViewModelBase> viewModelFactory,
         Func<Type, Control> viewFactory,
         INavigationKeywordProvider keywordProvider,
-        LocalizationService localizationService)
+        LocalizationService localizationService,
+        MediaPlayerService mediaPlayerService)
     {
         _settingsService = settingsService ?? throw new ArgumentNullException(nameof(settingsService));
         _viewModelFactory = viewModelFactory ?? throw new ArgumentNullException(nameof(viewModelFactory));
         _viewFactory = viewFactory ?? throw new ArgumentNullException(nameof(viewFactory));
         _keywordProvider = keywordProvider ?? throw new ArgumentNullException(nameof(keywordProvider));
         _localizationService = localizationService ?? throw new ArgumentNullException(nameof(localizationService));
+        _mediaPlayerService = mediaPlayerService ?? throw new ArgumentNullException(nameof(mediaPlayerService));
         
         _views = new Dictionary<SectionType, Control>
         {
-            [SectionType.Home] = viewFactory(typeof(HomeView)),
-            [SectionType.Media] = viewFactory(typeof(MediaView)),
-            [SectionType.History] = viewFactory(typeof(HistoryView)),
-            [SectionType.Settings] = viewFactory(typeof(SettingsView))
+            [SectionType.Home] = _viewFactory(typeof(HomeView)),
+            [SectionType.Media] = _viewFactory(typeof(MediaView)),
+            [SectionType.History] = _viewFactory(typeof(HistoryView)),
+            [SectionType.Settings] = _viewFactory(typeof(SettingsView))
         };
         
         CurrentView = _views[SectionType.Home];
@@ -71,6 +96,17 @@ public partial class MainViewModel : ViewModelBase
         // Subscribe to localization change event.
         // Подпишитесь на событие изменения локализации.
         _localizationService.PropertyChanged += LocalizationService_PropertyChanged;
+
+        // Инициализируем команду, которая вызывает метод воспроизведения
+        PlayCommand = new RelayCommand(ExecutePlayCommand);
+        StopCommand = new RelayCommand(ExecuteStopCommand);
+
+        // Новый переключающий комманд
+        TogglePlayPauseCommand = new RelayCommand(ExecuteTogglePlayPauseCommand);
+        NextCommand = new RelayCommand(ExecuteNextCommand);
+        PreviousCommand = new RelayCommand(ExecutePreviousCommand);
+
+        _mediaPlayerService.PlaybackEnded += OnPlaybackEnded;
     }
 
     private void LocalizationService_PropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -372,5 +408,75 @@ public partial class MainViewModel : ViewModelBase
             }
             IsSuggestionsOpen = SearchSuggestions.Any();
         }
+    }
+
+    // Метод, исполняемый командой PlayCommand
+    private void ExecutePlayCommand()
+    {
+        if (CurrentView is MediaView mediaView && 
+            mediaView.DataContext is MediaViewModel mvm &&
+            mvm.SelectedMediaItem != null)
+        {
+            _mediaPlayerService.Play(mvm.SelectedMediaItem.Path);
+            IsPlaying = true;
+        }
+    }
+
+    private void ExecuteStopCommand()
+    {
+        _mediaPlayerService.Stop();
+        IsPlaying = false;
+    }
+
+    // Обновлённый метод для переключения воспроизведения (play/pause)
+    private void ExecuteTogglePlayPauseCommand()
+    {
+        if (_mediaPlayerService.IsPlaying)
+        {
+            _mediaPlayerService.Pause();
+            IsPlaying = false;
+        }
+        else
+        {
+            _mediaPlayerService.Resume();
+            IsPlaying = true;
+        }
+    }
+
+    // Автоматически вызывается при изменении IsPlaying (если используется [ObservableProperty])
+    partial void OnIsPlayingChanged(bool value)
+    {
+        OnPropertyChanged(nameof(PlayIconData));
+    }
+
+    private void ExecuteNextCommand()
+    {
+        if (CurrentView is MediaView mediaView && 
+            mediaView.DataContext is MediaViewModel mediaVM)
+        {
+            mediaVM.NextMediaItemCommand.Execute(null);
+        }
+    }
+
+    private void ExecutePreviousCommand()
+    {
+        if (CurrentView is MediaView mediaView && 
+            mediaView.DataContext is MediaViewModel mediaVM)
+        {
+            mediaVM.PreviousMediaItemCommand.Execute(null);
+        }
+    }
+
+    // Вызывается автоматически при изменении Volume; обновляем значение в FFmpegService
+    partial void OnVolumeChanged(int value)
+    {
+        _mediaPlayerService.Volume = value;
+    }
+
+    private void OnPlaybackEnded(object? sender, EventArgs e)
+    {
+        IsPlaying = false;
+        // Автоматический переход к следующему треку
+        ExecuteNextCommand();
     }
 }

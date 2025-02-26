@@ -1,5 +1,6 @@
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Interactivity;
 using Atune.Models;
 using Atune.ViewModels;
 
@@ -32,6 +33,22 @@ public partial class MainView : UserControl
             listBox.SelectedItem = null;
             vm.SearchQuery = selectedSuggestion;
             vm.IsSuggestionsOpen = false;
+        }
+    }
+
+    public void PlayButton_Click(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is MainViewModel viewModel)
+        {
+            viewModel.PlayCommand.Execute(null);
+        }
+    }
+
+    public void StopButton_Click(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is MainViewModel viewModel)
+        {
+            viewModel.StopCommand.Execute(null);
         }
     }
 }

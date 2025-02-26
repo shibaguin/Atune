@@ -14,6 +14,7 @@ using System.Threading.Tasks;
 using System.ComponentModel.DataAnnotations;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using CommunityToolkit.Mvvm.Input;
 #if ANDROID
 using Android.Net;
 using Android.App;
@@ -28,6 +29,14 @@ namespace Atune.Views;
 
 public partial class MediaView : UserControl
 {
+    public new MediaViewModel DataContext
+    {
+        get => (MediaViewModel)base.DataContext!;
+        set => base.DataContext = value;
+    }
+
+    public IRelayCommand PlayMediaItemCommand => DataContext.PlayMediaItemCommand;
+
     private readonly IDbContextFactory<AppDbContext>? _dbContextFactory;
     private readonly ILoggerService? _logger;
     private readonly MediaDatabaseService _mediaDatabaseService = default!;
@@ -329,5 +338,16 @@ public partial class MediaView : UserControl
         #else
         return await Task.FromResult(path);
         #endif
+    }
+
+    private void PlayMediaItem_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button button && button.DataContext is MediaItem mediaItem)
+        {
+            if (DataContext is MediaViewModel vm)
+            {
+                vm.PlayMediaItemCommand.Execute(mediaItem);
+            }
+        }
     }
 }

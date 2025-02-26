@@ -257,6 +257,9 @@ public partial class App : Application
         });
 
         services.AddSingleton<INavigationKeywordProvider, NavigationKeywordProvider>();
+
+        // Регистрируем новый сервис воспроизведения
+        services.AddSingleton<MediaPlayerService>();
     }
 
     [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "Disabled for Avalonia compatibility")]

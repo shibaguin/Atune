@@ -5,6 +5,7 @@
              xmlns:vm="clr-namespace:Atune.ViewModels"
              xmlns:sys="clr-namespace:System;assembly=mscorlib"
              xmlns:views="clr-namespace:Atune.Views"
+             xmlns:converters="clr-namespace:Atune.Converters;assembly=Atune"
              mc:Ignorable="d" 
              d:DesignWidth="800" 
              d:DesignHeight="450"
@@ -268,29 +269,43 @@
                            Foreground="White"/>
             </Border>
 
-            <!-- Панель с кнопками управления мультимедиа (центрированный бар) -->
-            <!-- Media control panel (centered bar) -->
+            <!-- Обновлённая панель кнопок управления мультимедиа -->
             <Grid Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                <!-- Кнопка "Previous" в левом столбце -->
-                <!-- Previous button in the left column -->
-                <Button Grid.Column="0" Background="Transparent" BorderThickness="0" HorizontalAlignment="Right" Margin="5">
+                <!-- Кнопка "Previous" в левом столбце с привязкой к PreviousCommand -->
+                <Button Grid.Column="0" Background="Transparent" BorderThickness="0" 
+                        HorizontalAlignment="Right" Margin="5"
+                        Command="{Binding PreviousCommand}">
                     <PathIcon Data="M2.75 20a1 1 0 1 0 2 0V4a1 1 0 1 0-2 0v16ZM20.75 19.053c0 1.424-1.612 2.252-2.77 1.422L7.51 12.968a1.75 1.75 0 0 1 .075-2.895l10.47-6.716c1.165-.748 2.695.089 2.695 1.473v14.223Z"/>
                 </Button>
-                <!-- Кнопка "Play/Pause" в центральном столбце -->
-                <!-- Play/Pause button in the center column -->
-                <Button Grid.Column="1" Background="Transparent" BorderThickness="0" HorizontalAlignment="Center" Margin="5">
-                    <PathIcon Data="M2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10S2 17.523 2 12Zm8.856-3.845A1.25 1.25 0 0 0 9 9.248v5.504a1.25 1.25 0 0 0 1.856 1.093l5.757-3.189a.75.75 0 0 0 0-1.312l-5.757-3.189Z"/>
+                <!-- Обновлённая кнопка "Play/Pause" в центральном столбце -->
+                <Button Grid.Column="1" Background="Transparent" BorderThickness="0" 
+                        HorizontalAlignment="Center" Margin="5"
+                        Command="{Binding TogglePlayPauseCommand}">
+                    <PathIcon Data="{Binding PlayIconData}"/>
                 </Button>
-                <!-- Next button in the right column -->
-                <!-- Кнопка "Next" в правом столбце -->
-                <Button Grid.Column="2" Background="Transparent" BorderThickness="0" HorizontalAlignment="Left" Margin="5">
+                <!-- Кнопка "Stop" в четвертом столбце -->
+                <Button Grid.Column="2" Background="Transparent" BorderThickness="0" 
+                        HorizontalAlignment="Center" Margin="5"
+                        Command="{Binding StopCommand}">
+                    <PathIcon Data="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10ZM9.5 8h5A1.5 1.5 0 0 1 16 9.5v5a1.5 1.5 0 0 1-1.5 1.5h-5A1.5 1.5 0 0 1 8 14.5v-5A1.5 1.5 0 0 1 9.5 8Z"/>
+                </Button>
+                <!-- Кнопка "Next" в третьем столбце с привязкой к NextCommand -->
+                <Button Grid.Column="3" Background="Transparent" BorderThickness="0" 
+                        HorizontalAlignment="Left" Margin="5"
+                        Command="{Binding NextCommand}">
                     <PathIcon Data="M21 4a1 1 0 1 0-2 0v16a1 1 0 1 0 2 0V4ZM3 4.947c0-1.424 1.612-2.252 2.77-1.422l10.47 7.507a1.75 1.75 0 0 1-.075 2.895l-10.47 6.716C4.53 21.39 3 20.554 3 19.17V4.947Z"/>
                 </Button>
+                <!-- Новый слайдер для регулировки громкости -->
+                <Slider Grid.Column="4" Minimum="0" Maximum="100" 
+                        Value="{Binding Volume, Mode=TwoWay}" Width="150" Margin="5"
+                        ToolTip.Tip="Регулировка громкости"/>
             </Grid>
         </Grid>
 
