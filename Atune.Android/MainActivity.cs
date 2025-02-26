@@ -6,6 +6,8 @@ using Android.OS;
 using Android;
 using Android.Runtime;
 using System.Diagnostics.CodeAnalysis;
+using LibVLCSharp.Platforms.Android;
+using LibVLCSharp.Shared;
 
 namespace Atune.Android;
 
@@ -21,7 +23,11 @@ public class MainActivity : AvaloniaMainActivity<App>
 
     protected override void OnCreate(Bundle? savedInstanceState)
     {
+        // Правильная инициализация через Core
+        Core.Initialize();
+        
         base.OnCreate(savedInstanceState);
+        
         if ((int)Build.VERSION.SdkInt >= 23)
         {
             RequestStoragePermissions();

@@ -13,11 +13,17 @@ namespace Atune.Services
 
         public MediaPlayerService()
         {
-            Core.Initialize();
-            _libVlc = new LibVLC();
-            _player = new MediaPlayer(_libVlc);
-            
-            _player.EndReached += (s, e) => PlaybackEnded?.Invoke(this, EventArgs.Empty);
+            try 
+            {
+                _libVlc = new LibVLC(enableDebugLogs: true);
+                _player = new MediaPlayer(_libVlc);
+                _player.EndReached += (sender, e) => PlaybackEnded?.Invoke(this, EventArgs.Empty);
+            }
+            catch(Exception ex)
+            {
+                Console.WriteLine($"VLC INIT ERROR: {ex}");
+                throw;
+            }
         }
 
         public void Play(string path)
@@ -62,6 +68,11 @@ namespace Atune.Services
             _player.Dispose();
             _libVlc.Dispose();
             GC.SuppressFinalize(this);
+        }
+
+        private void OnPlaybackEnded(object? sender, EventArgs e)
+        {
+            PlaybackEnded?.Invoke(this, e);
         }
     }
 } 

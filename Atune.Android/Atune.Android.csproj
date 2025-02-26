@@ -14,12 +14,14 @@
     <!-- Отключаем LLVM для стабильности -->
     <EnableLLVM>false</EnableLLVM>
 
-    <PublishTrimmed>true</PublishTrimmed>
+    <PublishTrimmed>false</PublishTrimmed>
     <TrimMode>link</TrimMode>
-    <AndroidEnableProfiledAot>true</AndroidEnableProfiledAot>
-    <RunAOTCompilation>true</RunAOTCompilation>
+    <AndroidEnableProfiledAot>false</AndroidEnableProfiledAot>
+    <RunAOTCompilation>false</RunAOTCompilation>
 
-    
+    <!-- Включаем полную отладку -->
+    <EmbedAssembliesIntoApk>false</EmbedAssembliesIntoApk>
+    <AndroidLinkMode>None</AndroidLinkMode>
 
   </PropertyGroup>
 
@@ -44,9 +46,24 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" />
     <PackageReference Include="Xamarin.AndroidX.Core" />
     <PackageReference Include="Xamarin.AndroidX.DocumentFile" />
+    <PackageReference Include="LibVLCSharp" />
+    <PackageReference Include="LibVLCSharp.Avalonia"/>
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Atune\Atune.csproj" />
+  </ItemGroup>
+
+  <!-- Добавляем локальные библиотеки -->
+  <ItemGroup>
+    <AndroidNativeLibrary Include="Resources\lib\arm64-v8a\libvlc.so" />
+    <AndroidNativeLibrary Include="Resources\lib\arm64-v8a\libvlcjni.so" />
+    <AndroidNativeLibrary Include="Resources\lib\arm64-v8a\libc++_shared.so" />
+    <AndroidNativeLibrary Include="Resources\lib\arm64-v8a\libanw.21.so" />
+  </ItemGroup>
+
+  <!-- Удаляем старые ресурсы -->
+  <ItemGroup>
+    <AndroidResource Remove="Resources\VLC\**\*.so" />
   </ItemGroup>
 </Project>
