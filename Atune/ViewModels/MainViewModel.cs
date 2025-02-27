@@ -517,10 +517,21 @@ public partial class MainViewModel : ViewModelBase
 
     private void PositionTimer_Tick(object? sender, EventArgs e)
     {
-        if (_mediaPlayerService.IsPlaying)
+        if (_mediaPlayerService.IsPlaying && 
+            _mediaPlayerService.Duration.TotalSeconds > 0)
         {
             CurrentPosition = _mediaPlayerService.Position;
             Duration = _mediaPlayerService.Duration;
+        }
+    }
+
+    // Обновим метод установки позиции
+    partial void OnCurrentPositionChanged(TimeSpan value)
+    {
+        if (_mediaPlayerService.IsPlaying && 
+            Math.Abs((_mediaPlayerService.Position - value).TotalSeconds) > 1)
+        {
+            _mediaPlayerService.Position = value;
         }
     }
 }

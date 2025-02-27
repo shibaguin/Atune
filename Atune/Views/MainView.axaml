@@ -43,6 +43,8 @@
                     <StaticResource x:Key="TextBrush" ResourceKey="SystemControlForegroundBaseHighBrush"/>
                 </ResourceDictionary>
             </ResourceDictionary.ThemeDictionaries>
+
+            <converters:TimeSpanToSecondsConverter x:Key="TimeSpanToSecondsConverter"/>
         </ResourceDictionary>
     </UserControl.Resources>
 
@@ -247,56 +249,81 @@
             </Grid>
         </Border>
         
-        <!-- Панель мультимедиа управления (бар) -->
-        <!-- Media control panel (bar) -->
-        <Grid DockPanel.Dock="Bottom" Margin="0" Background="{DynamicResource BackgroundBrush}">
+        <!-- Объединённый контейнер для прогресс-бара и медиапанели -->
+        <Grid DockPanel.Dock="Bottom" 
+              Margin="0" 
+              Background="{DynamicResource BackgroundBrush}">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>    <!-- Левый спейсер -->
-                <ColumnDefinition Width="Auto"/> <!-- Центральная панель -->
+                <ColumnDefinition Width="Auto"/> <!-- Центральная область -->
                 <ColumnDefinition Width="*"/>    <!-- Правый спейсер -->
             </Grid.ColumnDefinitions>
 
-            <!-- Центральная панель с элементами управления -->
-            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Spacing="15">
-                <!-- Обложка -->
-                <Border Width="40" 
-                        Height="40" 
-                        Background="Gray" 
-                        CornerRadius="3"
-                        Margin="0,0,10,0">
-                    <Image/> <!-- Заглушка для будущей обложки -->
-                </Border>
+            <!-- Вертикальное разделение внутри центральной колонки -->
+            <Grid Grid.Column="1">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>  <!-- Прогресс-бар -->
+                    <RowDefinition Height="*"/>     <!-- Медиапанель -->
+                </Grid.RowDefinitions>
 
-                <!-- Текущее время -->
-                <TextBlock Text="{Binding CurrentPosition, StringFormat='{}{0:mm\\:ss}'}" 
-                           VerticalAlignment="Center"
-                           FontSize="14"/>
+                <!-- Прогресс-бар -->
+                <Grid Margin="0,0,0,0" Height="40">
+                    <Slider VerticalAlignment="Center"
+                            HorizontalAlignment="Stretch"
+                            Minimum="0"
+                            Maximum="{Binding Duration, Converter={StaticResource TimeSpanToSecondsConverter}}"
+                            Value="{Binding CurrentPosition, Converter={StaticResource TimeSpanToSecondsConverter}, Mode=TwoWay}"
+                            Background="{DynamicResource SubtleBorderBrush}"
+                            Foreground="{DynamicResource AccentBrush}"
+                            Height="40"/>
+                </Grid>
 
-                <!-- Кнопки управления -->
-                <StackPanel Orientation="Horizontal" Spacing="5">
-                    <Button Classes="nav-button" Command="{Binding PreviousCommand}">
-                        <PathIcon Data="M2.75 20a1 1 0 1 0 2 0V4a1 1 0 1 0-2 0v16ZM20.75 19.053c0 1.424-1.612 2.252-2.77 1.422L7.51 12.968a1.75 1.75 0 0 1 .075-2.895l10.47-6.716c1.165-.748 2.695.089 2.695 1.473v14.223Z"/>
-                    </Button>
-                    
-                    <Button Classes="nav-button" Command="{Binding TogglePlayPauseCommand}">
-                        <PathIcon Data="{Binding PlayIconData}"/>
-                    </Button>
-                    
-                    <Button Classes="nav-button" Command="{Binding StopCommand}">
-                        <PathIcon Data="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10ZM9.5 8h5A1.5 1.5 0 0 1 16 9.5v5a1.5 1.5 0 0 1-1.5 1.5h-5A1.5 1.5 0 0 1 8 14.5v-5A1.5 1.5 0 0 1 9.5 8Z"/>
-                    </Button>
-                    
-                    <Button Classes="nav-button" Command="{Binding NextCommand}">
-                        <PathIcon Data="M21 4a1 1 0 1 0-2 0v16a1 1 0 1 0 2 0V4ZM3 4.947c0-1.424 1.612-2.252 2.77-1.422l10.47 7.507a1.75 1.75 0 0 1-.075 2.895l-10.47 6.716C4.53 21.39 3 20.554 3 19.17V4.947Z"/>
-                    </Button>
-                </StackPanel>
+                <!-- Основная медиапанель -->
+                <Grid Grid.Row="1">
+                    <StackPanel Orientation="Horizontal" 
+                               VerticalAlignment="Center" 
+                               Spacing="15">
+                        <!-- Обложка -->
+                        <Border Width="40" 
+                                Height="40" 
+                                Background="Gray" 
+                                CornerRadius="3"
+                                Margin="0,0,10,0">
+                            <Image/> <!-- Заглушка для будущей обложки -->
+                        </Border>
 
-                <!-- Длительность трека -->
-                <TextBlock Text="{Binding Duration, StringFormat='{}{0:mm\\:ss}'}" 
-                           VerticalAlignment="Center"
-                           FontSize="14"
-                           Margin="10,0,0,0"/>
-            </StackPanel>
+                        <!-- Текущее время -->
+                        <TextBlock Text="{Binding CurrentPosition, StringFormat='{}{0:mm\\:ss}'}" 
+                                   VerticalAlignment="Center"
+                                   FontSize="14"/>
+
+                        <!-- Кнопки управления -->
+                        <StackPanel Orientation="Horizontal" Spacing="5">
+                            <Button Classes="nav-button" Command="{Binding PreviousCommand}">
+                                <PathIcon Data="M2.75 20a1 1 0 1 0 2 0V4a1 1 0 1 0-2 0v16ZM20.75 19.053c0 1.424-1.612 2.252-2.77 1.422L7.51 12.968a1.75 1.75 0 0 1 .075-2.895l10.47-6.716c1.165-.748 2.695.089 2.695 1.473v14.223Z"/>
+                            </Button>
+                            
+                            <Button Classes="nav-button" Command="{Binding TogglePlayPauseCommand}">
+                                <PathIcon Data="{Binding PlayIconData}"/>
+                            </Button>
+                            
+                            <Button Classes="nav-button" Command="{Binding StopCommand}">
+                                <PathIcon Data="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10ZM9.5 8h5A1.5 1.5 0 0 1 16 9.5v5a1.5 1.5 0 0 1-1.5 1.5h-5A1.5 1.5 0 0 1 8 14.5v-5A1.5 1.5 0 0 1 9.5 8Z"/>
+                            </Button>
+                            
+                            <Button Classes="nav-button" Command="{Binding NextCommand}">
+                                <PathIcon Data="M21 4a1 1 0 1 0-2 0v16a1 1 0 1 0 2 0V4ZM3 4.947c0-1.424 1.612-2.252 2.77-1.422l10.47 7.507a1.75 1.75 0 0 1-.075 2.895l-10.47 6.716C4.53 21.39 3 20.554 3 19.17V4.947Z"/>
+                            </Button>
+                        </StackPanel>
+
+                        <!-- Длительность трека -->
+                        <TextBlock Text="{Binding Duration, StringFormat='{}{0:mm\\:ss}'}" 
+                                   VerticalAlignment="Center"
+                                   FontSize="14"
+                                   Margin="10,0,0,0"/>
+                    </StackPanel>
+                </Grid>
+            </Grid>
 
             <!-- Слайдер громкости в правом спейсере -->
             <StackPanel Grid.Column="2" 

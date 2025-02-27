@@ -24,6 +24,7 @@ public partial class HistoryViewModel : ViewModelBase
         HistoryItems = _cache.GetOrCreate("HistoryItems", entry => 
         {
             entry.SlidingExpiration = TimeSpan.FromHours(1);
+            entry.Size = 1024;
             return FetchHistoryFromStorage();
         }) ?? new List<HistoryItem>();
     }

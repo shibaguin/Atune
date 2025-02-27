@@ -48,7 +48,8 @@ public partial class HomeViewModel : ViewModelBase
     {
         var message = await _cache.GetOrCreateAsync("WelcomeMessage", async entry =>
         {
-            entry.SetAbsoluteExpiration(TimeSpan.FromHours(1));
+            entry.SetAbsoluteExpiration(TimeSpan.FromHours(1))
+                 .SetSize(1024);
             return await GenerateWelcomeMessageAsync();
         });
         WelcomeMessage = message ?? string.Empty;

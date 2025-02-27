@@ -24,7 +24,8 @@ namespace Atune.Data.Repositories
         {
             return await _cache.GetOrCreateAsync(CacheKey, async entry =>
             {
-                entry.SetSlidingExpiration(System.TimeSpan.FromMinutes(15));
+                entry.SetSlidingExpiration(TimeSpan.FromMinutes(15))
+                     .SetSize(1);
                 return await _decorated.GetAllWithDetailsAsync(cancellationToken);
             }) ?? new List<MediaItem>();
         }

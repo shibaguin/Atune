@@ -54,4 +54,8 @@
     <TrimmerRootAssembly Include="Microsoft.EntityFrameworkCore" />
     <TrimmerRootAssembly Include="Microsoft.Data.Sqlite" />
   </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="Services\FFmpegBinariesHelper.cs" />
+  </ItemGroup>
 </Project>

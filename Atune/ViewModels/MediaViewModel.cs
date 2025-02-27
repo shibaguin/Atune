@@ -249,10 +249,8 @@ public partial class MediaViewModel : ObservableObject, IDisposable
         try
         {
             IsBusy = true;
-            // Убираем кэширование при обновлении
-            var items = await _unitOfWork.Media.GetAllWithDetailsAsync();
+            var items = (await _unitOfWork.Media.GetAllWithDetailsAsync()).ToList();
             
-            // Универсальный способ обновления для всех платформ
             await Dispatcher.UIThread.InvokeAsync(() =>
             {
                 MediaItems.Clear();
@@ -260,12 +258,12 @@ public partial class MediaViewModel : ObservableObject, IDisposable
                 {
                     MediaItems.Add(item);
                 }
-                // Принудительное обновление UI
                 OnPropertyChanged(nameof(MediaItems));
             });
             
-            // Обновляем кэш после загрузки
-            _cache.Set("MediaContent", items, new MemoryCacheEntryOptions().SetSlidingExpiration(TimeSpan.FromMinutes(5)));
+            _cache.Set("MediaContent", items, new MemoryCacheEntryOptions()
+                .SetSlidingExpiration(TimeSpan.FromMinutes(5))
+                .SetSize(items.Count * 500 + 1024));
         }
         catch (Exception ex)
         {

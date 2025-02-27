@@ -10,6 +10,7 @@ using Microsoft.Extensions.Options;
 using System.Threading.Tasks;
 using System.Threading;
 using System.Text.Json;
+using Atune.Services;
 
 namespace Atune.Services;
 
@@ -28,7 +29,7 @@ public class SettingsService : ISettingsService
     private readonly ILoggerService _logger;
 
     // Добавляем методы работы с кэшем здесь
-    private T Get<T>(string key, T defaultValue)
+    private T? Get<T>(string key, T? defaultValue)
     {
         return _cache.TryGetValue(key, out T? value) ? value : defaultValue;
     }
