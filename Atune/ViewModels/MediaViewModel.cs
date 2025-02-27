@@ -44,7 +44,7 @@ public partial class MediaViewModel : ObservableObject, IDisposable
 
     public Action<string>? UpdateStatusMessage { get; set; }
 
-    public IRelayCommand PlayCommand { get; }
+    public IAsyncRelayCommand PlayCommand { get; }
     public IRelayCommand StopCommand { get; }
 
     private bool _disposed;
@@ -61,7 +61,7 @@ public partial class MediaViewModel : ObservableObject, IDisposable
         _mediaPlayerService = mediaPlayerService;
         
         // Заменяем команды на релейтед команды из методов
-        PlayCommand = new RelayCommand<MediaItem>(PlayMediaItem);
+        PlayCommand = new AsyncRelayCommand<MediaItem>(PlayMediaItem);
         StopCommand = new RelayCommand(StopPlayback);
 
         _mediaPlayerService.PlaybackEnded += OnPlaybackEnded;
@@ -455,9 +455,10 @@ public partial class MediaViewModel : ObservableObject, IDisposable
             ? MediaItems.IndexOf(SelectedMediaItem) 
             : -1;
         
+        if (currentIndex == -1) currentIndex = 0;
+        
         int newIndex = (currentIndex + 1) % MediaItems.Count;
         var nextItem = MediaItems[newIndex];
-        SelectedMediaItem = nextItem;
         PlayMediaItemCommand.Execute(nextItem);
     }
 
@@ -472,19 +473,36 @@ public partial class MediaViewModel : ObservableObject, IDisposable
         
         int newIndex = (currentIndex - 1 + MediaItems.Count) % MediaItems.Count;
         var previousItem = MediaItems[newIndex];
-        SelectedMediaItem = previousItem;
         PlayMediaItemCommand.Execute(previousItem);
     }
 
     [RelayCommand]
-    private void PlayMediaItem(MediaItem? mediaItem)
+    private async Task PlayMediaItem(MediaItem? mediaItem)
     {
         if (mediaItem != null && !string.IsNullOrWhiteSpace(mediaItem.Path))
         {
-            _mediaPlayerService.Stop();
-            SelectedMediaItem = mediaItem;
-            OnPropertyChanged(nameof(SelectedMediaItem));
-            _mediaPlayerService.Play(mediaItem.Path);
+            try 
+            {
+                await _mediaPlayerService.StopAsync(); // Добавляем асинхронную остановку
+                SelectedMediaItem = mediaItem;
+                
+                await Dispatcher.UIThread.InvokeAsync(() => 
+                {
+                    OnPropertyChanged(nameof(SelectedMediaItem));
+                });
+                
+                await _mediaPlayerService.Play(mediaItem.Path);
+                
+                // Обновление интерфейса через главный поток
+                Dispatcher.UIThread.Post(() => 
+                {
+                    OnPropertyChanged(nameof(MediaItems));
+                }, DispatcherPriority.Background);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError($"Playback error: {ex.Message}", ex);
+            }
         }
     }
 

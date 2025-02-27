@@ -792,16 +792,45 @@ public partial class MainViewModel : ViewModelBase
     [RelayCommand]
     private void Stop()
     {
-        // существующий код
+        try
+        {
+            _mediaPlayerService?.Stop();
+            IsPlaying = false;
+            CurrentPosition = TimeSpan.Zero;
+            Duration = TimeSpan.Zero;
+            _logger.LogInformation("Playback stopped");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Stop playback error");
+        }
     }
 
     [RelayCommand]
-    private void Previous()
+    private async Task Next()
     {
         try 
         {
-            // Логика перехода к предыдущему треку
-            _logger.LogInformation("Previous track requested");
+            var mediaView = _views[SectionType.Media].DataContext as MediaViewModel;
+            mediaView?.NextMediaItemCommand.Execute(null);
+            await UpdateMetadataAsync(true);
+            _logger.LogInformation("Next track played");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Next track error");
+        }
+    }
+
+    [RelayCommand]
+    private async Task Previous()
+    {
+        try 
+        {
+            var mediaView = _views[SectionType.Media].DataContext as MediaViewModel;
+            mediaView?.PreviousMediaItemCommand.Execute(null);
+            await UpdateMetadataAsync(true);
+            _logger.LogInformation("Previous track played");
         }
         catch (Exception ex)
         {
@@ -823,8 +852,8 @@ public partial class MainViewModel : ViewModelBase
             {
                 if (!string.IsNullOrEmpty(CurrentMediaPath))
                 {
-                    _mediaPlayerService?.Play(CurrentMediaPath);
-                    await Task.Delay(50);
+                    await (_mediaPlayerService?.Play(CurrentMediaPath) ?? Task.CompletedTask);
+                    await Task.Delay(30); // Уменьшаем задержку
                     await UpdateMetadataAsync(true);
                 }
                 else
@@ -837,20 +866,6 @@ public partial class MainViewModel : ViewModelBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Play/pause error");
-        }
-    }
-
-    [RelayCommand]
-    private void Next()
-    {
-        try 
-        {
-            // Логика перехода к следующему треку
-            _logger.LogInformation("Next track requested");
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Next track error");
         }
     }
 }

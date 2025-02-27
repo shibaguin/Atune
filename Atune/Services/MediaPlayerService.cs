@@ -7,6 +7,7 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Linq;
 using System.Collections.Generic;
+using Avalonia.Threading;
 
 namespace Atune.Services
 {
@@ -79,43 +80,32 @@ namespace Atune.Services
             if (_libVlc == null || _player == null)
                 throw new InvalidOperationException("Media player is not initialized");
 
-            Stop();
-            
-            _currentMedia = Uri.IsWellFormedUriString(path, UriKind.Absolute) 
-                ? new Media(_libVlc, new Uri(path)) 
-                : new Media(_libVlc, path, FromType.FromPath);
-            
-            var parseTask = Task.Run(() => {
-                _currentMedia.Parse(MediaParseOptions.ParseLocal | MediaParseOptions.FetchLocal);
-                while (!_currentMedia.IsParsed)
-                {
-                    Task.Delay(10).Wait();
-                    _currentMedia.Parse(MediaParseOptions.ParseLocal);
-                }
-            });
-            
-            if (await Task.WhenAny(parseTask, Task.Delay(500)) != parseTask)
+            try
             {
-                _logger.LogWarning("Media parse timeout, continuing anyway");
-            }
-
-            _player.Media = _currentMedia;
-            _player.Play();
-            
-            await Task.Delay(10);
-            
-            if (!_player.IsPlaying)
-            {
-                _player.Stop();
-                await Task.Delay(5);
-                _player.Play();
-                await Task.Delay(30);
+                _currentMedia?.Dispose();
+                _currentMedia = new Media(_libVlc, new Uri(path));
                 
-                if (!_player.IsPlaying)
+                // Асинхронная подготовка медиа
+                await Task.Run(() => {
+                    _currentMedia.Parse(MediaParseOptions.ParseLocal | MediaParseOptions.FetchLocal);
+                    while (!_currentMedia.IsParsed)
+                    {
+                        Task.Delay(10).Wait(); // Уменьшаем задержку
+                        _currentMedia.Parse(MediaParseOptions.ParseLocal);
+                    }
+                });
+
+                // Асинхронное воспроизведение
+                await Dispatcher.UIThread.InvokeAsync(() => 
                 {
-                    _logger.LogError("Playback failed to start after retry");
-                    throw new PlaybackException("Не удалось начать воспроизведение");
-                }
+                    _player.Play(_currentMedia);
+                    Volume = _volume; // Применяем текущую громкость
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Playback error");
+                throw new MediaPlaybackException("Failed to play media", ex);
             }
         }
 
@@ -140,7 +130,7 @@ namespace Atune.Services
             try
             {
                 _player.Stop();
-                Task.Delay(100).Wait();
+                Task.Delay(50).Wait();
             }
             finally
             {
@@ -223,5 +213,30 @@ namespace Atune.Services
         {
             PlaybackEnded?.Invoke(this, e);
         }
+
+        public async Task StopAsync()
+        {
+            if (_player == null) return;
+            
+            await Dispatcher.UIThread.InvokeAsync(() => 
+            {
+                try
+                {
+                    _player.Stop();
+                    _currentMedia?.Dispose();
+                    _currentMedia = null;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Stop error");
+                }
+            });
+        }
+    }
+
+    public class MediaPlaybackException : Exception
+    {
+        public MediaPlaybackException(string message, Exception inner) 
+            : base(message, inner) { }
     }
 } 
