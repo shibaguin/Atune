@@ -817,9 +817,22 @@ public partial class MainViewModel : ViewModelBase
         try 
         {
             var mediaView = _views[SectionType.Media].DataContext as MediaViewModel;
-            mediaView?.PreviousMediaItemCommand.Execute(null);
-            await UpdateMetadataAsync(true);
-            _logger.LogInformation("Previous track played");
+            if (mediaView == null) return;
+
+            if (CurrentPosition.TotalSeconds >= 10)
+            {
+                // Перемотка в начало текущего трека
+                _mediaPlayerService.Position = TimeSpan.Zero;
+                CurrentPosition = TimeSpan.Zero;
+                _logger.LogInformation("Rewind to start of current track");
+            }
+            else
+            {
+                // Переход к предыдущему треку
+                mediaView.PreviousMediaItemCommand.Execute(null);
+                await UpdateMetadataAsync(true);
+                _logger.LogInformation("Previous track played");
+            }
         }
         catch (Exception ex)
         {
