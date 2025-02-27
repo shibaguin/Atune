@@ -541,8 +541,8 @@ public partial class MainViewModel : ViewModelBase
             _positionTimer.Start();
             
             // Принудительно запрашиваем метаданные сразу
-            await Task.Delay(100); // Даем время на инициализацию
-            await UpdateMetadataAsync(true); // Принудительное обновление
+            await Task.Delay(10);
+            await UpdateMetadataAsync(true);
 
             if (_coverArtLoading) return;
             _coverArtLoading = true;
@@ -593,7 +593,7 @@ public partial class MainViewModel : ViewModelBase
             
             // Запускаем таймер с увеличенной частотой
             _metadataTimer?.Stop();
-            _metadataTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(500) };
+            _metadataTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(250) };
             _metadataTimer.Tick += async (s, e) => await UpdateMetadataAsync();
             _metadataTimer.Start();
 
@@ -715,8 +715,8 @@ public partial class MainViewModel : ViewModelBase
         _positionTimer ??= new DispatcherTimer();
         
         _positionTimer.Interval = active 
-            ? TimeSpan.FromMilliseconds(250)
-            : TimeSpan.FromMilliseconds(1000);
+            ? TimeSpan.FromMilliseconds(100)
+            : TimeSpan.FromMilliseconds(500);
     }
 
     partial void OnCurrentPositionChanged(TimeSpan value)
@@ -822,8 +822,8 @@ public partial class MainViewModel : ViewModelBase
                 if (!string.IsNullOrEmpty(CurrentMediaPath))
                 {
                     _mediaPlayerService?.Play(CurrentMediaPath);
-                    await Task.Delay(150); // Увеличиваем задержку
-                    await UpdateMetadataAsync(true); // Принудительное обновление
+                    await Task.Delay(50);
+                    await UpdateMetadataAsync(true);
                 }
                 else
                 {

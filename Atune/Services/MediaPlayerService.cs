@@ -89,7 +89,7 @@ namespace Atune.Services
                 _currentMedia.Parse(MediaParseOptions.ParseLocal | MediaParseOptions.FetchLocal);
                 while (!_currentMedia.IsParsed)
                 {
-                    Task.Delay(50).Wait();
+                    Task.Delay(10).Wait();
                     _currentMedia.Parse(MediaParseOptions.ParseLocal);
                 }
             });
@@ -102,14 +102,14 @@ namespace Atune.Services
             _player.Media = _currentMedia;
             _player.Play();
             
-            await Task.Delay(50);
+            await Task.Delay(10);
             
             if (!_player.IsPlaying)
             {
                 _player.Stop();
-                await Task.Delay(10);
+                await Task.Delay(5);
                 _player.Play();
-                await Task.Delay(50);
+                await Task.Delay(30);
                 
                 if (!_player.IsPlaying)
                 {
