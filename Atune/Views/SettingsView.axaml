@@ -80,7 +80,7 @@
                  HorizontalAlignment="Center"
                  HorizontalContentAlignment="Center">
             <TabItem.Header>
-                <TextBlock Text="Вид" FontSize="24" FontWeight="Bold"/>
+                <TextBlock Text="{DynamicResource Settings_ViewTitle}" FontSize="24" FontWeight="Bold"/>
             </TabItem.Header>
             <ScrollViewer HorizontalAlignment="Stretch" VerticalScrollBarVisibility="Auto" MaxWidth="800">
                 <StackPanel Margin="10" Spacing="10">
