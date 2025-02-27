@@ -85,14 +85,9 @@ namespace Atune.Services
                 _currentMedia?.Dispose();
                 _currentMedia = new Media(_libVlc, new Uri(path));
                 
-                // Асинхронная подготовка медиа
+                // Упрощаем подготовку медиа
                 await Task.Run(() => {
-                    _currentMedia.Parse(MediaParseOptions.ParseLocal | MediaParseOptions.FetchLocal);
-                    while (!_currentMedia.IsParsed)
-                    {
-                        Task.Delay(10).Wait(); // Уменьшаем задержку
-                        _currentMedia.Parse(MediaParseOptions.ParseLocal);
-                    }
+                    _currentMedia.Parse(MediaParseOptions.ParseLocal); // Только базовый парсинг
                 });
 
                 // Асинхронное воспроизведение

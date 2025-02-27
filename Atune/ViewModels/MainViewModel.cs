@@ -541,20 +541,16 @@ public partial class MainViewModel : ViewModelBase
             IsPlaying = true;
             _positionTimer.Start();
             
-            // Принудительно запрашиваем метаданные сразу
-            await Task.Delay(10);
-            await UpdateMetadataAsync(true);
+            // Убираем принудительный парсинг
+            await Task.Delay(100); // Увеличиваем задержку для стабилизации
+            await UpdateMetadataAsync();
 
             if (_coverArtLoading) return;
             _coverArtLoading = true;
             
             try 
             {
-                if (_mediaPlayerService == null) return;
-
-                // Добавляем принудительное обновление метаданных
-                _mediaPlayerService.GetCurrentMedia()?.Parse(MediaParseOptions.ParseLocal | MediaParseOptions.FetchLocal);
-                
+                // Убираем повторный парсинг
                 var embeddedCover = await Task.Run(() => 
                     _coverArtService.GetEmbeddedCoverArt());
                 
@@ -611,27 +607,13 @@ public partial class MainViewModel : ViewModelBase
         {
             if (_mediaPlayerService == null) return;
 
-            // Принудительный повторный парсинг при необходимости
-            if (force)
-            {
-                await Task.Run(() => 
-                    _mediaPlayerService.GetCurrentMedia()?.Parse(MediaParseOptions.ParseLocal | MediaParseOptions.FetchLocal));
-            }
-
-            var metadata = await Task.Run(() => 
-                _mediaPlayerService.GetCurrentMetadataAsync());
-
+            // Убираем принудительный повторный парсинг
+            var metadata = await _mediaPlayerService.GetCurrentMetadataAsync();
+            
             await Dispatcher.UIThread.InvokeAsync(() =>
             {
-                // Всегда обновляем значения, даже если они одинаковые
-                TrackTitle = string.IsNullOrWhiteSpace(metadata.Title) 
-                    ? "Неизвестный трек" 
-                    : metadata.Title;
-                
-                ArtistName = string.IsNullOrWhiteSpace(metadata.Artist) 
-                    ? "Неизвестный исполнитель" 
-                    : metadata.Artist;
-
+                TrackTitle = metadata.Title;
+                ArtistName = metadata.Artist;
                 OnPropertyChanged(nameof(TrackTitle));
                 OnPropertyChanged(nameof(ArtistName));
                 
