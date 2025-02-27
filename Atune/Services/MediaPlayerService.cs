@@ -71,6 +71,11 @@ namespace Atune.Services
             }
         }
 
+        public TimeSpan Duration => 
+            _currentMedia != null ? 
+            TimeSpan.FromMilliseconds(_currentMedia.Duration) : 
+            TimeSpan.Zero;
+
         public void Dispose()
         {
             _player.Dispose();

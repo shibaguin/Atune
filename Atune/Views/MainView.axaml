@@ -249,64 +249,72 @@
         
         <!-- Панель мультимедиа управления (бар) -->
         <!-- Media control panel (bar) -->
-        <Grid DockPanel.Dock="Bottom" Margin="0,0,0,0" Background="{DynamicResource BackgroundBrush}">
+        <Grid DockPanel.Dock="Bottom" Margin="0" Background="{DynamicResource BackgroundBrush}">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto"/>   <!-- For cover / Для обложки-->
-                <ColumnDefinition Width="*"/>      <!-- For control buttons / Для кнопок управления -->
+                <ColumnDefinition Width="*"/>    <!-- Левый спейсер -->
+                <ColumnDefinition Width="Auto"/> <!-- Центральная панель -->
+                <ColumnDefinition Width="*"/>    <!-- Правый спейсер -->
             </Grid.ColumnDefinitions>
 
-            <!-- Cover (placeholder) using dynamic resource for localization -->
-            <!-- Обложка (заглушка) с использованием динамического ресурса для локализации -->
-            <Border Width="80"
-                    Height="80"
-                    Background="Gray"
-                    Margin="10"
-                    CornerRadius="5"
-                    Grid.Column="0">
-                <TextBlock Text="{DynamicResource Media_Cover}"
-                           HorizontalAlignment="Center"
-                           VerticalAlignment="Center"
-                           Foreground="White"/>
-            </Border>
+            <!-- Центральная панель с элементами управления -->
+            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Spacing="15">
+                <!-- Обложка -->
+                <Border Width="40" 
+                        Height="40" 
+                        Background="Gray" 
+                        CornerRadius="3"
+                        Margin="0,0,10,0">
+                    <Image/> <!-- Заглушка для будущей обложки -->
+                </Border>
 
-            <!-- Обновлённая панель кнопок управления мультимедиа -->
-            <Grid Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-                <!-- Кнопка "Previous" в левом столбце с привязкой к PreviousCommand -->
-                <Button Grid.Column="0" Background="Transparent" BorderThickness="0" 
-                        HorizontalAlignment="Right" Margin="5"
-                        Command="{Binding PreviousCommand}">
-                    <PathIcon Data="M2.75 20a1 1 0 1 0 2 0V4a1 1 0 1 0-2 0v16ZM20.75 19.053c0 1.424-1.612 2.252-2.77 1.422L7.51 12.968a1.75 1.75 0 0 1 .075-2.895l10.47-6.716c1.165-.748 2.695.089 2.695 1.473v14.223Z"/>
-                </Button>
-                <!-- Обновлённая кнопка "Play/Pause" в центральном столбце -->
-                <Button Grid.Column="1" Background="Transparent" BorderThickness="0" 
-                        HorizontalAlignment="Center" Margin="5"
-                        Command="{Binding TogglePlayPauseCommand}">
-                    <PathIcon Data="{Binding PlayIconData}"/>
-                </Button>
-                <!-- Кнопка "Stop" в четвертом столбце -->
-                <Button Grid.Column="2" Background="Transparent" BorderThickness="0" 
-                        HorizontalAlignment="Center" Margin="5"
-                        Command="{Binding StopCommand}">
-                    <PathIcon Data="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10ZM9.5 8h5A1.5 1.5 0 0 1 16 9.5v5a1.5 1.5 0 0 1-1.5 1.5h-5A1.5 1.5 0 0 1 8 14.5v-5A1.5 1.5 0 0 1 9.5 8Z"/>
-                </Button>
-                <!-- Кнопка "Next" в третьем столбце с привязкой к NextCommand -->
-                <Button Grid.Column="3" Background="Transparent" BorderThickness="0" 
-                        HorizontalAlignment="Left" Margin="5"
-                        Command="{Binding NextCommand}">
-                    <PathIcon Data="M21 4a1 1 0 1 0-2 0v16a1 1 0 1 0 2 0V4ZM3 4.947c0-1.424 1.612-2.252 2.77-1.422l10.47 7.507a1.75 1.75 0 0 1-.075 2.895l-10.47 6.716C4.53 21.39 3 20.554 3 19.17V4.947Z"/>
-                </Button>
-                <!-- Новый слайдер для регулировки громкости -->
-                <Slider Grid.Column="4" Minimum="0" Maximum="100" 
-                        Value="{Binding Volume, Mode=TwoWay}" Width="150" Margin="5"
-                        ToolTip.Tip="Регулировка громкости"/>
-            </Grid>
+                <!-- Текущее время -->
+                <TextBlock Text="{Binding CurrentPosition, StringFormat='{}{0:mm\\:ss}'}" 
+                           VerticalAlignment="Center"
+                           FontSize="14"/>
+
+                <!-- Кнопки управления -->
+                <StackPanel Orientation="Horizontal" Spacing="5">
+                    <Button Classes="nav-button" Command="{Binding PreviousCommand}">
+                        <PathIcon Data="M2.75 20a1 1 0 1 0 2 0V4a1 1 0 1 0-2 0v16ZM20.75 19.053c0 1.424-1.612 2.252-2.77 1.422L7.51 12.968a1.75 1.75 0 0 1 .075-2.895l10.47-6.716c1.165-.748 2.695.089 2.695 1.473v14.223Z"/>
+                    </Button>
+                    
+                    <Button Classes="nav-button" Command="{Binding TogglePlayPauseCommand}">
+                        <PathIcon Data="{Binding PlayIconData}"/>
+                    </Button>
+                    
+                    <Button Classes="nav-button" Command="{Binding StopCommand}">
+                        <PathIcon Data="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10ZM9.5 8h5A1.5 1.5 0 0 1 16 9.5v5a1.5 1.5 0 0 1-1.5 1.5h-5A1.5 1.5 0 0 1 8 14.5v-5A1.5 1.5 0 0 1 9.5 8Z"/>
+                    </Button>
+                    
+                    <Button Classes="nav-button" Command="{Binding NextCommand}">
+                        <PathIcon Data="M21 4a1 1 0 1 0-2 0v16a1 1 0 1 0 2 0V4ZM3 4.947c0-1.424 1.612-2.252 2.77-1.422l10.47 7.507a1.75 1.75 0 0 1-.075 2.895l-10.47 6.716C4.53 21.39 3 20.554 3 19.17V4.947Z"/>
+                    </Button>
+                </StackPanel>
+
+                <!-- Длительность трека -->
+                <TextBlock Text="{Binding Duration, StringFormat='{}{0:mm\\:ss}'}" 
+                           VerticalAlignment="Center"
+                           FontSize="14"
+                           Margin="10,0,0,0"/>
+            </StackPanel>
+
+            <!-- Слайдер громкости в правом спейсере -->
+            <StackPanel Grid.Column="2" 
+                        Orientation="Horizontal" 
+                        HorizontalAlignment="Right" 
+                        VerticalAlignment="Center"
+                        Margin="0,0,15,0"
+                        Spacing="10">
+                <PathIcon Data="M13.5 4.06c0-1.336-1.616-2.005-2.56-1.06l-4.5 4.5H4.508c-1.141 0-2.318.664-2.66 1.905A9.76 9.76 0 0 0 1.5 12c0 .898.121 1.768.35 2.595.341 1.24 1.518 1.905 2.659 1.905h1.93l4.5 4.5c.945.945 2.561.276 2.561-1.06V4.06ZM18.584 5.17a.75.75 0 0 1 1.06 0c3.808 3.807 3.808 9.98 0 13.788a.75.75 0 0 1-1.06-1.06 8.25 8.25 0 0 0 0-11.668.75.75 0 0 1 0-1.06Zm-2.293 2.293a.75.75 0 0 1 1.06 0 6 6 0 0 1 0 8.486.75.75 0 0 1-1.06-1.06 4.5 4.5 0 0 0 0-6.364.75.75 0 0 1 0-1.06Z"
+                          Width="20"
+                          Height="20"
+                          Margin="0,0,5,0"/>
+                <Slider Minimum="0" 
+                        Maximum="100" 
+                        Width="150"
+                        Value="{Binding Volume, Mode=TwoWay}"
+                        ToolTip.Tip="Громкость"/>
+            </StackPanel>
         </Grid>
 
         <ContentControl Content="{Binding CurrentView}"

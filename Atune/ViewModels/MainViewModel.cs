@@ -11,6 +11,7 @@ using Avalonia.Controls.ApplicationLifetimes;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Collections.ObjectModel;
+using Avalonia.Threading;
 namespace Atune.ViewModels;
 public partial class MainViewModel : ViewModelBase
 {
@@ -45,6 +46,14 @@ public partial class MainViewModel : ViewModelBase
 
     [ObservableProperty]
     private string currentMediaPath = string.Empty;
+
+    [ObservableProperty]
+    private TimeSpan _currentPosition;
+
+    [ObservableProperty]
+    private TimeSpan _duration;
+
+    private DispatcherTimer _positionTimer;
 
     public IRelayCommand PlayCommand { get; }
     public IRelayCommand StopCommand { get; }
@@ -114,6 +123,20 @@ public partial class MainViewModel : ViewModelBase
         
         // Обновляем сервис плеера
         _mediaPlayerService.Volume = Volume;
+
+        // Инициализируем таймер для обновления позиции
+        _positionTimer = new DispatcherTimer
+        {
+            Interval = TimeSpan.FromMilliseconds(500)
+        };
+        _positionTimer.Tick += PositionTimer_Tick;
+        _positionTimer.Start();
+        
+        _mediaPlayerService.PlaybackEnded += (s, e) => 
+        {
+            CurrentPosition = TimeSpan.Zero;
+            Duration = TimeSpan.Zero;
+        };
     }
 
     private void LocalizationService_PropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -490,5 +513,14 @@ public partial class MainViewModel : ViewModelBase
         IsPlaying = false;
         // Автоматический переход к следующему треку
         ExecuteNextCommand();
+    }
+
+    private void PositionTimer_Tick(object? sender, EventArgs e)
+    {
+        if (_mediaPlayerService.IsPlaying)
+        {
+            CurrentPosition = _mediaPlayerService.Position;
+            Duration = _mediaPlayerService.Duration;
+        }
     }
 }

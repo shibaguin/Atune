@@ -365,11 +365,25 @@ public partial class App : Application
 
     public void UpdateLocalization()
     {
+        // Добавляем принудительное обновление кэша
         var settingsService = Services?.GetRequiredService<ISettingsService>();
-        var localizationService = Services?.GetRequiredService<LocalizationService>();
-        if (settingsService != null && localizationService != null)
+        if (settingsService != null)
         {
-            localizationService.SetLanguage(settingsService.LoadSettings().Language);
+            // Сбрасываем кэш и загружаем заново
+            settingsService.LoadSettings();
+        }
+
+        var localizationService = Services?.GetRequiredService<LocalizationService>();
+        if (localizationService != null && settingsService != null)
+        {
+            var settings = settingsService.LoadSettings();
+            localizationService.SetLanguage(settings.Language);
+            
+            // Принудительно обновляем все окна
+            if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+            {
+                desktop.MainWindow?.InvalidateVisual();
+            }
         }
     }
 }

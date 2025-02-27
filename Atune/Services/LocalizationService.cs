@@ -28,8 +28,22 @@ public class LocalizationService : INotifyPropertyChanged
 
     public void SetLanguage(string languageCode)
     {
+        // Добавляем принудительное обновление настроек
+        var settings = _settingsService.LoadSettings();
+        if (settings.Language != languageCode)
+        {
+            settings.Language = languageCode;
+            _settingsService.SaveSettings(settings);
+        }
+        
         LoadLanguage(languageCode);
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("Item"));
+        
+        // Заменяем проблемную строку
+        if (Application.Current is { } app)
+        {
+            app.RequestedThemeVariant = app.ActualThemeVariant;
+        }
     }
 
     private void LoadLanguage(string languageCode)

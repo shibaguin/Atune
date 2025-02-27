@@ -27,6 +27,17 @@ public class SettingsService : ISettingsService
 
     private readonly ILoggerService _logger;
 
+    // Добавляем методы работы с кэшем здесь
+    private T Get<T>(string key, T defaultValue)
+    {
+        return _cache.TryGetValue(key, out T? value) ? value : defaultValue;
+    }
+
+    private void Set<T>(string key, T value)
+    {
+        _cache.Set(key, value, _cacheOptions);
+    }
+
     private const string VolumeKey = "PlayerVolume";
     private const int DefaultVolume = 50;
     
@@ -39,11 +50,12 @@ public class SettingsService : ISettingsService
             if (settings.Volume != DefaultVolume)
                 return settings.Volume;
             
-            // Затем проверяем кэш
+            // Затем проверяем кэш через новый метод Get
             return Get(VolumeKey, DefaultVolume);
         }
         set
         {
+            // Сохраняем в кэш через новый метод Set
             Set(VolumeKey, value);
             // Обновляем значение в файле настроек
             var settings = LoadSettings();
@@ -51,7 +63,6 @@ public class SettingsService : ISettingsService
             SaveSettings(settings);
         }
     }
-
     public SettingsService(IMemoryCache cache, IPlatformPathService platformPathService, ILoggerService logger)
     {
         _cache = cache;
@@ -80,76 +91,74 @@ public class SettingsService : ISettingsService
         }
     }
 
-    // Добавляем новые методы для разбора INI‑файла на секции
-    private Dictionary<string, List<string>> ParseIniFile()
+    public void SaveSettings(AppSettings settings)
     {
-        var sections = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
-        List<string>? currentSectionLines = null;
-        string currentSectionName = string.Empty;
-        if (File.Exists(_settingsPath))
+        try
         {
-            foreach (var line in File.ReadAllLines(_settingsPath))
+            lock (_fileLockAsync)
             {
-                var trimmed = line.Trim();
-                if (trimmed.StartsWith("[") && trimmed.EndsWith("]"))
+                // Обновляем кэш перед сохранением в файл
+                _cache.Set("AppSettings", settings, new MemoryCacheEntryOptions()
+                    .SetSize(1024)
+                    .SetPriority(CacheItemPriority.High)
+                    .SetSlidingExpiration(TimeSpan.FromMinutes(30)));
+
+                var directory = Path.GetDirectoryName(_settingsPath);
+                if (!string.IsNullOrWhiteSpace(directory))
                 {
-                    // Начало новой секции
-                    currentSectionName = trimmed.TrimStart('[').TrimEnd(']');
-                    if (!sections.ContainsKey(currentSectionName))
+                    try
                     {
-                        sections[currentSectionName] = new List<string>();
+                        // Directory.CreateDirectory will create the directory if it doesn't exist,
+                        // and will not throw an exception if the directory already exists.
+                        // Directory.CreateDirectory создаст директорию, если она не существует,
+                        // и не выбросит исключение, если директория уже существует.
+                        Directory.CreateDirectory(directory);
                     }
-                    currentSectionLines = sections[currentSectionName];
+                    catch (UnauthorizedAccessException ex)
+                    {
+                        Debug.WriteLine("Not enough permissions to create directory: " + directory);
+                        throw new InvalidOperationException("Not enough permissions to access directory " + directory, ex);
+                    }
+                    catch (IOException ex)
+                    {
+                        // Если ошибка произошла из-за состояния гонки, проверьте директорию снова.
+                        // If the error occurred due to a race condition, check the directory again.
+                        if (!Directory.Exists(directory))
+                        {
+                            Debug.WriteLine("Error creating directory: " + directory);
+                            throw new InvalidOperationException("Failed to create directory " + directory, ex);
+                        }
+                    }
+                }
+
+                // Возвращаем старый формат сохранения только с ThemeVariant и Language
+                var lines = new List<string>
+                {
+                    $"ThemeVariant={(int)settings.ThemeVariant}",
+                    $"Language={settings.Language}",
+                    $"Volume={settings.Volume}"
+                };
+
+                // For Android, we use a special storage
+                // Для Android мы используем специальное хранилище
+                if (OperatingSystem.IsAndroid())
+                {
+                    using var stream = File.Create(_settingsPath);
+                    using var writer = new StreamWriter(stream);
+                    lines.ForEach(writer.WriteLine);
                 }
                 else
                 {
-                    // Добавляем строку, только если она не пустая
-                    if (currentSectionLines != null && !string.IsNullOrWhiteSpace(line))
-                    {
-                        currentSectionLines.Add(line);
-                    }
+                    File.WriteAllLines(_settingsPath, lines);
                 }
             }
+            _logger.LogInformation("Settings saved successfully");
         }
-        return sections;
-    }
-
-    private void WriteIniFile(Dictionary<string, List<string>> sections)
-    {
-        var lines = new List<string>();
-        foreach (var kvp in sections)
+        catch (Exception ex)
         {
-            lines.Add($"[{kvp.Key}]");
-            lines.AddRange(kvp.Value);
-            lines.Add(string.Empty); // пустая строка для отделения секций
-        }
-        File.WriteAllLines(_settingsPath, lines);
-    }
-
-    // Изменяем метод сохранения основных настроек, чтобы обновлять только секцию [AppSettings]
-    public void SaveSettings(AppSettings settings)
-    {
-        lock (_fileLockAsync)
-        {
-            var appSection = new List<string>
-            {
-                $"ThemeVariant={(int)settings.ThemeVariant}",
-                $"Language={settings.Language}",
-                $"Volume={settings.Volume}"
-            };
-
-            // Разбираем текущее содержимое файла на секции (если файл существует)
-            var sections = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
-            if (File.Exists(_settingsPath))
-            {
-                sections = ParseIniFile();
-            }
-
-            // Обновляем (или добавляем) секцию AppSettings
-            sections["AppSettings"] = appSection;
-
-            // Записываем обновлённый INI‑файл
-            WriteIniFile(sections);
+            _logger.LogError("Error saving settings", ex);
+            _cache.Remove("AppSettings"); // Принудительно сбрасываем кэш при ошибке
+            throw new SettingsException("Failed to save settings", ex);
         }
     }
 
@@ -169,81 +178,49 @@ public class SettingsService : ISettingsService
             try
             {
                 if (!File.Exists(_settingsPath))
-                {
-                    _logger.LogWarning($"Settings file not found at {_settingsPath}. Using default settings.");
                     return new AppSettings();
-                }
 
-                var sections = ParseIniFile();
-                if (!sections.ContainsKey("AppSettings"))
-                {
-                    _logger.LogWarning("Section [AppSettings] not found in settings file. Using default settings.");
-                    return new AppSettings();
-                }
-
-                var appSection = sections["AppSettings"];
                 var settings = new AppSettings();
-                foreach (var line in appSection)
+                
+                foreach (var line in File.ReadAllLines(_settingsPath))
                 {
                     var parts = line.Split('=', 2);
-                    if (parts.Length != 2)
-                    {
-                        _logger.LogWarning($"Ignoring malformed line in settings file: '{line}'");
-                        continue;
-                    }
+                    if (parts.Length != 2) continue;
 
                     switch (parts[0])
                     {
-                        case "ThemeVariant":
-                            if (!int.TryParse(parts[1], out var theme))
+                        case "ThemeVariant" when int.TryParse(parts[1], out var theme):
+                            settings.ThemeVariant = theme switch
                             {
-                                _logger.LogWarning($"Invalid value for ThemeVariant: '{parts[1]}'. Using default.");
-                                settings.ThemeVariant = ThemeVariant.System;
-                            }
-                            else
-                            {
-                                settings.ThemeVariant = theme switch
-                                {
-                                    0 => ThemeVariant.System,
-                                    1 => ThemeVariant.Light,
-                                    2 => ThemeVariant.Dark,
-                                    _ => ThemeVariant.System
-                                };
-                            }
+                                0 => ThemeVariant.System,
+                                1 => ThemeVariant.Light,
+                                2 => ThemeVariant.Dark,
+                                _ => ThemeVariant.System
+                            };
                             break;
                         case "Language":
-                            settings.Language = string.IsNullOrWhiteSpace(parts[1]) ? "en" : parts[1];
+                            settings.Language = parts[1];
                             break;
                         case "LastUsedProfile":
                             settings.LastUsedProfile = parts[1];
                             break;
-                        case "LastUpdated":
-                            if (!DateTimeOffset.TryParse(parts[1], out var date))
-                            {
-                                _logger.LogWarning($"Invalid value for LastUpdated: '{parts[1]}'. Using current date.");
-                                settings.LastUpdated = DateTimeOffset.Now;
-                            }
-                            else
-                            {
-                                settings.LastUpdated = date;
-                            }
+                        case "LastUpdated" when DateTimeOffset.TryParse(parts[1], out var date):
+                            settings.LastUpdated = date;
                             break;
                         case "Volume":
                             if (int.TryParse(parts[1], out int volume))
                                 settings.Volume = volume;
                             break;
-                        default:
-                            _logger.LogWarning($"Unknown key '{parts[0]}' encountered in settings file.");
-                            break;
                     }
                 }
 
+                // Всегда обновляем кэш при загрузке
                 _cache.Set("AppSettings", settings, _cacheOptions);
                 return settings;
             }
             catch (Exception ex)
             {
-                _logger.LogError("Error loading settings from INI file.", ex);
+                Debug.WriteLine($"Error loading settings: {ex.Message}");
                 return new AppSettings();
             }
         }
@@ -286,31 +263,20 @@ public class SettingsService : ISettingsService
         await _fileLockAsync.WaitAsync();
         try
         {
-            // Обновляем кэш
-            _cache.Set("AppSettings", settings, _cacheOptions);
-
-            // Разбираем существующий INI-файл, если он существует
-            var sections = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
-            if (File.Exists(_settingsPath))
+            var cacheOptions = new MemoryCacheEntryOptions()
+                .SetSize(1024)
+                .SetPriority(CacheItemPriority.High)
+                .SetSlidingExpiration(TimeSpan.FromMinutes(30));
+            
+            await Task.Run(() => _cache.Set("AppSettings", settings, cacheOptions));
+            
+            var directory = Path.GetDirectoryName(_settingsPath);
+            if (!string.IsNullOrWhiteSpace(directory))
             {
-                sections = ParseIniFile();
+                await Task.Run(() => Directory.CreateDirectory(directory));
             }
-
-            // Готовим секцию для основных настроек (локализации, темы и т.п.)
-            var appSection = new List<string>
-            {
-                $"ThemeVariant={(int)settings.ThemeVariant}",
-                $"Language={settings.Language}",
-                $"LastUsedProfile={settings.LastUsedProfile}",
-                $"LastUpdated={settings.LastUpdated}",
-                $"Volume={settings.Volume}"
-            };
-
-            // Обновляем (или добавляем) секцию AppSettings
-            sections["AppSettings"] = appSection;
-
-            // Записываем обновлённый INI‑файл (запись запускаем в отдельном таске, чтобы не блокировать поток)
-            await Task.Run(() => WriteIniFile(sections));
+            
+            await File.WriteAllTextAsync(_settingsPath, JsonSerializer.Serialize(settings));
         }
         finally
         {
@@ -348,19 +314,5 @@ public class SettingsService : ISettingsService
         {
             _fileLockAsync.Release();
         }
-    }
-
-    private int Get(string key, int defaultValue)
-    {
-        if (_cache.TryGetValue(key, out int value))
-        {
-            return value;
-        }
-        return defaultValue;
-    }
-
-    private void Set(string key, int value)
-    {
-        _cache.Set(key, value, _cacheOptions);
     }
 } 
