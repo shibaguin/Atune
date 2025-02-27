@@ -458,7 +458,6 @@ public partial class MediaViewModel : ObservableObject, IDisposable
     [RelayCommand]
     private async Task NextMediaItem()
     {
-        // Добавляем проверку на доступ к UI потоку
         Dispatcher.UIThread.VerifyAccess();
         
         if (MediaItems == null || MediaItems.Count == 0) 
@@ -478,8 +477,7 @@ public partial class MediaViewModel : ObservableObject, IDisposable
         }
         else 
         {
-            // Обновляем состояние через Dispatcher
-            Dispatcher.UIThread.InvokeAsync(() => 
+            await Dispatcher.UIThread.InvokeAsync(() => 
             {
                 SelectedMediaItem = null;
                 PlayPauseIcon = "fa-solid fa-play";

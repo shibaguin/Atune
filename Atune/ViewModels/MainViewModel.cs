@@ -457,13 +457,13 @@ public partial class MainViewModel : ViewModelBase
     }
 
     // Метод, исполняемый командой PlayCommand
-    private void ExecutePlayCommand()
+    private async void ExecutePlayCommand()
     {
         if (CurrentView is MediaView mediaView && 
             mediaView.DataContext is MediaViewModel mvm &&
             mvm.SelectedMediaItem != null)
         {
-            _mediaPlayerService.Play(mvm.SelectedMediaItem.Path);
+            await _mediaPlayerService.Play(mvm.SelectedMediaItem.Path);
             IsPlaying = true;
         }
     }
@@ -517,7 +517,7 @@ public partial class MainViewModel : ViewModelBase
     partial void OnVolumeChanged(int value)
     {
         _mediaPlayerService.Volume = value;
-        UpdateMetadataAsync();
+        _ = UpdateMetadataAsync();
         
         // Сохраняем через обновление полных настроек
         var settings = _settingsService.LoadSettings();
@@ -774,7 +774,7 @@ public partial class MainViewModel : ViewModelBase
             _logger.LogInformation($"PlayAsync started for: {path}");
             
             CurrentMediaPath = path;
-            _mediaPlayerService?.Play(path);
+            await _mediaPlayerService.Play(path);
             IsPlaying = true;
             
             _logger.LogDebug("Starting metadata update delay");
