@@ -768,11 +768,26 @@ public partial class MainViewModel : ViewModelBase
     {
         try
         {
-            _mediaPlayerService?.Stop();
-            IsPlaying = false;
-            CurrentPosition = TimeSpan.Zero;
-            Duration = TimeSpan.Zero;
-            _logger.LogInformation("Playback stopped");
+            if (_mediaPlayerService == null) return;
+
+            if (CurrentPosition.TotalSeconds >= 5)
+            {
+                // Перемотка в начало с паузой
+                _mediaPlayerService.Position = TimeSpan.Zero;
+                _mediaPlayerService.Pause();
+                CurrentPosition = TimeSpan.Zero;
+                IsPlaying = false;
+                _logger.LogInformation("Playback reset to start");
+            }
+            else
+            {
+                // Полная остановка
+                _mediaPlayerService.Stop();
+                IsPlaying = false;
+                CurrentPosition = TimeSpan.Zero;
+                Duration = TimeSpan.Zero;
+                _logger.LogInformation("Playback stopped");
+            }
         }
         catch (Exception ex)
         {
