@@ -239,6 +239,26 @@ namespace Atune.Services
             }
         }
 
+        public MediaMetadata? GetCurrentMetadata()
+        {
+            if (_currentMedia == null) 
+                return null;
+
+            try 
+            {
+                _currentMedia.Parse(MediaParseOptions.ParseLocal);
+                
+                return new MediaMetadata {
+                    Title = _currentMedia.Meta(MetadataType.Title),
+                    Artist = _currentMedia.Meta(MetadataType.Artist)
+                };
+            }
+            catch 
+            {
+                return null;
+            }
+        }
+
         public void Dispose()
         {
             DisposeInternal();

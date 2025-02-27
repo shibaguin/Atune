@@ -61,9 +61,14 @@ public partial class MainViewModel : ViewModelBase
     [ObservableProperty]
     private Bitmap? _coverArt;
 
+    [ObservableProperty]
+    private string _trackTitle = "Неизвестный трек";
+
+    [ObservableProperty]
+    private string _artist = "Неизвестный исполнитель";
+
     private DispatcherTimer _positionTimer;
 
-    private Bitmap? _pendingCoverArt;
     private bool _coverArtLoading;
 
     public IRelayCommand PlayCommand { get; }
@@ -587,6 +592,14 @@ public partial class MainViewModel : ViewModelBase
         {
             _coverArtLoading = false;
         }
+
+        // Получаем метаданные трека
+        var metadata = await Task.Run(() => 
+            _mediaPlayerService?.GetCurrentMetadata());
+        
+        // Обновляем свойства с проверкой на null
+        TrackTitle = metadata?.Title ?? Path.GetFileNameWithoutExtension(CurrentMediaPath);
+        Artist = metadata?.Artist ?? "Неизвестный исполнитель";
     }
 
     private Bitmap? LoadCoverSafely(string path)

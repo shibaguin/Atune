@@ -6,6 +6,7 @@
              xmlns:sys="clr-namespace:System;assembly=mscorlib"
              xmlns:views="clr-namespace:Atune.Views"
              xmlns:converters="clr-namespace:Atune.Converters;assembly=Atune"
+             xmlns:avalonia="clr-namespace:Avalonia.Controls;assembly=Avalonia.Controls"
              mc:Ignorable="d" 
              d:DesignWidth="800" 
              d:DesignHeight="450"
@@ -259,6 +260,46 @@
                 <ColumnDefinition Width="*"/>    <!-- Правый спейсер -->
             </Grid.ColumnDefinitions>
 
+            <!-- Левый спейсер -->
+            <StackPanel Grid.Column="0" 
+                        Orientation="Horizontal"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Center"
+                        Margin="15,0"
+                        Spacing="10">
+                <!-- Обложка -->
+                <Image MaxWidth="64" 
+                       MaxHeight="64"
+                       Margin="5"     
+                       Source="{Binding CoverArt}"
+                       Stretch="Uniform">
+                    <Image.Styles>
+                        <Style Selector="Image:empty">
+                            <Setter Property="Source" 
+                                    Value="avares://Atune/Assets/default_cover.jpg"/>
+                        </Style>
+                    </Image.Styles>
+                </Image>
+                
+                <!-- Информация о треке -->
+                <avalonia:StackPanel Orientation="Vertical"
+                                     VerticalAlignment="Center"
+                                     Margin="5,0"
+                                     Spacing="2">
+                    <TextBlock Text="{Binding TrackTitle}" 
+                               FontSize="14"
+                               FontWeight="Bold"
+                               Foreground="{DynamicResource ForegroundBrush}"
+                               MaxWidth="200"
+                               TextTrimming="CharacterEllipsis"/>
+                    <TextBlock Text="{Binding Artist}" 
+                               FontSize="12"
+                               Foreground="{DynamicResource ForegroundBrush}"
+                               MaxWidth="200"
+                               TextTrimming="CharacterEllipsis"/>
+                </avalonia:StackPanel>
+            </StackPanel>
+
             <!-- Вертикальное разделение внутри центральной колонки -->
             <Grid Grid.Column="1">
                 <Grid.RowDefinitions>
@@ -268,40 +309,42 @@
 
                 <!-- Прогресс-бар -->
                 <Grid Margin="0,0,0,0" Height="40">
-                    <Slider VerticalAlignment="Center"
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/> <!-- Текущее время -->
+                        <ColumnDefinition Width="*"/>    <!-- Слайдер -->
+                        <ColumnDefinition Width="Auto"/> <!-- Длительность -->
+                    </Grid.ColumnDefinitions>
+                    
+                    <!-- Текущее время -->
+                    <TextBlock Text="{Binding CurrentPosition, StringFormat='{}{0:mm\\:ss}'}" 
+                               VerticalAlignment="Center"
+                               FontSize="14"
+                               Margin="5,0"/>
+                    
+                    <!-- Слайдер прогресса -->
+                    <Slider Grid.Column="1"
+                            VerticalAlignment="Center"
                             HorizontalAlignment="Stretch"
                             Minimum="0"
                             Maximum="{Binding Duration, Converter={StaticResource TimeSpanToSecondsConverter}}"
                             Value="{Binding CurrentPosition, Converter={StaticResource TimeSpanToSecondsConverter}, Mode=TwoWay}"
                             Background="{DynamicResource SubtleBorderBrush}"
-                            Foreground="{DynamicResource AccentBrush}"
-                            Height="40"/>
+                            Foreground="{DynamicResource AccentBrush}"/>
+                    
+                    <!-- Длительность трека -->
+                    <TextBlock Grid.Column="2"
+                               Text="{Binding Duration, StringFormat='{}{0:mm\\:ss}'}" 
+                               VerticalAlignment="Center"
+                               FontSize="14"
+                               Margin="5,0"/>
                 </Grid>
 
                 <!-- Основная медиапанель -->
                 <Grid Grid.Row="1">
                     <StackPanel Orientation="Horizontal" 
                                VerticalAlignment="Center" 
+                               HorizontalAlignment="Center"
                                Spacing="15">
-                        <!-- Обложка -->
-                        <Image Width="64" 
-                               Height="64" 
-                               Margin="10,0"
-                               Source="{Binding CoverArt}"
-                               Stretch="UniformToFill">
-                            <Image.Styles>
-                                <Style Selector="Image:empty">
-                                    <Setter Property="Source" 
-                                            Value="avares://Atune/Assets/default_cover.jpg"/>
-                                </Style>
-                            </Image.Styles>
-                        </Image>
-
-                        <!-- Текущее время -->
-                        <TextBlock Text="{Binding CurrentPosition, StringFormat='{}{0:mm\\:ss}'}" 
-                                   VerticalAlignment="Center"
-                                   FontSize="14"/>
-
                         <!-- Кнопки управления -->
                         <StackPanel Orientation="Horizontal" Spacing="5">
                             <Button Classes="nav-button" Command="{Binding PreviousCommand}">
@@ -320,12 +363,6 @@
                                 <PathIcon Data="M21 4a1 1 0 1 0-2 0v16a1 1 0 1 0 2 0V4ZM3 4.947c0-1.424 1.612-2.252 2.77-1.422l10.47 7.507a1.75 1.75 0 0 1-.075 2.895l-10.47 6.716C4.53 21.39 3 20.554 3 19.17V4.947Z"/>
                             </Button>
                         </StackPanel>
-
-                        <!-- Длительность трека -->
-                        <TextBlock Text="{Binding Duration, StringFormat='{}{0:mm\\:ss}'}" 
-                                   VerticalAlignment="Center"
-                                   FontSize="14"
-                                   Margin="10,0,0,0"/>
                     </StackPanel>
                 </Grid>
             </Grid>
