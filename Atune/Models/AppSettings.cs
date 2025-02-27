@@ -8,5 +8,6 @@ public class AppSettings
     public ThemeVariant ThemeVariant { get; set; } = ThemeVariant.System;
     public string? LastUsedProfile { get; set; }
     public DateTimeOffset LastUpdated { get; set; } = DateTimeOffset.UtcNow;
-    public string Language { get; set; } = "ru";
+    public string Language { get; set; } = "en";
+    public int Volume { get; set; } = 50;
 } 

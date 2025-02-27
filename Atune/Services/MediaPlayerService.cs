@@ -8,15 +8,19 @@ namespace Atune.Services
         private LibVLC _libVlc;
         private MediaPlayer _player;
         private Media? _currentMedia;
+        private int _volume = 50;
         
         public event EventHandler? PlaybackEnded;
 
-        public MediaPlayerService()
+        public MediaPlayerService(ISettingsService settingsService)
         {
             try 
             {
                 _libVlc = new LibVLC(enableDebugLogs: true);
                 _player = new MediaPlayer(_libVlc);
+                
+                _volume = settingsService.Volume;
+                
                 _player.EndReached += (sender, e) => PlaybackEnded?.Invoke(this, EventArgs.Empty);
             }
             catch(Exception ex)
@@ -49,8 +53,12 @@ namespace Atune.Services
 
         public int Volume
         {
-            get => _player.Volume;
-            set => _player.Volume = Math.Clamp(value, 0, 100);
+            get => _volume;
+            set
+            {
+                _volume = value;
+                _player.Volume = value;
+            }
         }
 
         public TimeSpan Position

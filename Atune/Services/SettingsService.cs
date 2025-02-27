@@ -10,7 +10,6 @@ using Microsoft.Extensions.Options;
 using System.Threading.Tasks;
 using System.Threading;
 using System.Text.Json;
-using Atune.Services;
 
 namespace Atune.Services;
 
@@ -27,6 +26,31 @@ public class SettingsService : ISettingsService
     private readonly string _settingsPath;
 
     private readonly ILoggerService _logger;
+
+    private const string VolumeKey = "PlayerVolume";
+    private const int DefaultVolume = 50;
+    
+    public int Volume
+    {
+        get
+        {
+            // Сначала проверяем файл настроек
+            var settings = LoadSettings();
+            if (settings.Volume != DefaultVolume)
+                return settings.Volume;
+            
+            // Затем проверяем кэш
+            return Get(VolumeKey, DefaultVolume);
+        }
+        set
+        {
+            Set(VolumeKey, value);
+            // Обновляем значение в файле настроек
+            var settings = LoadSettings();
+            settings.Volume = value;
+            SaveSettings(settings);
+        }
+    }
 
     public SettingsService(IMemoryCache cache, IPlatformPathService platformPathService, ILoggerService logger)
     {
@@ -107,11 +131,11 @@ public class SettingsService : ISettingsService
     {
         lock (_fileLockAsync)
         {
-            // Готовим содержимое секции для основных настроек
             var appSection = new List<string>
             {
                 $"ThemeVariant={(int)settings.ThemeVariant}",
-                $"Language={settings.Language}"
+                $"Language={settings.Language}",
+                $"Volume={settings.Volume}"
             };
 
             // Разбираем текущее содержимое файла на секции (если файл существует)
@@ -204,6 +228,10 @@ public class SettingsService : ISettingsService
                                 settings.LastUpdated = date;
                             }
                             break;
+                        case "Volume":
+                            if (int.TryParse(parts[1], out int volume))
+                                settings.Volume = volume;
+                            break;
                         default:
                             _logger.LogWarning($"Unknown key '{parts[0]}' encountered in settings file.");
                             break;
@@ -274,7 +302,8 @@ public class SettingsService : ISettingsService
                 $"ThemeVariant={(int)settings.ThemeVariant}",
                 $"Language={settings.Language}",
                 $"LastUsedProfile={settings.LastUsedProfile}",
-                $"LastUpdated={settings.LastUpdated}"
+                $"LastUpdated={settings.LastUpdated}",
+                $"Volume={settings.Volume}"
             };
 
             // Обновляем (или добавляем) секцию AppSettings
@@ -319,5 +348,19 @@ public class SettingsService : ISettingsService
         {
             _fileLockAsync.Release();
         }
+    }
+
+    private int Get(string key, int defaultValue)
+    {
+        if (_cache.TryGetValue(key, out int value))
+        {
+            return value;
+        }
+        return defaultValue;
+    }
+
+    private void Set(string key, int value)
+    {
+        _cache.Set(key, value, _cacheOptions);
     }
 } 

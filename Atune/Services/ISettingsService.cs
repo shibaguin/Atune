@@ -5,6 +5,7 @@ namespace Atune.Services;
 
 public interface ISettingsService
 {
+    int Volume { get; set; }
     Task SaveSettingsAsync(AppSettings settings);
     Task<AppSettings> LoadSettingsAsync();
     void SaveSettings(AppSettings settings);

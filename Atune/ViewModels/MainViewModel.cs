@@ -107,6 +107,13 @@ public partial class MainViewModel : ViewModelBase
         PreviousCommand = new RelayCommand(ExecutePreviousCommand);
 
         _mediaPlayerService.PlaybackEnded += OnPlaybackEnded;
+        
+        // Загружаем настройки полностью, а не только Volume
+        var settings = _settingsService.LoadSettings();
+        Volume = settings.Volume; // Используем значение из файла настроек
+        
+        // Обновляем сервис плеера
+        _mediaPlayerService.Volume = Volume;
     }
 
     private void LocalizationService_PropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -471,6 +478,11 @@ public partial class MainViewModel : ViewModelBase
     partial void OnVolumeChanged(int value)
     {
         _mediaPlayerService.Volume = value;
+        
+        // Сохраняем через обновление полных настроек
+        var settings = _settingsService.LoadSettings();
+        settings.Volume = value;
+        _settingsService.SaveSettings(settings);
     }
 
     private void OnPlaybackEnded(object? sender, EventArgs e)
