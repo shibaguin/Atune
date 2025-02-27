@@ -34,7 +34,12 @@ namespace Atune.Services
                 _logger.LogInformation("Initializing LibVLC...");
                 Core.Initialize();
                 
-                _libVlc = new LibVLC(enableDebugLogs: true);
+                _libVlc = new LibVLC(
+                    enableDebugLogs: true,
+                    "--avcodec-hw=none",
+                    "--no-xlib",
+                    "--ignore-config",
+                    "--no-sub-autodetect-file");
                 _logger.LogDebug("LibVLC instance created");
 
                 _player = new MediaPlayer(_libVlc);
@@ -43,6 +48,8 @@ namespace Atune.Services
                 _volume = settingsService.Volume;
                 
                 _player.EndReached += (s, e) => PlaybackEnded?.Invoke(this, EventArgs.Empty);
+                _player.Playing += (s, e) => PlaybackStarted?.Invoke(this, EventArgs.Empty);
+                _player.Paused += (s, e) => PlaybackPaused?.Invoke(this, EventArgs.Empty);
             }
             catch (Exception ex)
             {
@@ -68,17 +75,17 @@ namespace Atune.Services
 
             Stop();
             
-            if (Uri.IsWellFormedUriString(path, UriKind.Absolute))
+            // Создаем медиа объект и парсим синхронно
+            _currentMedia = Uri.IsWellFormedUriString(path, UriKind.Absolute) 
+                ? new Media(_libVlc, new Uri(path)) 
+                : new Media(_libVlc, path, FromType.FromPath);
+            
+            // Принудительный парсинг перед воспроизведением
+            _currentMedia.Parse(MediaParseOptions.ParseLocal | MediaParseOptions.FetchLocal);
+            while (!_currentMedia.IsParsed) 
             {
-                var uri = new Uri(path);
-                _currentMedia = new Media(_libVlc, uri, 
-                    uri.Scheme.Equals("rtsp", StringComparison.OrdinalIgnoreCase) 
-                        ? $"{NetworkCaching} {RtspTcp}" 
-                        : NetworkCaching);
-            }
-            else
-            {
-                _currentMedia = new Media(_libVlc, path, FromType.FromPath);
+                Task.Delay(100).Wait();
+                _currentMedia.Parse(MediaParseOptions.ParseLocal);
             }
 
             _player.Media = _currentMedia;
@@ -158,11 +165,78 @@ namespace Atune.Services
         {
             if (_currentMedia == null) return null;
             
-            _currentMedia.Parse(MediaParseOptions.ParseLocal);
-            var artUrl = _currentMedia.Meta(LibVLCSharp.Shared.MetadataType.ArtworkURL);
-            return !string.IsNullOrEmpty(artUrl) && File.Exists(artUrl) 
-                ? artUrl 
-                : null;
+            _currentMedia.Parse(MediaParseOptions.ParseLocal 
+                | MediaParseOptions.FetchLocal 
+                | MediaParseOptions.FetchNetwork);
+            
+            if (!_currentMedia.IsParsed) return null;
+            
+            var artUrl = _currentMedia.Meta(MetadataType.ArtworkURL) 
+                       ?? _currentMedia.Meta(MetadataType.Publisher);
+            
+            try 
+            {
+                if (!string.IsNullOrEmpty(artUrl))
+                {
+                    if (Uri.TryCreate(artUrl, UriKind.Absolute, out var uri))
+                    {
+                        return uri.IsFile && File.Exists(uri.LocalPath) 
+                            ? uri.LocalPath 
+                            : null;
+                    }
+                    return File.Exists(artUrl) ? artUrl : null;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Error accessing cover art path");
+            }
+            return null;
+        }
+
+        public Stream? GetEmbeddedCoverArt()
+        {
+            if (_currentMedia == null || _libVlc == null) return null;
+            
+            try 
+            {
+                _currentMedia.Parse(MediaParseOptions.ParseLocal);
+                var artData = _currentMedia.Meta(MetadataType.ArtworkURL);
+                
+                if (!string.IsNullOrEmpty(artData))
+                {
+                    if (artData.StartsWith("data:image"))
+                    {
+                        var base64Data = artData.Split(',')[1];
+                        return new MemoryStream(Convert.FromBase64String(base64Data));
+                    }
+                    
+                    if (File.Exists(artData))
+                    {
+                        return File.OpenRead(artData);
+                    }
+                }
+                
+                // Быстрый снимок первого кадра
+                using var mp = new MediaPlayer(_libVlc);
+                mp.Media = _currentMedia;
+                mp.Play();
+                
+                var tempFile = Path.GetTempFileName() + ".png";
+                if (mp.TakeSnapshot(0u, tempFile, 200u, 200u))
+                {
+                    var imageBytes = File.ReadAllBytes(tempFile);
+                    File.Delete(tempFile);
+                    return new MemoryStream(imageBytes);
+                }
+                
+                return null;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error extracting embedded cover art");
+                return null;
+            }
         }
 
         public void Dispose()

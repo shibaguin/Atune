@@ -4,6 +4,7 @@
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
     <PublishTrimmed>false</PublishTrimmed>
     <IsTrimmable>false</IsTrimmable>
@@ -15,18 +16,6 @@
     <AvaloniaResource Include="Resources/Localization/ru.resx" />
     <AvaloniaResource Include="Resources/Localization/en.resx" />
     <AvaloniaResource Include="Assets\default_cover.jpg" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Content Include="ffmpeg\**\*.*">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
-
-  <ItemGroup>
-    <Content Include="ffmpeg\**\*.*">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
   </ItemGroup>
 
   <ItemGroup>
@@ -60,9 +49,5 @@
     <TrimmerRootAssembly Include="Atune" />
     <TrimmerRootAssembly Include="Microsoft.EntityFrameworkCore" />
     <TrimmerRootAssembly Include="Microsoft.Data.Sqlite" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Compile Remove="Services\FFmpegBinariesHelper.cs" />
   </ItemGroup>
 </Project>

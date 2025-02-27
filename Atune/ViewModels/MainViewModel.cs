@@ -63,6 +63,9 @@ public partial class MainViewModel : ViewModelBase
 
     private DispatcherTimer _positionTimer;
 
+    private Bitmap? _pendingCoverArt;
+    private bool _coverArtLoading;
+
     public IRelayCommand PlayCommand { get; }
     public IRelayCommand StopCommand { get; }
     public IRelayCommand TogglePlayPauseCommand { get; }
@@ -539,16 +542,63 @@ public partial class MainViewModel : ViewModelBase
         ExecuteNextCommand();
     }
 
-    private void OnPlaybackStarted(object? sender, EventArgs e)
+    private async void OnPlaybackStarted(object? sender, EventArgs e)
     {
         _positionTimer.Start();
         UpdateTimerInterval(active: true);
         
-        // Получаем обложку через VLC
-        var coverPath = _mediaPlayerService?.GetCoverArtPath();
-        CoverArt = !string.IsNullOrEmpty(coverPath) 
-            ? new Bitmap(coverPath) 
-            : LoadDefaultCover();
+        if (_coverArtLoading) return;
+        _coverArtLoading = true;
+        
+        try 
+        {
+            // Сначала пробуем загрузить встроенную обложку
+            var embeddedCover = await Task.Run(() => 
+                _mediaPlayerService?.GetEmbeddedCoverArt());
+            
+            if (embeddedCover != null)
+            {
+                using (embeddedCover)
+                {
+                    CoverArt = new Bitmap(embeddedCover);
+                    return;
+                }
+            }
+
+            // Если встроенной нет - загружаем из файла
+            var coverPath = await Task.Run(() => 
+                _mediaPlayerService?.GetCoverArtPath());
+            
+            if (!string.IsNullOrEmpty(coverPath) && File.Exists(coverPath))
+            {
+                CoverArt = new Bitmap(coverPath);
+                return;
+            }
+
+            // Если ничего не найдено - используем дефолтную
+            CoverArt = LoadDefaultCover();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error loading cover art");
+            CoverArt = LoadDefaultCover();
+        }
+        finally 
+        {
+            _coverArtLoading = false;
+        }
+    }
+
+    private Bitmap? LoadCoverSafely(string path)
+    {
+        try 
+        {
+            return File.Exists(path) ? new Bitmap(path) : null;
+        }
+        catch 
+        {
+            return null;
+        }
     }
 
     private Bitmap LoadDefaultCover()
