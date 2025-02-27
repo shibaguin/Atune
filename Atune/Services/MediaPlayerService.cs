@@ -2,6 +2,7 @@ using LibVLCSharp.Shared;
 using System;
 using Atune.Exceptions;
 using Microsoft.Extensions.Logging;
+using System.Threading.Tasks;
 
 namespace Atune.Services
 {
@@ -13,6 +14,9 @@ namespace Atune.Services
         private int _volume = 50;
         private readonly ILogger<MediaPlayerService> _logger;
         
+        private const string NetworkCaching = ":network-caching=300";
+        private const string RtspTcp = ":rtsp-tcp";
+
         public event EventHandler? PlaybackEnded;
 
         public MediaPlayerService(
@@ -59,7 +63,20 @@ namespace Atune.Services
                 throw new InvalidOperationException("Media player is not initialized");
 
             Stop();
-            _currentMedia = new Media(_libVlc, new Uri(path));
+            
+            if (Uri.IsWellFormedUriString(path, UriKind.Absolute))
+            {
+                var uri = new Uri(path);
+                _currentMedia = new Media(_libVlc, uri, 
+                    uri.Scheme.Equals("rtsp", StringComparison.OrdinalIgnoreCase) 
+                        ? $"{NetworkCaching} {RtspTcp}" 
+                        : NetworkCaching);
+            }
+            else
+            {
+                _currentMedia = new Media(_libVlc, path, FromType.FromPath);
+            }
+
             _player.Media = _currentMedia;
             _player.Play();
         }
@@ -80,9 +97,16 @@ namespace Atune.Services
         {
             if (_player == null) return;
             
-            _player.Stop();
-            _currentMedia?.Dispose();
-            _currentMedia = null;
+            try
+            {
+                _player.Stop();
+                Task.Delay(100).Wait();
+            }
+            finally
+            {
+                _currentMedia?.Dispose();
+                _currentMedia = null;
+            }
         }
 
         public bool IsPlaying => _player?.IsPlaying ?? false;
@@ -118,6 +142,10 @@ namespace Atune.Services
             _currentMedia != null ? 
             TimeSpan.FromMilliseconds(_currentMedia.Duration) : 
             TimeSpan.Zero;
+
+        public bool IsNetworkStream => 
+            _currentMedia?.Mrl != null && 
+            Uri.IsWellFormedUriString(_currentMedia.Mrl, UriKind.Absolute);
 
         public void Dispose()
         {
