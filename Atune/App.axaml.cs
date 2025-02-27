@@ -262,6 +262,9 @@ public partial class App : Application
 
         // Регистрируем новый сервис воспроизведения
         services.AddSingleton<MediaPlayerService>();
+
+        // Добавляем новый сервис для работы с обложками
+        services.AddSingleton<ICoverArtService, CoverArtService>();
     }
 
     [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "Disabled for Avalonia compatibility")]

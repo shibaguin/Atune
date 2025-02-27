@@ -286,17 +286,15 @@
                                      VerticalAlignment="Center"
                                      Margin="5,0"
                                      Spacing="2">
-                    <TextBlock Text="{Binding TrackTitle}" 
+                    <TextBlock Text="{Binding TrackTitle, Mode=OneWay}" 
+                               Foreground="{DynamicResource ForegroundBrush}"
+                               FontSize="16"
+                               FontWeight="SemiBold"
+                               Margin="0,0,10,0"/>
+                    <TextBlock Text="{Binding ArtistName, Mode=OneWay}" 
+                               Foreground="{DynamicResource ForegroundBrush}"
                                FontSize="14"
-                               FontWeight="Bold"
-                               Foreground="{DynamicResource ForegroundBrush}"
-                               MaxWidth="200"
-                               TextTrimming="CharacterEllipsis"/>
-                    <TextBlock Text="{Binding Artist}" 
-                               FontSize="12"
-                               Foreground="{DynamicResource ForegroundBrush}"
-                               MaxWidth="200"
-                               TextTrimming="CharacterEllipsis"/>
+                               Opacity="0.8"/>
                 </avalonia:StackPanel>
             </StackPanel>
 

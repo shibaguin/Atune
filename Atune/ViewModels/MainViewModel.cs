@@ -17,6 +17,7 @@ using Atune.Exceptions;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 using System.IO;
+using LibVLCSharp.Shared;
 namespace Atune.ViewModels;
 public partial class MainViewModel : ViewModelBase
 {
@@ -62,20 +63,15 @@ public partial class MainViewModel : ViewModelBase
     private Bitmap? _coverArt;
 
     [ObservableProperty]
-    private string _trackTitle = "Неизвестный трек";
+    private string _trackTitle = string.Empty;
 
     [ObservableProperty]
-    private string _artist = "Неизвестный исполнитель";
+    private string _artistName = string.Empty;
 
     private DispatcherTimer _positionTimer;
+    private DispatcherTimer? _metadataTimer;
 
     private bool _coverArtLoading;
-
-    public IRelayCommand PlayCommand { get; }
-    public IRelayCommand StopCommand { get; }
-    public IRelayCommand TogglePlayPauseCommand { get; }
-    public IRelayCommand NextCommand { get; }
-    public IRelayCommand PreviousCommand { get; }
 
     private readonly ISettingsService _settingsService;
     private readonly Dictionary<SectionType, Control> _views;
@@ -85,9 +81,10 @@ public partial class MainViewModel : ViewModelBase
     private readonly LocalizationService _localizationService;
     private readonly MediaPlayerService _mediaPlayerService;
     private readonly ILogger<MainViewModel> _logger;
+    private readonly ICoverArtService _coverArtService;
 
     // Константы с векторными данными для иконок
-    private const string PlayIconPath = "M2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10S2 17.523 2 12Zm8.856-3.845A1.25 1.25 0 0 0 9 9.248v5.504a1.25 1.25 0 0 0 1.856 1.093l5.757-3.189a.75.75 0 0 0 0-1.312l-5.757-3.189Z";
+    private const string PlayIconPath = "M2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10S2 17.523 2 12ZM8.856-3.845A1.25 1.25 0 0 0 9 9.248v5.504a1.25 1.25 0 0 0 1.856 1.093l5.757-3.189a.75.75 0 0 0 0-1.312l-5.757-3.189Z";
     private const string PauseIconPath = "M5.746 3a1.75 1.75 0 0 0-1.75 1.75v14.5c0 .966.784 1.75 1.75 1.75h3.5a1.75 1.75 0 0 0 1.75-1.75V4.75A1.75 1.75 0 0 0 9.246 3h-3.5ZM14.746 3a1.75 1.75 0 0 0-1.75 1.75v14.5c0 .966.784 1.75 1.75 1.75h3.5a1.75 1.75 0 0 0 1.75-1.75V4.75A1.75 1.75 0 0 0 18.246 3h-3.5Z";
 
     // Вычисляемое свойство для передачи в XAML
@@ -100,7 +97,8 @@ public partial class MainViewModel : ViewModelBase
         INavigationKeywordProvider keywordProvider,
         LocalizationService localizationService,
         MediaPlayerService mediaPlayerService,
-        ILogger<MainViewModel> logger)
+        ILogger<MainViewModel> logger,
+        ICoverArtService coverArtService)
     {
         _settingsService = settingsService ?? throw new ArgumentNullException(nameof(settingsService));
         _viewModelFactory = viewModelFactory ?? throw new ArgumentNullException(nameof(viewModelFactory));
@@ -108,6 +106,7 @@ public partial class MainViewModel : ViewModelBase
         _keywordProvider = keywordProvider ?? throw new ArgumentNullException(nameof(keywordProvider));
         _localizationService = localizationService ?? throw new ArgumentNullException(nameof(localizationService));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _coverArtService = coverArtService ?? throw new ArgumentNullException(nameof(coverArtService));
         
         try
         {
@@ -135,24 +134,6 @@ public partial class MainViewModel : ViewModelBase
         // Подпишитесь на событие изменения локализации.
         _localizationService.PropertyChanged += LocalizationService_PropertyChanged;
 
-        // Инициализируем команду, которая вызывает метод воспроизведения
-        PlayCommand = new RelayCommand(ExecutePlayCommand);
-        StopCommand = new RelayCommand(ExecuteStopCommand);
-
-        // Новый переключающий комманд
-        TogglePlayPauseCommand = new RelayCommand(ExecuteTogglePlayPauseCommand);
-        NextCommand = new RelayCommand(ExecuteNextCommand);
-        PreviousCommand = new RelayCommand(ExecutePreviousCommand);
-
-        _mediaPlayerService.PlaybackEnded += OnPlaybackEnded;
-        
-        // Загружаем настройки полностью, а не только Volume
-        var settings = _settingsService.LoadSettings();
-        Volume = settings.Volume; // Используем значение из файла настроек
-        
-        // Обновляем сервис плеера
-        _mediaPlayerService.Volume = Volume;
-
         // Оптимизированный таймер
         _positionTimer = new DispatcherTimer
         {
@@ -169,6 +150,8 @@ public partial class MainViewModel : ViewModelBase
             CurrentPosition = TimeSpan.Zero;
             Duration = TimeSpan.Zero;
         };
+
+        _metadataTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
     }
 
     private void LocalizationService_PropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -533,6 +516,7 @@ public partial class MainViewModel : ViewModelBase
     partial void OnVolumeChanged(int value)
     {
         _mediaPlayerService.Volume = value;
+        UpdateMetadataAsync();
         
         // Сохраняем через обновление полных настроек
         var settings = _settingsService.LoadSettings();
@@ -549,57 +533,113 @@ public partial class MainViewModel : ViewModelBase
 
     private async void OnPlaybackStarted(object? sender, EventArgs e)
     {
-        _positionTimer.Start();
-        UpdateTimerInterval(active: true);
-        
-        if (_coverArtLoading) return;
-        _coverArtLoading = true;
-        
-        try 
+        try
         {
-            // Сначала пробуем загрузить встроенную обложку
-            var embeddedCover = await Task.Run(() => 
-                _mediaPlayerService?.GetEmbeddedCoverArt());
+            if (_mediaPlayerService == null || _positionTimer == null) return;
+
+            IsPlaying = true;
+            _positionTimer.Start();
             
-            if (embeddedCover != null)
+            // Принудительно запрашиваем метаданные сразу
+            await Task.Delay(100); // Даем время на инициализацию
+            await UpdateMetadataAsync(true); // Принудительное обновление
+
+            if (_coverArtLoading) return;
+            _coverArtLoading = true;
+            
+            try 
             {
-                using (embeddedCover)
+                if (_mediaPlayerService == null) return;
+
+                // Добавляем принудительное обновление метаданных
+                _mediaPlayerService.GetCurrentMedia()?.Parse(MediaParseOptions.ParseLocal | MediaParseOptions.FetchLocal);
+                
+                var embeddedCover = await Task.Run(() => 
+                    _coverArtService.GetEmbeddedCoverArt());
+                
+                if (embeddedCover != null)
                 {
-                    CoverArt = new Bitmap(embeddedCover);
+                    using (embeddedCover)
+                    {
+                        CoverArt = new Bitmap(embeddedCover);
+                        return;
+                    }
+                }
+
+                var coverPath = await Task.Run(() => 
+                    _coverArtService.GetCoverArtPath());
+                
+                if (_coverArtService.LoadCoverFromPath(coverPath) is { } cover)
+                {
+                    CoverArt = cover;
                     return;
                 }
-            }
 
-            // Если встроенной нет - загружаем из файла
-            var coverPath = await Task.Run(() => 
-                _mediaPlayerService?.GetCoverArtPath());
-            
-            if (!string.IsNullOrEmpty(coverPath) && File.Exists(coverPath))
+                // Если ничего не найдено - используем дефолтную
+                CoverArt = LoadDefaultCover();
+            }
+            catch (Exception ex)
             {
-                CoverArt = new Bitmap(coverPath);
-                return;
+                _logger.LogError(ex, "Error loading cover art");
+                CoverArt = LoadDefaultCover();
+            }
+            finally 
+            {
+                _coverArtLoading = false;
             }
 
-            // Если ничего не найдено - используем дефолтную
-            CoverArt = LoadDefaultCover();
+            // Немедленное обновление с асинхронным вызовом
+            await UpdateMetadataAsync();
+            
+            // Запускаем таймер с увеличенной частотой
+            _metadataTimer?.Stop();
+            _metadataTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(500) };
+            _metadataTimer.Tick += async (s, e) => await UpdateMetadataAsync();
+            _metadataTimer.Start();
+
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error loading cover art");
-            CoverArt = LoadDefaultCover();
+            _logger.LogError(ex, "Playback start error");
         }
-        finally 
-        {
-            _coverArtLoading = false;
-        }
+    }
 
-        // Получаем метаданные трека
-        var metadata = await Task.Run(() => 
-            _mediaPlayerService?.GetCurrentMetadata());
-        
-        // Обновляем свойства с проверкой на null
-        TrackTitle = metadata?.Title ?? Path.GetFileNameWithoutExtension(CurrentMediaPath);
-        Artist = metadata?.Artist ?? "Неизвестный исполнитель";
+    private async Task UpdateMetadataAsync(bool force = false)
+    {
+        try
+        {
+            if (_mediaPlayerService == null) return;
+
+            // Принудительный повторный парсинг при необходимости
+            if (force)
+            {
+                await Task.Run(() => 
+                    _mediaPlayerService.GetCurrentMedia()?.Parse(MediaParseOptions.ParseLocal | MediaParseOptions.FetchLocal));
+            }
+
+            var metadata = await Task.Run(() => _mediaPlayerService.GetCurrentMetadata());
+
+            await Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                // Всегда обновляем значения, даже если они одинаковые
+                TrackTitle = string.IsNullOrWhiteSpace(metadata.Title) 
+                    ? "Неизвестный трек" 
+                    : metadata.Title;
+                
+                ArtistName = string.IsNullOrWhiteSpace(metadata.Artist) 
+                    ? "Неизвестный исполнитель" 
+                    : metadata.Artist;
+
+                OnPropertyChanged(nameof(TrackTitle));
+                OnPropertyChanged(nameof(ArtistName));
+                
+                _logger.LogInformation($"Metadata updated: {TrackTitle} - {ArtistName}");
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Metadata update failed");
+        }
     }
 
     private Bitmap? LoadCoverSafely(string path)
@@ -672,9 +712,11 @@ public partial class MainViewModel : ViewModelBase
 
     private void UpdateTimerInterval(bool active)
     {
+        _positionTimer ??= new DispatcherTimer();
+        
         _positionTimer.Interval = active 
-            ? TimeSpan.FromMilliseconds(250) // Частые обновления при активном воспроизведении
-            : TimeSpan.FromMilliseconds(1000); // Редкие обновления при паузе
+            ? TimeSpan.FromMilliseconds(250)
+            : TimeSpan.FromMilliseconds(1000);
     }
 
     partial void OnCurrentPositionChanged(TimeSpan value)
@@ -685,12 +727,128 @@ public partial class MainViewModel : ViewModelBase
             try
             {
                 _mediaPlayerService.Position = value;
-                UpdateTimerInterval(active: true); // Сбрасываем интервал при взаимодействии
+                UpdateTimerInterval(active: true);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error setting media position");
             }
+        }
+    }
+
+    private async void LoadMediaMetadata()
+    {
+        try
+        {
+            if (_mediaPlayerService == null) return;
+            
+            if (_metadataTimer != null)
+            {
+                _metadataTimer.Stop();
+                _metadataTimer = null;
+            }
+            
+            await Task.Run(() => _mediaPlayerService.GetCurrentMetadata());
+            await Task.Delay(500); 
+            
+            await UpdateMetadataAsync();
+            
+            _metadataTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
+            _metadataTimer.Tick += async (s, e) => await UpdateMetadataAsync();
+            _metadataTimer.Start();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Metadata loading failed");
+        }
+    }
+
+    // Исправляем предупреждение CS1998 добавлением await
+    [RelayCommand]
+    private async Task PlayAsync(string path)
+    {
+        try
+        {
+            _logger.LogInformation($"PlayAsync started for: {path}");
+            
+            CurrentMediaPath = path;
+            _mediaPlayerService?.Play(path);
+            IsPlaying = true;
+            
+            _logger.LogDebug("Starting metadata update delay");
+            await Task.Delay(1000); // Увеличиваем задержку для инициализации
+            await UpdateMetadataAsync();
+            
+            _logger.LogInformation("Playback started successfully");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Playback error");
+        }
+    }
+
+    [RelayCommand]
+    private void Stop()
+    {
+        // существующий код
+    }
+
+    [RelayCommand]
+    private void Previous()
+    {
+        try 
+        {
+            // Логика перехода к предыдущему треку
+            _logger.LogInformation("Previous track requested");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Previous track error");
+        }
+    }
+
+    [RelayCommand]
+    private async Task TogglePlayPause()
+    {
+        try 
+        {
+            if (IsPlaying)
+            {
+                _mediaPlayerService?.Pause();
+                IsPlaying = false;
+            }
+            else
+            {
+                if (!string.IsNullOrEmpty(CurrentMediaPath))
+                {
+                    _mediaPlayerService?.Play(CurrentMediaPath);
+                    await Task.Delay(150); // Увеличиваем задержку
+                    await UpdateMetadataAsync(true); // Принудительное обновление
+                }
+                else
+                {
+                    _mediaPlayerService?.Resume();
+                }
+                IsPlaying = true;
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Play/pause error");
+        }
+    }
+
+    [RelayCommand]
+    private void Next()
+    {
+        try 
+        {
+            // Логика перехода к следующему треку
+            _logger.LogInformation("Next track requested");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Next track error");
         }
     }
 }

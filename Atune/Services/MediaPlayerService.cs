@@ -5,6 +5,8 @@ using Microsoft.Extensions.Logging;
 using System.Threading.Tasks;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Linq;
+using System.Collections.Generic;
 
 namespace Atune.Services
 {
@@ -39,7 +41,11 @@ namespace Atune.Services
                     "--avcodec-hw=none",
                     "--no-xlib",
                     "--ignore-config",
-                    "--no-sub-autodetect-file");
+                    "--no-sub-autodetect-file",
+                    "--network-caching=5000",
+                    "--file-caching=3000",
+                    "--no-audio-time-stretch"
+                );
                 _logger.LogDebug("LibVLC instance created");
 
                 _player = new MediaPlayer(_libVlc);
@@ -68,29 +74,49 @@ namespace Atune.Services
             _libVlc = null;
         }
 
-        public void Play(string path)
+        public async Task Play(string path)
         {
             if (_libVlc == null || _player == null)
                 throw new InvalidOperationException("Media player is not initialized");
 
             Stop();
             
-            // Создаем медиа объект и парсим синхронно
             _currentMedia = Uri.IsWellFormedUriString(path, UriKind.Absolute) 
                 ? new Media(_libVlc, new Uri(path)) 
                 : new Media(_libVlc, path, FromType.FromPath);
             
-            // Принудительный парсинг перед воспроизведением
-            _currentMedia.Parse(MediaParseOptions.ParseLocal | MediaParseOptions.FetchLocal);
-            while (!_currentMedia.IsParsed) 
+            var parseTask = Task.Run(() => {
+                _currentMedia.Parse(MediaParseOptions.ParseLocal | MediaParseOptions.FetchLocal);
+                while (!_currentMedia.IsParsed)
+                {
+                    Task.Delay(50).Wait();
+                    _currentMedia.Parse(MediaParseOptions.ParseLocal);
+                }
+            });
+            
+            if (await Task.WhenAny(parseTask, Task.Delay(500)) != parseTask)
             {
-                Task.Delay(100).Wait();
-                _currentMedia.Parse(MediaParseOptions.ParseLocal);
+                _logger.LogWarning("Media parse timeout, continuing anyway");
             }
 
             _player.Media = _currentMedia;
             _player.Play();
-            PlaybackStarted?.Invoke(this, EventArgs.Empty);
+            
+            await Task.Delay(50);
+            
+            if (!_player.IsPlaying)
+            {
+                _player.Stop();
+                await Task.Delay(10);
+                _player.Play();
+                await Task.Delay(50);
+                
+                if (!_player.IsPlaying)
+                {
+                    _logger.LogError("Playback failed to start after retry");
+                    throw new PlaybackException("Не удалось начать воспроизведение");
+                }
+            }
         }
 
         public void Pause()
@@ -161,101 +187,23 @@ namespace Atune.Services
             _currentMedia?.Mrl != null && 
             Uri.IsWellFormedUriString(_currentMedia.Mrl, UriKind.Absolute);
 
-        public string? GetCoverArtPath()
-        {
-            if (_currentMedia == null) return null;
-            
-            _currentMedia.Parse(MediaParseOptions.ParseLocal 
-                | MediaParseOptions.FetchLocal 
-                | MediaParseOptions.FetchNetwork);
-            
-            if (!_currentMedia.IsParsed) return null;
-            
-            var artUrl = _currentMedia.Meta(MetadataType.ArtworkURL) 
-                       ?? _currentMedia.Meta(MetadataType.Publisher);
-            
-            try 
-            {
-                if (!string.IsNullOrEmpty(artUrl))
-                {
-                    if (Uri.TryCreate(artUrl, UriKind.Absolute, out var uri))
-                    {
-                        return uri.IsFile && File.Exists(uri.LocalPath) 
-                            ? uri.LocalPath 
-                            : null;
-                    }
-                    return File.Exists(artUrl) ? artUrl : null;
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Error accessing cover art path");
-            }
-            return null;
-        }
+        public string? CurrentPath => _currentMedia?.Mrl;
 
-        public Stream? GetEmbeddedCoverArt()
-        {
-            if (_currentMedia == null || _libVlc == null) return null;
-            
-            try 
-            {
-                _currentMedia.Parse(MediaParseOptions.ParseLocal);
-                var artData = _currentMedia.Meta(MetadataType.ArtworkURL);
-                
-                if (!string.IsNullOrEmpty(artData))
-                {
-                    if (artData.StartsWith("data:image"))
-                    {
-                        var base64Data = artData.Split(',')[1];
-                        return new MemoryStream(Convert.FromBase64String(base64Data));
-                    }
-                    
-                    if (File.Exists(artData))
-                    {
-                        return File.OpenRead(artData);
-                    }
-                }
-                
-                // Быстрый снимок первого кадра
-                using var mp = new MediaPlayer(_libVlc);
-                mp.Media = _currentMedia;
-                mp.Play();
-                
-                var tempFile = Path.GetTempFileName() + ".png";
-                if (mp.TakeSnapshot(0u, tempFile, 200u, 200u))
-                {
-                    var imageBytes = File.ReadAllBytes(tempFile);
-                    File.Delete(tempFile);
-                    return new MemoryStream(imageBytes);
-                }
-                
-                return null;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error extracting embedded cover art");
-                return null;
-            }
-        }
-
-        public MediaMetadata? GetCurrentMetadata()
+        public MediaMetadata GetCurrentMetadata()
         {
             if (_currentMedia == null) 
-                return null;
+                return new MediaMetadata { Title = "Нет данных", Artist = "Нет данных" };
 
             try 
             {
-                _currentMedia.Parse(MediaParseOptions.ParseLocal);
-                
                 return new MediaMetadata {
-                    Title = _currentMedia.Meta(MetadataType.Title),
-                    Artist = _currentMedia.Meta(MetadataType.Artist)
+                    Title = _currentMedia.Meta(MetadataType.Title) ?? Path.GetFileNameWithoutExtension(_currentMedia.Mrl),
+                    Artist = _currentMedia.Meta(MetadataType.Artist) ?? "Неизвестный исполнитель"
                 };
             }
             catch 
             {
-                return null;
+                return new MediaMetadata { Title = "Ошибка", Artist = "Ошибка" };
             }
         }
 
@@ -264,6 +212,9 @@ namespace Atune.Services
             DisposeInternal();
             GC.SuppressFinalize(this);
         }
+
+        public LibVLC? GetLibVlc() => _libVlc;
+        public Media? GetCurrentMedia() => _currentMedia;
 
         private void OnPlaybackEnded(object? sender, EventArgs e)
         {
