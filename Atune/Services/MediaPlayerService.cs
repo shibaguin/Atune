@@ -1,55 +1,91 @@
 using LibVLCSharp.Shared;
 using System;
+using Atune.Exceptions;
+using Microsoft.Extensions.Logging;
 
 namespace Atune.Services
 {
     public class MediaPlayerService : IDisposable
     {
-        private LibVLC _libVlc;
-        private MediaPlayer _player;
+        private LibVLC? _libVlc;
+        private MediaPlayer? _player;
         private Media? _currentMedia;
         private int _volume = 50;
+        private readonly ILogger<MediaPlayerService> _logger;
         
         public event EventHandler? PlaybackEnded;
 
-        public MediaPlayerService(ISettingsService settingsService)
+        public MediaPlayerService(
+            ISettingsService settingsService, 
+            ILogger<MediaPlayerService> logger)
         {
-            try 
+            _logger = logger;
+            
+            try
             {
-                _libVlc = new LibVLC(enableDebugLogs: true);
-                _player = new MediaPlayer(_libVlc);
+                _logger.LogInformation("Initializing LibVLC...");
+                Core.Initialize();
                 
+                _libVlc = new LibVLC(enableDebugLogs: true);
+                _logger.LogDebug("LibVLC instance created");
+
+                _player = new MediaPlayer(_libVlc);
+                _logger.LogInformation("MediaPlayer initialized successfully");
+
                 _volume = settingsService.Volume;
                 
-                _player.EndReached += (sender, e) => PlaybackEnded?.Invoke(this, EventArgs.Empty);
+                _player.EndReached += (s, e) => PlaybackEnded?.Invoke(this, EventArgs.Empty);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
-                Console.WriteLine($"VLC INIT ERROR: {ex}");
-                throw;
+                _logger.LogError(ex, "Failed to initialize LibVLC");
+                DisposeInternal();
+                throw new MediaPlayerInitializationException(
+                    "Failed to initialize media player components", ex);
             }
+        }
+
+        private void DisposeInternal()
+        {
+            _player?.Dispose();
+            _libVlc?.Dispose();
+            _player = null;
+            _libVlc = null;
         }
 
         public void Play(string path)
         {
+            if (_libVlc == null || _player == null)
+                throw new InvalidOperationException("Media player is not initialized");
+
             Stop();
             _currentMedia = new Media(_libVlc, new Uri(path));
             _player.Media = _currentMedia;
             _player.Play();
         }
 
-        public void Pause() => _player.Pause();
+        public void Pause()
+        {
+            if (_player == null) return;
+            _player.Pause();
+        }
         
-        public void Resume() => _player.Play();
+        public void Resume()
+        {
+            if (_player == null) return;
+            _player.Play();
+        }
 
         public void Stop()
         {
+            if (_player == null) return;
+            
             _player.Stop();
             _currentMedia?.Dispose();
             _currentMedia = null;
         }
 
-        public bool IsPlaying => _player.IsPlaying;
+        public bool IsPlaying => _player?.IsPlaying ?? false;
 
         public int Volume
         {
@@ -57,16 +93,23 @@ namespace Atune.Services
             set
             {
                 _volume = value;
-                _player.Volume = value;
+                if (_player != null)
+                    _player.Volume = value;
             }
         }
 
         public TimeSpan Position
         {
-            get => TimeSpan.FromMilliseconds(_player.Position * _player.Media?.Duration ?? 0);
+            get
+            {
+                if (_player?.Media?.Duration == null) 
+                    return TimeSpan.Zero;
+                    
+                return TimeSpan.FromMilliseconds(_player.Position * _player.Media.Duration);
+            }
             set
             {
-                if (_player.Media != null && _player.Media.Duration > 0)
+                if (_player?.Media?.Duration > 0)
                     _player.Position = (float)(value.TotalMilliseconds / _player.Media.Duration);
             }
         }
@@ -78,8 +121,7 @@ namespace Atune.Services
 
         public void Dispose()
         {
-            _player.Dispose();
-            _libVlc.Dispose();
+            DisposeInternal();
             GC.SuppressFinalize(this);
         }
 

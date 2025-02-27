@@ -27,6 +27,7 @@ using Microsoft.Extensions.Hosting;
 using Atune.Data.Interfaces;
 using Atune.Data.Repositories;
 using Atune.Data;
+using Microsoft.Extensions.Logging;
 
 namespace Atune;
 
@@ -235,6 +236,7 @@ public partial class App : Application
                 (Control)ActivatorUtilities.CreateInstance(provider, type));
 
         services.AddLogging(builder => {
+            builder.ClearProviders();
             builder.AddSerilog(dispose: true);
         });
 
@@ -259,8 +261,7 @@ public partial class App : Application
         services.AddSingleton<INavigationKeywordProvider, NavigationKeywordProvider>();
 
         // Регистрируем новый сервис воспроизведения
-        services.AddSingleton<MediaPlayerService>(sp => 
-            new MediaPlayerService(sp.GetRequiredService<ISettingsService>()));
+        services.AddSingleton<MediaPlayerService>();
     }
 
     [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "Disabled for Avalonia compatibility")]
