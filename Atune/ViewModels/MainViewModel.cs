@@ -139,13 +139,16 @@ public partial class MainViewModel : ViewModelBase
         // Обновляем сервис плеера
         _mediaPlayerService.Volume = Volume;
 
-        // Инициализируем таймер для обновления позиции
+        // Оптимизированный таймер
         _positionTimer = new DispatcherTimer
         {
-            Interval = TimeSpan.FromMilliseconds(500)
+            Interval = TimeSpan.FromMilliseconds(250) // Уменьшили интервал для плавности
         };
         _positionTimer.Tick += PositionTimer_Tick;
-        _positionTimer.Start();
+        
+        // Подписываемся на события состояния плеера
+        _mediaPlayerService.PlaybackStarted += OnPlaybackStarted;
+        _mediaPlayerService.PlaybackPaused += OnPlaybackPaused;
         
         _mediaPlayerService.PlaybackEnded += (s, e) => 
         {
@@ -530,23 +533,69 @@ public partial class MainViewModel : ViewModelBase
         ExecuteNextCommand();
     }
 
+    private void OnPlaybackStarted(object? sender, EventArgs e)
+    {
+        _positionTimer.Start();
+        UpdateTimerInterval(active: true);
+    }
+
+    private void OnPlaybackPaused(object? sender, EventArgs e)
+    {
+        UpdateTimerInterval(active: false);
+    }
+
     private void PositionTimer_Tick(object? sender, EventArgs e)
     {
-        if (_mediaPlayerService.IsPlaying && 
-            _mediaPlayerService.Duration.TotalSeconds > 0)
+        if (_mediaPlayerService == null || !_mediaPlayerService.IsPlaying) 
         {
-            CurrentPosition = _mediaPlayerService.Position;
-            Duration = _mediaPlayerService.Duration;
+            _positionTimer.Stop();
+            return;
+        }
+
+        try
+        {
+            // Обновляем позицию только если медиа активно
+            var newPosition = _mediaPlayerService.Position;
+            if (newPosition != CurrentPosition)
+            {
+                CurrentPosition = newPosition;
+            }
+
+            // Обновляем длительность только при изменении
+            var newDuration = _mediaPlayerService.Duration;
+            if (newDuration != Duration)
+            {
+                Duration = newDuration;
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating media position");
+            _positionTimer.Stop();
         }
     }
 
-    // Обновим метод установки позиции
+    private void UpdateTimerInterval(bool active)
+    {
+        _positionTimer.Interval = active 
+            ? TimeSpan.FromMilliseconds(250) // Частые обновления при активном воспроизведении
+            : TimeSpan.FromMilliseconds(1000); // Редкие обновления при паузе
+    }
+
     partial void OnCurrentPositionChanged(TimeSpan value)
     {
-        if (_mediaPlayerService.IsPlaying && 
-            Math.Abs((_mediaPlayerService.Position - value).TotalSeconds) > 1)
+        if (_mediaPlayerService?.IsPlaying == true 
+            && Math.Abs((_mediaPlayerService.Position - value).TotalSeconds) > 0.5)
         {
-            _mediaPlayerService.Position = value;
+            try
+            {
+                _mediaPlayerService.Position = value;
+                UpdateTimerInterval(active: true); // Сбрасываем интервал при взаимодействии
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error setting media position");
+            }
         }
     }
 }

@@ -18,6 +18,8 @@ namespace Atune.Services
         private const string RtspTcp = ":rtsp-tcp";
 
         public event EventHandler? PlaybackEnded;
+        public event EventHandler? PlaybackStarted;
+        public event EventHandler? PlaybackPaused;
 
         public MediaPlayerService(
             ISettingsService settingsService, 
@@ -79,18 +81,21 @@ namespace Atune.Services
 
             _player.Media = _currentMedia;
             _player.Play();
+            PlaybackStarted?.Invoke(this, EventArgs.Empty);
         }
 
         public void Pause()
         {
             if (_player == null) return;
             _player.Pause();
+            PlaybackPaused?.Invoke(this, EventArgs.Empty);
         }
         
         public void Resume()
         {
             if (_player == null) return;
             _player.Play();
+            PlaybackStarted?.Invoke(this, EventArgs.Empty);
         }
 
         public void Stop()
