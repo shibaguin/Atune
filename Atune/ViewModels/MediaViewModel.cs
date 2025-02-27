@@ -42,6 +42,15 @@ public partial class MediaViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     private bool _isBusy;
 
+    [ObservableProperty]
+    private bool _isShuffleEnabled;
+
+    [ObservableProperty]
+    private bool _isRepeatEnabled;
+
+    [ObservableProperty]
+    private string _playPauseIcon = "fa-solid fa-play";
+
     public Action<string>? UpdateStatusMessage { get; set; }
 
     public IAsyncRelayCommand PlayCommand { get; }
@@ -447,19 +456,35 @@ public partial class MediaViewModel : ObservableObject, IDisposable
     }
 
     [RelayCommand]
-    private void NextMediaItem()
+    private async Task NextMediaItem()
     {
-        if (MediaItems.Count == 0) return;
+        // Добавляем проверку на доступ к UI потоку
+        Dispatcher.UIThread.VerifyAccess();
         
-        int currentIndex = SelectedMediaItem != null 
-            ? MediaItems.IndexOf(SelectedMediaItem) 
-            : -1;
-        
-        if (currentIndex == -1) currentIndex = 0;
-        
-        int newIndex = (currentIndex + 1) % MediaItems.Count;
-        var nextItem = MediaItems[newIndex];
-        PlayMediaItemCommand.Execute(nextItem);
+        if (MediaItems == null || MediaItems.Count == 0) 
+            return;
+
+        var currentIndex = SelectedMediaItem != null ? MediaItems.IndexOf(SelectedMediaItem) : -1;
+        var nextIndex = currentIndex + 1;
+
+        if (nextIndex < MediaItems.Count)
+        {
+            SelectedMediaItem = MediaItems[nextIndex];
+            await PlayMediaItem(SelectedMediaItem);
+        }
+        else if (IsShuffleEnabled)
+        {
+            await PlayRandomMediaItem();
+        }
+        else 
+        {
+            // Обновляем состояние через Dispatcher
+            Dispatcher.UIThread.InvokeAsync(() => 
+            {
+                SelectedMediaItem = null;
+                PlayPauseIcon = "fa-solid fa-play";
+            });
+        }
     }
 
     [RelayCommand]
@@ -515,7 +540,37 @@ public partial class MediaViewModel : ObservableObject, IDisposable
 
     private void OnPlaybackEnded(object? sender, EventArgs e)
     {
-        NextMediaItemCommand.Execute(null);
+        // Обновляем через Dispatcher для работы с UI элементами
+        Dispatcher.UIThread.InvokeAsync(() =>
+        {
+            if (IsRepeatEnabled)
+            {
+                PlayCurrentMediaItem();
+            }
+            else
+            {
+                NextMediaItemCommand.Execute(null);
+            }
+        });
+    }
+
+    [RelayCommand]
+    private async Task PlayRandomMediaItem()
+    {
+        if (MediaItems.Count == 0) return;
+        
+        var random = new Random();
+        int index = random.Next(MediaItems.Count);
+        await PlayMediaItem(MediaItems[index]);
+    }
+
+    [RelayCommand]
+    private void PlayCurrentMediaItem()
+    {
+        if (SelectedMediaItem != null)
+        {
+            PlayMediaItemCommand.Execute(SelectedMediaItem);
+        }
     }
 
     public void Dispose()
