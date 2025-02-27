@@ -660,12 +660,13 @@ public partial class MainViewModel : ViewModelBase
 
     private void OnPlaybackPaused(object? sender, EventArgs e)
     {
-        UpdateTimerInterval(active: false);
+        IsPlaying = false;
+        // Не останавливаем таймер, только обновляем состояние
     }
 
     private void PositionTimer_Tick(object? sender, EventArgs e)
     {
-        if (_mediaPlayerService == null || !_mediaPlayerService.IsPlaying) 
+        if (_mediaPlayerService == null) 
         {
             _positionTimer.Stop();
             return;
@@ -673,14 +674,13 @@ public partial class MainViewModel : ViewModelBase
 
         try
         {
-            // Обновляем позицию только если медиа активно
+            // Всегда обновляем позицию, даже если воспроизведение на паузе
             var newPosition = _mediaPlayerService.Position;
             if (newPosition != CurrentPosition)
             {
                 CurrentPosition = newPosition;
             }
 
-            // Обновляем длительность только при изменении
             var newDuration = _mediaPlayerService.Duration;
             if (newDuration != Duration)
             {
@@ -694,24 +694,16 @@ public partial class MainViewModel : ViewModelBase
         }
     }
 
-    private void UpdateTimerInterval(bool active)
-    {
-        _positionTimer ??= new DispatcherTimer();
-        
-        _positionTimer.Interval = active 
-            ? TimeSpan.FromMilliseconds(100)
-            : TimeSpan.FromMilliseconds(500);
-    }
-
     partial void OnCurrentPositionChanged(TimeSpan value)
     {
-        if (_mediaPlayerService?.IsPlaying == true 
+        // Убираем проверку на IsPlaying, разрешаем изменение позиции всегда
+        if (_mediaPlayerService != null 
             && Math.Abs((_mediaPlayerService.Position - value).TotalSeconds) > 0.5)
         {
             try
             {
                 _mediaPlayerService.Position = value;
-                UpdateTimerInterval(active: true);
+                // Не меняем интервал таймера при ручной перемотке
             }
             catch (Exception ex)
             {
@@ -828,21 +820,19 @@ public partial class MainViewModel : ViewModelBase
             if (IsPlaying)
             {
                 _mediaPlayerService?.Pause();
-                IsPlaying = false;
+                // Не меняем IsPlaying здесь - дождемся события PlaybackPaused
             }
             else
             {
                 if (!string.IsNullOrEmpty(CurrentMediaPath))
                 {
                     await (_mediaPlayerService?.Play(CurrentMediaPath) ?? Task.CompletedTask);
-                    await Task.Delay(30); // Уменьшаем задержку
-                    await UpdateMetadataAsync(true);
+                    // Не устанавливаем IsPlaying вручную - дождемся события PlaybackStarted
                 }
                 else
                 {
                     _mediaPlayerService?.Resume();
                 }
-                IsPlaying = true;
             }
         }
         catch (Exception ex)
