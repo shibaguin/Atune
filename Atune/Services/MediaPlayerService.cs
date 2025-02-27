@@ -38,7 +38,7 @@ namespace Atune.Services
                 Core.Initialize();
                 
                 _libVlc = new LibVLC(
-                    enableDebugLogs: true,
+                    enableDebugLogs: false,
                     "--avcodec-hw=none",
                     "--no-xlib",
                     "--ignore-config",
