@@ -189,22 +189,25 @@ namespace Atune.Services
 
         public string? CurrentPath => _currentMedia?.Mrl;
 
-        public MediaMetadata GetCurrentMetadata()
+        public async Task<MediaMetadata> GetCurrentMetadataAsync()
         {
             if (_currentMedia == null) 
                 return new MediaMetadata { Title = "Нет данных", Artist = "Нет данных" };
 
-            try 
+            return await Task.Run(() =>
             {
-                return new MediaMetadata {
-                    Title = _currentMedia.Meta(MetadataType.Title) ?? Path.GetFileNameWithoutExtension(_currentMedia.Mrl),
-                    Artist = _currentMedia.Meta(MetadataType.Artist) ?? "Неизвестный исполнитель"
-                };
-            }
-            catch 
-            {
-                return new MediaMetadata { Title = "Ошибка", Artist = "Ошибка" };
-            }
+                try
+                {
+                    return new MediaMetadata {
+                        Title = _currentMedia.Meta(MetadataType.Title) ?? Path.GetFileNameWithoutExtension(_currentMedia.Mrl),
+                        Artist = _currentMedia.Meta(MetadataType.Artist) ?? "Неизвестный исполнитель"
+                    };
+                }
+                catch
+                {
+                    return new MediaMetadata { Title = "Ошибка", Artist = "Ошибка" };
+                }
+            });
         }
 
         public void Dispose()

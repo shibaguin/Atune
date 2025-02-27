@@ -618,7 +618,8 @@ public partial class MainViewModel : ViewModelBase
                     _mediaPlayerService.GetCurrentMedia()?.Parse(MediaParseOptions.ParseLocal | MediaParseOptions.FetchLocal));
             }
 
-            var metadata = await Task.Run(() => _mediaPlayerService.GetCurrentMetadata());
+            var metadata = await Task.Run(() => 
+                _mediaPlayerService.GetCurrentMetadataAsync());
 
             await Dispatcher.UIThread.InvokeAsync(() =>
             {
@@ -749,7 +750,7 @@ public partial class MainViewModel : ViewModelBase
                 _metadataTimer = null;
             }
             
-            await Task.Run(() => _mediaPlayerService.GetCurrentMetadata());
+            await Task.Run(() => _mediaPlayerService.GetCurrentMetadataAsync());
             await Task.Delay(500); 
             
             await UpdateMetadataAsync();
