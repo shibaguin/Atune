@@ -14,6 +14,13 @@
     <AvaloniaResource Include="Assets\**" />
     <AvaloniaResource Include="Resources/Localization/ru.resx" />
     <AvaloniaResource Include="Resources/Localization/en.resx" />
+    <AvaloniaResource Include="Assets\default_cover.jpg" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="ffmpeg\**\*.*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
   <ItemGroup>

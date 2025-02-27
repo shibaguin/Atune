@@ -284,13 +284,18 @@
                                VerticalAlignment="Center" 
                                Spacing="15">
                         <!-- Обложка -->
-                        <Border Width="40" 
-                                Height="40" 
-                                Background="Gray" 
-                                CornerRadius="3"
-                                Margin="0,0,10,0">
-                            <Image/> <!-- Заглушка для будущей обложки -->
-                        </Border>
+                        <Image Width="64" 
+                               Height="64" 
+                               Margin="10,0"
+                               Source="{Binding CoverArt}"
+                               Stretch="UniformToFill">
+                            <Image.Styles>
+                                <Style Selector="Image:empty">
+                                    <Setter Property="Source" 
+                                            Value="avares://Atune/Assets/default_cover.jpg"/>
+                                </Style>
+                            </Image.Styles>
+                        </Image>
 
                         <!-- Текущее время -->
                         <TextBlock Text="{Binding CurrentPosition, StringFormat='{}{0:mm\\:ss}'}" 

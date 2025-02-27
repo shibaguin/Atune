@@ -14,6 +14,9 @@ using System.Collections.ObjectModel;
 using Avalonia.Threading;
 using Microsoft.Extensions.Logging;
 using Atune.Exceptions;
+using Avalonia.Media.Imaging;
+using Avalonia.Platform;
+using System.IO;
 namespace Atune.ViewModels;
 public partial class MainViewModel : ViewModelBase
 {
@@ -54,6 +57,9 @@ public partial class MainViewModel : ViewModelBase
 
     [ObservableProperty]
     private TimeSpan _duration;
+
+    [ObservableProperty]
+    private Bitmap? _coverArt;
 
     private DispatcherTimer _positionTimer;
 
@@ -537,6 +543,32 @@ public partial class MainViewModel : ViewModelBase
     {
         _positionTimer.Start();
         UpdateTimerInterval(active: true);
+        
+        // Получаем обложку через VLC
+        var coverPath = _mediaPlayerService?.GetCoverArtPath();
+        CoverArt = !string.IsNullOrEmpty(coverPath) 
+            ? new Bitmap(coverPath) 
+            : LoadDefaultCover();
+    }
+
+    private Bitmap LoadDefaultCover()
+    {
+        try 
+        {
+            var asset = AssetLoader.Open(new Uri("avares://Atune/Assets/default_cover.jpg"));
+            return new Bitmap(asset);
+        }
+        catch (System.IO.FileNotFoundException)
+        {
+            return CreateTransparentFallback();
+        }
+    }
+
+    private Bitmap CreateTransparentFallback()
+    {
+        // Implementation of CreateTransparentFallback method
+        // Реализация метода CreateTransparentFallback
+        throw new NotImplementedException();
     }
 
     private void OnPlaybackPaused(object? sender, EventArgs e)

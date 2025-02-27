@@ -3,6 +3,8 @@ using System;
 using Atune.Exceptions;
 using Microsoft.Extensions.Logging;
 using System.Threading.Tasks;
+using System.IO;
+using System.Runtime.InteropServices;
 
 namespace Atune.Services
 {
@@ -151,6 +153,17 @@ namespace Atune.Services
         public bool IsNetworkStream => 
             _currentMedia?.Mrl != null && 
             Uri.IsWellFormedUriString(_currentMedia.Mrl, UriKind.Absolute);
+
+        public string? GetCoverArtPath()
+        {
+            if (_currentMedia == null) return null;
+            
+            _currentMedia.Parse(MediaParseOptions.ParseLocal);
+            var artUrl = _currentMedia.Meta(LibVLCSharp.Shared.MetadataType.ArtworkURL);
+            return !string.IsNullOrEmpty(artUrl) && File.Exists(artUrl) 
+                ? artUrl 
+                : null;
+        }
 
         public void Dispose()
         {
