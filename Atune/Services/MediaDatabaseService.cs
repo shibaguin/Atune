@@ -25,19 +25,24 @@ namespace Atune.Services
         public async Task<bool> CanConnectAsync()
         {
             using var dbContext = _dbContextFactory.CreateDbContext();
-            return await dbContext.Database.CanConnectAsync();
+            bool canConnect = await dbContext.Database.CanConnectAsync();
+            _logger.LogInformation($"Database connection status: {canConnect}");
+            return canConnect;
         }
 
         public async Task<bool> ExistsByPathAsync(string path)
         {
             using var dbContext = _dbContextFactory.CreateDbContext();
-            return await dbContext.ExistsByPathAsync(path);
+            bool exists = await dbContext.ExistsByPathAsync(path);
+            _logger.LogInformation($"Checking existence of media item by path: {path}, Exists: {exists}");
+            return exists;
         }
 
         public async Task AddMediaItemAsync(MediaItem item)
         {
             using var dbContext = _dbContextFactory.CreateDbContext();
             await dbContext.AddMediaAsync(item);
+            _logger.LogInformation($"Added media item: {item.Title} by {item.Artist}");
         }
 
         public async Task ValidateDatabaseRecordsAsync()
@@ -46,17 +51,22 @@ namespace Atune.Services
             var invalidRecords = await dbContext.MediaItems
                 .Where(m => string.IsNullOrEmpty(m.Path) || !File.Exists(m.Path))
                 .ToListAsync();
+            _logger.LogInformation($"Found {invalidRecords.Count} invalid records in the database");
             foreach (var record in invalidRecords)
             {
                 dbContext.MediaItems.Remove(record);
+                _logger.LogInformation($"Removed invalid record: {record.Title} by {record.Artist}");
             }
             await dbContext.SaveChangesAsync();
+            _logger.LogInformation("Database records validated and changes saved");
         }
 
         public string GetDatabasePath()
         {
             using var dbContext = _dbContextFactory.CreateDbContext();
-            return dbContext.Database.GetDbConnection().DataSource ?? "not defined";
+            string dbPath = dbContext.Database.GetDbConnection().DataSource ?? "not defined";
+            _logger.LogInformation($"Database path retrieved: {dbPath}");
+            return dbPath;
         }
     }
 } 
