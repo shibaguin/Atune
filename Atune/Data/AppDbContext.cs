@@ -140,33 +140,57 @@ public class AppDbContext : DbContext
 
     public async Task<int> SaveChangesAsync()
     {
-        var entries = ChangeTracker
-            .Entries()
-            .Where(e => e.Entity is MediaItem && 
-                (e.State == EntityState.Added || e.State == EntityState.Modified));
-
-        foreach (var entityEntry in entries)
+        try
         {
-            var validationContext = new ValidationContext(entityEntry.Entity);
-            Validator.ValidateObject(entityEntry.Entity, validationContext, true);
-        }
+            var entries = ChangeTracker
+                .Entries()
+                .Where(e => e.Entity is MediaItem && 
+                    (e.State == EntityState.Added || e.State == EntityState.Modified));
 
-        return await base.SaveChangesAsync();
+            foreach (var entityEntry in entries)
+            {
+                var validationContext = new ValidationContext(entityEntry.Entity);
+                Validator.ValidateObject(entityEntry.Entity, validationContext, true);
+            }
+
+            return await base.SaveChangesAsync();
+        }
+        catch (Exception ex)
+        {
+            // Логируем ошибку
+            throw new InvalidOperationException("Error saving changes to the database", ex);
+        }
     }
 
     public async Task<List<MediaItem>> GetAllMediaAsync()
     {
-        return await MediaItems
-            .AsNoTracking()
-            .OrderBy(m => m.Title)
-            .ToListAsync();
+        try
+        {
+            return await MediaItems
+                .AsNoTracking()
+                .OrderBy(m => m.Title)
+                .ToListAsync();
+        }
+        catch (Exception ex)
+        {
+            // Логируем ошибку
+            throw new InvalidOperationException("Error retrieving all media items", ex);
+        }
     }
 
     public async Task<MediaItem?> GetMediaByIdAsync(int id)
     {
-        return await MediaItems
-            .AsNoTracking()
-            .FirstOrDefaultAsync(m => m.Id == id);
+        try
+        {
+            return await MediaItems
+                .AsNoTracking()
+                .FirstOrDefaultAsync(m => m.Id == id);
+        }
+        catch (Exception ex)
+        {
+            // Логируем ошибку
+            throw new InvalidOperationException("Error retrieving media item by ID", ex);
+        }
     }
 
     public async Task AddMediaAsync(MediaItem media)
@@ -191,6 +215,11 @@ public class AppDbContext : DbContext
         {
             await Database.OpenConnectionAsync();
         }
+        catch (Exception ex)
+        {
+            // Логируем ошибку
+            throw new InvalidOperationException("Error initializing database", ex);
+        }
         finally 
         {
             await Database.CloseConnectionAsync();
@@ -199,7 +228,15 @@ public class AppDbContext : DbContext
 
     public async Task<bool> ExistsByPathAsync(string path)
     {
-        return await MediaItems.AnyAsync(m => m.Path == path);
+        try
+        {
+            return await MediaItems.AnyAsync(m => m.Path == path);
+        }
+        catch (Exception ex)
+        {
+            // Логируем ошибку
+            throw new InvalidOperationException("Error checking existence by path", ex);
+        }
     }
 
     public async Task BulkInsertAsync(IEnumerable<MediaItem> entities, Action<BulkInsertOptions>? configureOptions = null)

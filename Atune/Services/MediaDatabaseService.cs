@@ -6,6 +6,8 @@ using Atune.Models;
 using Atune.Data;
 using Atune.Services;
 using Microsoft.Extensions.Logging;
+using System;
+using Atune.Exceptions;
 
 namespace Atune.Services
 {
@@ -41,8 +43,15 @@ namespace Atune.Services
         public async Task AddMediaItemAsync(MediaItem item)
         {
             using var dbContext = _dbContextFactory.CreateDbContext();
-            await dbContext.AddMediaAsync(item);
-            _logger.LogInformation($"Added media item: {item.Title} by {item.Artist}");
+            try
+            {
+                await dbContext.AddMediaAsync(item);
+                _logger.LogInformation($"Added media item: {item.Title} by {item.Artist}");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("Error adding media item: {Message}", ex);
+            }
         }
 
         public async Task ValidateDatabaseRecordsAsync()
