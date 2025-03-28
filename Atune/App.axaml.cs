@@ -265,6 +265,16 @@ public partial class App : Application
 
         // Добавляем новый сервис для работы с обложками
         services.AddSingleton<ICoverArtService, CoverArtService>();
+
+        // Добавляем загрузчик плагинов
+        var pluginLoader = new PluginLoader(services.BuildServiceProvider().GetRequiredService<IPlatformPathService>(), services.BuildServiceProvider().GetRequiredService<ILoggerService>());
+        var plugins = pluginLoader.LoadPlugins();
+
+        foreach (var plugin in plugins)
+        {
+            plugin.Value.Initialize();
+            services.AddSingleton(plugin.Value);
+        }
     }
 
     [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "Disabled for Avalonia compatibility")]

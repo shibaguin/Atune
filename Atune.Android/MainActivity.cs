@@ -8,6 +8,8 @@ using Android.Runtime;
 using System.Diagnostics.CodeAnalysis;
 using LibVLCSharp.Platforms.Android;
 using LibVLCSharp.Shared;
+using System.Reflection;
+using System.Linq;
 
 namespace Atune.Android;
 
@@ -32,6 +34,13 @@ public class MainActivity : AvaloniaMainActivity<App>
         {
             RequestStoragePermissions();
         }
+
+        // Добавляем после инициализации Core
+        AppDomain.CurrentDomain.AssemblyResolve += (sender, args) =>
+        {
+            var asmName = new AssemblyName(args.Name);
+            return PluginLoader.LoadedAssemblies.FirstOrDefault(a => a.GetName().Name == asmName.Name);
+        };
     }
 
     [SuppressMessage("Interoperability", "CA1416:Validate platform compatibility", 

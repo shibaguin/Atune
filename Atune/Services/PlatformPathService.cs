@@ -28,5 +28,20 @@ namespace Atune.Services
             }
             return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Atune", "Data", databaseFileName);
         }
+
+        public string GetPluginsDirectory()
+        {
+            if (OperatingSystem.IsAndroid())
+            {
+                return Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), 
+                    "AtunePlugins");
+            }
+            
+            return Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), 
+                "Atune", 
+                "Plugins");
+        }
     }
 } 

@@ -12,5 +12,8 @@ namespace Atune.Services
         // Returns the path for the database file (e.g., "media_library.db")
         // Возвращает путь к файлу базы данных (например, "media_library.db")
         string GetDatabasePath(string databaseFileName = "media_library.db");
+
+        // Добавляем новый метод
+        string GetPluginsDirectory();
     }
 } 

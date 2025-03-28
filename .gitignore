@@ -16,6 +16,7 @@
 
 # User-added files
 Release.sh
+Atune.Plugins/
 
 # Mono auto generated files
 mono_crash.*
