@@ -349,8 +349,14 @@ public partial class App : Application
             Log.Information("Initializing database...");
             await db.Database.EnsureCreatedAsync();
             
-            // Простая проверка функциональности
-            // Simple functionality check
+            // Apply migrations if they exist
+            var pendingMigrations = await db.Database.GetPendingMigrationsAsync();
+            if (pendingMigrations.Any())
+            {
+                Log.Information($"Applying {pendingMigrations.Count()} pending migrations...");
+                await db.Database.MigrateAsync();
+            }
+            
             var exists = await db.MediaItems.AnyAsync();
             Log.Information($"Database status: {(exists ? "OK" : "EMPTY")}");
         }
