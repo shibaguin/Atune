@@ -153,8 +153,8 @@ public partial class MediaViewModel : ObservableObject, IDisposable
                     {
                         new FilePickerFileType("Audio files")
                         {
-                            Patterns = new[] { "*.mp3", "*.flac" },
-                            MimeTypes = new[] { "audio/mpeg", "audio/flac" }
+                            Patterns = new[] { "*.mp3", "*.flac", "*.wav", "*.ogg", "*.aac", "*.wma", "*.alac", "*.ape" },
+                            MimeTypes = new[] { "audio/mpeg", "audio/flac", "audio/wav", "audio/ogg", "audio/aac", "audio/wma", "audio/alac", "audio/ape" }
                         }
                     }
                 });
