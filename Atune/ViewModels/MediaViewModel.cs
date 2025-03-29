@@ -20,6 +20,8 @@ using Avalonia.Threading;
 using ATL;
 using Atune.Services;
 using Atune.Extensions;
+using Atune.Views;
+using Serilog;
 
 namespace Atune.ViewModels;
 
@@ -572,10 +574,35 @@ public partial class MediaViewModel : ObservableObject, IDisposable
     }
 
     [RelayCommand]
-    private void MoreInfo(MediaItem mediaItem)
+    private async Task MoreInfo(MediaItem mediaItem)
     {
-        // Пустая реализация команды
-        // Здесь можно добавить логику, если потребуется
+        if (mediaItem == null)
+        {
+            Log.Warning("MediaItem is null");
+            return;
+        }
+        Log.Information($"Title: {mediaItem.Title}, Artist: {mediaItem.Artist}, Album: {mediaItem.Album}");
+        
+        var mainWindow = Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop
+            ? desktop.MainWindow
+            : null;
+
+        if (mainWindow == null)
+        {
+            Log.Warning("MainWindow is null");
+            return;
+        }
+
+        var infoWindow = new Window
+        {
+            Title = "Информация о медиа",
+            Width = 400,
+            Height = 300,
+            Content = new MediaInfoView(mediaItem),
+            WindowStartupLocation = WindowStartupLocation.CenterOwner
+        };
+
+        await infoWindow.ShowDialog(mainWindow);
     }
 
     public void Dispose()

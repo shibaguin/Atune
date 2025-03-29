@@ -1,0 +1,29 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:Atune.Models"
+             mc:Ignorable="d"
+             d:DesignWidth="400"
+             d:DesignHeight="300"
+             x:Class="Atune.Views.MediaInfoView"
+             x:DataType="vm:MediaItem">
+    <StackPanel Margin="10" Spacing="10">
+        <TextBlock Text="Test Title" FontWeight="Bold" FontSize="16" Foreground="White"/>
+        <TextBlock Text="Test Artist" Foreground="White"/>
+        <TextBlock Text="Test Album" Foreground="White"/>
+        <TextBlock Text="Test Year" Foreground="White"/>
+        <TextBlock Text="Test Path" Foreground="White"/>
+        <TextBlock Text="Test Rating" Foreground="White"/>
+        <TextBlock Text="Test ReleaseDate" Foreground="White"/>
+        <!--
+        <TextBlock Text="{Binding Title}" FontWeight="Bold" FontSize="16"/>
+        <TextBlock Text="{Binding Artist}"/>
+        <TextBlock Text="{Binding Album}"/>
+        <TextBlock Text="{Binding Year}"/>
+        <TextBlock Text="{Binding Path}"/>
+        <TextBlock Text="{Binding Rating, StringFormat='Рейтинг: {0:F1}'}"/>
+        <TextBlock Text="{Binding ReleaseDate, StringFormat='Дата релиза: {0:d}'}"/>
+        -->
+    </StackPanel>
+</UserControl>
