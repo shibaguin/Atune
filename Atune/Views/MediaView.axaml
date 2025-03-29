@@ -36,18 +36,11 @@
                                        MaxLines="1"/>
                             <TextBlock Text="{Binding Artist}" 
                                        MaxLines="1"/>
-                            <StackPanel Orientation="Horizontal" Spacing="5">
-                                <TextBlock Text="{Binding Genre}" 
-                                           Foreground="Gray"
-                                           MaxLines="1"/>
-                                <TextBlock Text="{Binding Year}" 
-                                           Foreground="Gray"/>
-                            </StackPanel>
-                            <TextBlock Text="{Binding Path}" 
-                                       FontSize="12"
-                                       Foreground="DarkGray"
-                                       MaxLines="1"
-                                       TextTrimming="CharacterEllipsis"/>
+                            <TextBlock Text="{Binding Album}" 
+                                       Foreground="Gray"
+                                       MaxLines="1"/>
+                            <TextBlock Text="{Binding Year}" 
+                                       Foreground="Gray"/>
                         </StackPanel>
                     </Button>
                 </DataTemplate>
