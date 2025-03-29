@@ -571,6 +571,13 @@ public partial class MediaViewModel : ObservableObject, IDisposable
         }
     }
 
+    [RelayCommand]
+    private void MoreInfo(MediaItem mediaItem)
+    {
+        // Пустая реализация команды
+        // Здесь можно добавить логику, если потребуется
+    }
+
     public void Dispose()
     {
         Dispose(true);

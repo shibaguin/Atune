@@ -47,6 +47,15 @@
                             <TextBlock Text="{Binding Year}" 
                                        Foreground="Gray"
                                        HorizontalAlignment="Stretch"/>
+                            <Button Command="{Binding MoreInfoCommand, ElementName=Root}"
+                                    CommandParameter="{Binding}"
+                                    HorizontalAlignment="Right" 
+                                    Width="30" 
+                                    Margin="5,0,0,0">
+                                <Button.Content>
+                                    <PathIcon Width="24" Height="24" Fill="#ffffff" Data="M8 12a2 2 0 1 1-4 0 2 2 0 0 1 4 0ZM14 12a2 2 0 1 1-4 0 2 2 0 0 1 4 0ZM18 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"/>
+                                </Button.Content>
+                            </Button>
                         </StackPanel>
                     </Button>
                 </DataTemplate>
