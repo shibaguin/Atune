@@ -28,19 +28,25 @@
                 <DataTemplate>
                     <Button Command="{Binding PlayMediaItemCommand, ElementName=Root}"
                             CommandParameter="{Binding}"
-                            Background="Transparent" BorderThickness="0"
-                            Focusable="False">
-                        <StackPanel Margin="5" Spacing="3">
+                            Background="Transparent" 
+                            BorderThickness="0"
+                            Focusable="False"
+                            HorizontalAlignment="Stretch">
+                        <StackPanel Margin="5" Spacing="3" HorizontalAlignment="Stretch">
                             <TextBlock Text="{Binding Title}" 
                                        FontWeight="Bold"
-                                       MaxLines="1"/>
+                                       MaxLines="1"
+                                       HorizontalAlignment="Stretch"/>
                             <TextBlock Text="{Binding Artist}" 
-                                       MaxLines="1"/>
+                                       MaxLines="1"
+                                       HorizontalAlignment="Stretch"/>
                             <TextBlock Text="{Binding Album}" 
                                        Foreground="Gray"
-                                       MaxLines="1"/>
+                                       MaxLines="1"
+                                       HorizontalAlignment="Stretch"/>
                             <TextBlock Text="{Binding Year}" 
-                                       Foreground="Gray"/>
+                                       Foreground="Gray"
+                                       HorizontalAlignment="Stretch"/>
                         </StackPanel>
                     </Button>
                 </DataTemplate>
