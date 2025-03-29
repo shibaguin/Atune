@@ -18,6 +18,15 @@ public class MediaItem
     public string Album { get; set; } = string.Empty;
     [Range(1900u, 2100u, ErrorMessage = "Invalid year")]
     public uint Year { get; set; }
+    
+    [Range(0, 10, ErrorMessage = "Rating must be between 0 and 10")]
+    public double Rating { get; set; }
+    
+    [DataType(DataType.Date)]
+    public DateTime ReleaseDate { get; set; }
+    
+    public string CoverArt { get; set; } = string.Empty;
+    
     public string Genre { get; set; } = string.Empty;
     
     [Required(ErrorMessage = "Path is required")]
