@@ -347,14 +347,28 @@ public partial class App : Application
         try
         {
             Log.Information("Initializing database...");
-            await db.Database.EnsureCreatedAsync();
             
-            // Apply migrations if they exist
-            var pendingMigrations = await db.Database.GetPendingMigrationsAsync();
-            if (pendingMigrations.Any())
+            // Корректная проверка наличия таблицы MediaItems с использованием ExecuteScalarAsync
+            bool tableExists = false;
+            var connection = db.Database.GetDbConnection();
+            await connection.OpenAsync();
+            using (var command = connection.CreateCommand())
             {
-                Log.Information($"Applying {pendingMigrations.Count()} pending migrations...");
-                await db.Database.MigrateAsync();
+                command.CommandText = "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='MediaItems'";
+                var result = await command.ExecuteScalarAsync();
+                tableExists = Convert.ToInt32(result) > 0;
+            }
+            await connection.CloseAsync();
+
+            if (!tableExists)
+            {
+                // Применение миграций, если таблицы еще нет
+                var pendingMigrations = await db.Database.GetPendingMigrationsAsync();
+                if (pendingMigrations.Any())
+                {
+                    Log.Information($"Applying {pendingMigrations.Count()} pending migrations...");
+                    await db.Database.MigrateAsync();
+                }
             }
             
             var exists = await db.MediaItems.AnyAsync();
