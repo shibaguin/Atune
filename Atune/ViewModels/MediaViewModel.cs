@@ -22,6 +22,7 @@ using Atune.Services;
 using Atune.Extensions;
 using Atune.Views;
 using Serilog;
+using System.ComponentModel;
 
 namespace Atune.ViewModels;
 
@@ -53,12 +54,27 @@ public partial class MediaViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     private string _playPauseIcon = "fa-solid fa-play";
 
+    private string? _sortOrder;
+    public string SortOrder
+    {
+        get => _sortOrder ?? "A-Z";
+        set
+        {
+            _sortOrder = value;
+            OnPropertyChanged(nameof(SortOrder));
+            SortMediaItems();
+        }
+    }
+
     public Action<string>? UpdateStatusMessage { get; set; }
 
     public IAsyncRelayCommand PlayCommand { get; }
     public IRelayCommand StopCommand { get; }
 
     private bool _disposed;
+
+    // Сохраняем отсортированный кэш для ускорения последующих операций сортировки
+    private List<MediaItem> _sortedCache = new List<MediaItem>();
 
     public MediaViewModel(
         IMemoryCache cache, 
@@ -82,6 +98,9 @@ public partial class MediaViewModel : ObservableObject, IDisposable
         {
             await RefreshMedia();
         });
+
+        MediaItems = new ObservableCollection<MediaItem>();
+        SortOrder = "A-Z"; // Установите значение по умолчанию
     }
 
     private async Task<List<MediaItem>> LoadFromDatabaseAsync()
@@ -269,6 +288,8 @@ public partial class MediaViewModel : ObservableObject, IDisposable
                 {
                     MediaItems.Add(item);
                 }
+                // Применяем сортировку после обновления коллекции
+                SortMediaItems();
                 OnPropertyChanged(nameof(MediaItems));
             });
             
@@ -605,6 +626,50 @@ public partial class MediaViewModel : ObservableObject, IDisposable
         await infoWindow.ShowDialog(mainWindow);
     }
 
+    private void SortMediaItems()
+    {
+        // Логируем текущее значение SortOrder
+        _logger?.LogInformation($"Sorting media items by: {SortOrder}");
+
+        // Получаем компаратор в зависимости от SortOrder (если "A-Z", то ascending; "Z-A" - descending)
+        var titleComparer = new CustomTitleComparer(SortOrder == "A-Z");
+
+        // Полностью пересчитываем кэш из текущей коллекции
+        _sortedCache = MediaItems.ToList();
+        _sortedCache.Sort(new MediaItemComparer(titleComparer));
+
+        // Обновляем ObservableCollection из кешированного списка
+        MediaItems.Clear();
+        foreach (var item in _sortedCache)
+        {
+            MediaItems.Add(item);
+            _logger?.LogInformation($"Added item to sorted list: {item.Title}");
+        }
+    }
+
+    // Новый метод для инкрементального добавления нового элемента в отсортированное представление
+    public void InsertItemSorted(MediaItem newItem)
+    {
+        var titleComparer = new CustomTitleComparer(SortOrder == "A-Z");
+        // Если кэш пуст или не содержит нового элемента, пересчитываем его полностью
+        if (_sortedCache == null)
+        {
+            _sortedCache = MediaItems.ToList();
+            _sortedCache.Sort(new MediaItemComparer(titleComparer));
+        }
+
+        // Ищем индекс для вставки нового элемента с помощью бинарного поиска
+        int index = _sortedCache.BinarySearch(newItem, new MediaItemComparer(titleComparer));
+        if (index < 0)
+        {
+            index = ~index;
+        }
+
+        _sortedCache.Insert(index, newItem);
+        MediaItems.Insert(index, newItem);
+        _logger?.LogInformation($"Inserted new item '{newItem.Title}' at index {index}");
+    }
+
     public void Dispose()
     {
         Dispose(true);
@@ -621,5 +686,94 @@ public partial class MediaViewModel : ObservableObject, IDisposable
         }
         
         _disposed = true;
+    }
+}
+
+public class CustomTitleComparer : IComparer<string>
+{
+    private readonly bool _ascending;
+    
+    public CustomTitleComparer(bool ascending)
+    {
+        _ascending = ascending;
+    }
+    
+    public int Compare(string? s1, string? s2)
+    {
+        // Если обе строки равны
+        if (ReferenceEquals(s1, s2)) return 0;
+        if (s1 is null) return _ascending ? -1 : 1;
+        if (s2 is null) return _ascending ? 1 : -1;
+        
+        int minLen = Math.Min(s1.Length, s2.Length);
+        for (int i = 0; i < minLen; i++)
+        {
+            char c1 = s1[i];
+            char c2 = s2[i];
+            int cat1 = GetCategory(c1);
+            int cat2 = GetCategory(c2);
+            
+            if (cat1 != cat2)
+            {
+                int cmp = cat1.CompareTo(cat2);
+                return _ascending ? cmp : -cmp;
+            }
+            // Если символы из одной категории, сравниваем их без учета регистра
+            int cmpChar = char.ToUpperInvariant(c1).CompareTo(char.ToUpperInvariant(c2));
+            if (cmpChar != 0)
+            {
+                return _ascending ? cmpChar : -cmpChar;
+            }
+        }
+        // Если один текст является префиксом другого, более короткая строка считается "меньшей"
+        int lenDiff = s1.Length.CompareTo(s2.Length);
+        return _ascending ? lenDiff : -lenDiff;
+    }
+    
+    // Метод возвращает числовую категорию символа:
+    // 0 - цифры, 1 - латинские буквы, 2 - кириллические буквы, 3 - все остальное
+    private int GetCategory(char c)
+    {
+        if (char.IsDigit(c))
+            return 0;
+        else if (IsLatin(c))
+            return 1;
+        else if (IsCyrillic(c))
+            return 2;
+        else
+            return 3;
+    }
+    
+    private bool IsLatin(char c)
+    {
+        return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');
+    }
+    
+    private bool IsCyrillic(char c)
+    {
+        // Основной диапазон кириллических символов: U+0400 — U+04FF
+        return c >= '\u0400' && c <= '\u04FF';
+    }
+}
+
+// Добавляем новый компаратор для MediaItem, использующий наш компаратор по Title
+public class MediaItemComparer : IComparer<MediaItem>
+{
+    private readonly IComparer<string> _titleComparer;
+
+    public MediaItemComparer(IComparer<string> titleComparer)
+    {
+        _titleComparer = titleComparer;
+    }
+
+    public int Compare(MediaItem? x, MediaItem? y)
+    {
+        if (x == null && y == null) return 0;
+        if (x == null) return -1;
+        if (y == null) return 1;
+
+        int result = _titleComparer.Compare(x.Title, y.Title);
+
+        return result;
     }
 } 

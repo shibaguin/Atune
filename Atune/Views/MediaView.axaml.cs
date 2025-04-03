@@ -351,4 +351,16 @@ public partial class MediaView : UserControl
             }
         }
     }
+
+    private void ComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (DataContext is MediaViewModel vm)
+        {
+            var comboBox = sender as ComboBox;
+            if (comboBox?.SelectedItem is ComboBoxItem selectedItem)
+            {
+                vm.SortOrder = selectedItem.Content.ToString();
+            }
+        }
+    }
 }
