@@ -34,7 +34,7 @@
                                     BorderThickness="0"
                                     Focusable="False"
                                     HorizontalAlignment="Stretch">
-                                <StackPanel Margin="5" Spacing="3" HorizontalAlignment="Stretch">
+                                <StackPanel Margin="2" Spacing="2" HorizontalAlignment="Stretch">
                                     <TextBlock Text="{Binding Title}" 
                                                FontWeight="Bold"
                                                MaxLines="1"
@@ -49,6 +49,7 @@
                                     <TextBlock Text="{Binding Year}" 
                                                Foreground="Gray"
                                                HorizontalAlignment="Stretch"/>
+                                    <!--
                                     <Button Command="{Binding MoreInfoCommand, ElementName=Root}"
                                             CommandParameter="{Binding}"
                                             HorizontalAlignment="Right" 
@@ -57,6 +58,7 @@
                                             <PathIcon Data="M8 12a2 2 0 1 1-4 0 2 2 0 0 1 4 0ZM14 12a2 2 0 1 1-4 0 2 2 0 0 1 4 0ZM18 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"/>
                                         </Button.Content>
                                     </Button>
+                                    -->
                                 </StackPanel>
                             </Button>
                         </DataTemplate>
@@ -81,24 +83,31 @@
                     Grid.Row="2">
             <Button Content="{DynamicResource Media_AddMusic}" 
                     Click="AddToLibrary_Click"
-                    Padding="15 5"
+                    Padding="5 5"
                     FontSize="16"
+                    Width="100"
                     HorizontalAlignment="Right"/>
             <Button Content="{DynamicResource Media_AddFolder}"
                     Command="{Binding AddFolderCommand}"
                     Margin="5,0"
-                    Padding="15 5"
-                    FontSize="16"/>
+                    Padding="5 5"
+                    FontSize="16"
+                    Width="100"
+                    HorizontalAlignment="Right"/>
             <Button Content="{DynamicResource Media_Refresh}" 
                     Command="{Binding RefreshMediaCommand}"
                     Margin="10,0,0,0"
-                    Padding="10 5"
+                    Padding="5 5"
+                    FontSize="16"
+                    Width="100"
                     HorizontalAlignment="Left"
                     VerticalAlignment="Bottom"/>
             <Button Content="{DynamicResource Media_Drop}" 
                     Command="{Binding DropMediaRecordsCommand}"
                     Margin="10,0,0,0"
-                    Padding="10 5"
+                    Padding="5 5"
+                    FontSize="16"
+                    Width="100"
                     HorizontalAlignment="Left"
                     VerticalAlignment="Bottom"/>
         </StackPanel>
