@@ -16,6 +16,21 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
+        <TabControl Grid.Row="0">
+            <TabItem Header="{DynamicResource Media_Tracks}">
+                <!-- Содержимое для вкладки Треки -->
+            </TabItem>
+            <TabItem Header="{DynamicResource Media_Albums}">
+                <!-- Содержимое для вкладки Альбомы -->
+            </TabItem>
+            <TabItem Header="{DynamicResource Media_Playlists}">
+                <!-- Содержимое для вкладки Плейлисты -->
+            </TabItem>
+            <TabItem Header="{DynamicResource Media_Artists}">
+                <!-- Содержимое для вкладки Исполнители -->
+            </TabItem>
+        </TabControl>
+
         <ListBox ItemsSource="{Binding MediaItems}" 
                  SelectedItem="{Binding SelectedMediaItem, Mode=TwoWay}"
                  Grid.Row="1">

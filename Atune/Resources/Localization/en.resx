@@ -112,4 +112,16 @@
   <data name="Media_Cover" xml:space="preserve">
     <value>Cover</value>
   </data>
+  <data name="Media_Tracks" xml:space="preserve">
+    <value>Tracks</value>
+  </data>
+  <data name="Media_Albums" xml:space="preserve">
+    <value>Albums</value>
+  </data>
+  <data name="Media_Playlists" xml:space="preserve">
+    <value>Playlists</value>
+  </data>
+  <data name="Media_Artists" xml:space="preserve">
+    <value>Artists</value>
+  </data>
 </root> 

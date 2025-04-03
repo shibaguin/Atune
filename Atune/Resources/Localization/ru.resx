@@ -112,4 +112,16 @@
   <data name="Media_Cover" xml:space="preserve">
     <value>Обложка</value>
   </data>
+  <data name="Media_Tracks" xml:space="preserve">
+    <value>Треки</value>
+  </data>
+  <data name="Media_Albums" xml:space="preserve">
+    <value>Альбомы</value>
+  </data>
+  <data name="Media_Playlists" xml:space="preserve">
+    <value>Плейлисты</value>
+  </data>
+  <data name="Media_Artists" xml:space="preserve">
+    <value>Исполнители</value>
+  </data>
 </root> 
