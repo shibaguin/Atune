@@ -1,106 +1,170 @@
-# Atune – Кроссплатформенный аудиоплеер
+# Atune – Crossplatform Audio Player
 
-Atune — это современный кроссплатформенный аудиоплеер, разработанный с использованием .NET и AvaloniaUI. Проект нацелен на работу в средах Linux, Windows и Android, предоставляя интуитивно понятный и отзывчивый интерфейс для управления вашей медиатекой.
+Atune is a modern cross-platform audio player developed using .NET and AvaloniaUI. The project is designed to work in environments such as Linux, Windows, and Android, providing an intuitive and responsive interface for managing and listening to your media library.
 
-## Особенности
+## Features
 
-- **Кроссплатформенность:** Равномерная поддержка Linux, Windows и Android.
-- **Адаптивный интерфейс:** Использование AvaloniaUI позволяет создавать современный и настраиваемый дизайн, который работает на всех поддерживаемых платформах.
-- **Архитектура MVVM:** Чёткое разделение логики представления и бизнес-логики обеспечивает удобство поддержки и расширения проекта.
-- **Локализация:** Доступны несколько языковых пакетов (например, русский и английский), что упрощает адаптацию приложения для международного сообщества.
-- **Настроиваемые темы:** Поддержка переключения между светлой, тёмной и системной темами.
-- **Работа с медиа:** Функции добавления музыки, организация папок, история воспроизведения и многое другое.
-- **Расширяемость:** Модульная организация кода и использование Dependency Injection позволяют легко интегрировать сторонние сервисы и плагины.
+- **Crossplatform:** Equal support for Linux, Windows and Android.
+- **Adaptive interface:** Using AvaloniaUI allows creating a modern and customizable design that works on all supported platforms.
+- **MVVM architecture:** Clear separation of view logic and business logic ensures ease of support and expansion of the project.
+- **Localization:** Available multiple language packages (for now, Russian and English), which simplifies the adaptation of the application for the international community.
+- **Customizable themes:** Support for switching between light, dark and system themes.
+- **Media functions:** Functions for adding music, organizing playlists, managing favorites, playback history and more.
+- **Plugins:** Support for plugins allows you to extend the functionality of the application.
+- **Extensibility:** Modular code organization and use of Dependency Injection allows easy integration of third-party services and plugins.
 
-## Требования
+## Requirements
 
 - [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
-- [Avalonia](https://avaloniaui.net) — кроссплатформенный UI-фреймворк
-- [Entity Framework Core](https://docs.microsoft.com/en-us/ef/) — для работы с локальными базами данных (SQLite)
-- Дополнительно: Android SDK и инструменты для сборки Android-версии
+- [Avalonia](https://avaloniaui.net) — cross-platform UI framework
+- [Entity Framework Core](https://docs.microsoft.com/en-us/ef/) — for working with local databases (SQLite)
+- Additional: Android SDK and tools for building Android version
 
-## Установка и сборка
+## Installation and build
 
-1. **Клонирование репозитория:**
+1. **Clone the repository:**
 
    ```bash
    git clone https://github.com/shibaguin/Atune.git
    cd Atune
    ```
 
-2. **Восстановление зависимостей:**
+2. **Restore dependencies:**
 
    ```bash
    dotnet restore
    ```
 
-3. **Сборка проекта:**
+3. **Build the project:**
 
-   - Для Desktop (Windows/Linux):
-   В директории Atune.Desktop выполните команду:
+   - For Desktop:
+   In the Atune.Desktop directory, run the command:
 
      ```bash
-     dotnet publish -c Release --runtime linux-x64
+     dotnet publish -c Release --runtime {platform}
 
      ```
-
-   - Для Android:
-   В директории Atune.Android выполните команду:
+     Where {platform} is the platform you want to build the application on.
+     For example:
+     win-x64
+     win-x86
+     linux-x64
+     
+   - For Android:
+      In the Atune.Android directory, run the command:
      ```bash
      dotnet publish -c Release -f net8.0-android34.0
      ```
+     Or use suitable tools for building and running the application, for example Rider IDE.
 
-   - Для iOS и браузерной версии доступны отдельные проекты, требующие реализации и доработки, а также инструменты для сборки.
+   - For iOS and browser version, there are separate projects that require implementation and refinement, as well as tools for building.
 
-4. **Запуск приложения:**
+4. **Run the application:**
 
-   - Для Desktop-версии:
-   В директории Atune.Desktop/bin/Release/net8.0/{platform}/publish запустите приложение Atune.Desktop:
+   - For Desktop version:
 
-     ```bash
-    ./Atune.Desktop
-     ```
-     
-   - Для Android-версии используйте подходящие эмуляторы и инструменты сборки.
+      - Linux:
+         In the Atune.Desktop/bin/Release/net8.0/linux-x64/publish directory, run the application **Atune.Desktop**:
 
-## Использование
+         ```bash
+         ./Atune.Desktop
+         ```
 
-Atune предлагает простой и интуитивный интерфейс:
-- **Навигация по разделам:** Главная, Медиатека, История, Настройки.
-- **Управление музыкой:** Добавление аудиофайлов, организация папок, обновление библиотеки.
-- **Локализация и темы:** Переключение языка и изменение темы оформления осуществляется через настройки приложения.
+      - Windows:
+         In the Atune.Desktop/bin/Release/net8.0/win-x64/publish directory, run the application **Atune.Desktop.exe**
 
-Детали по работе с локальными ресурсами и базой данных можно найти в исходном коде, где используются технологии Microsoft.EntityFrameworkCore и локальные .resx файлы для локализации.
+   - For Android version:
+      In the Atune.Android/bin/Release/net8.0-android34.0/publish directory, find the file **Atune.Android.apk** and install it on the device.
+      Or use suitable emulators and tools for building to run and test the application.
 
-## Вклад в развитие
+## Usage
 
-Мы приветствуем участие сообщества и сторонних разработчиков! Если у вас есть идеи, улучшения или обнаружены ошибки:
-- **GitHub Issues:** Оформляйте issues для обсуждения и отслеживания задач.
-- **Pull Requests:** Отправляйте pull request с вашими предложениями.
-- Ознакомьтесь с [CONTRIBUTING.md](CONTRIBUTING.md) для получения подробной информации о процессе внесения изменений.
+Atune offers a simple and intuitive interface:
+- **Navigation through sections:** Main, Media Library, History, Settings.
+- **Music management:** Adding audio files, organizing folders, updating library.
+- **Localization and themes:** Switching language and changing the theme of the application is done through the application settings.
 
-## Сообщество
+Details of working with local resources and database can be found in the source code, where technologies Microsoft.EntityFrameworkCore and local .resx files for localization are used.
 
-Присоединяйтесь к обсуждениям и делитесь своими идеями:
-- **GitHub Discussions/Issues:** Для вопросов и предложений.
-- **Чаты/форумы:** (При наличии, укажите ссылки на Discord, Telegram или другие платформы).
+## Localization
 
-## Лицензия
+Atune supports multiple languages, including Russian and English. Localization is performed through resource files, such as `en.resx` and `ru.resx`, which are located in the `Atune/Resources/Localization` directory. The community can add its localization files and make changes through GitHub. Language switching is done through the application settings menu.
 
-Проект распространяется под лицензией **GNU Lesser General Public License v3.0 (LGPL-3.0)**. Это гарантирует:
-- Свободное использование, модификацию и распространение программного обеспечения
-- Обязательное сохранение авторских прав и лицензионных уведомлений
-- Требование открывать исходный код производных работ при распространении
+## Plugins
 
-Полный текст лицензии доступен в файле [LICENSE](LICENSE).
+Atune supports a plugin system that allows extending the functionality of the application. Plugins are loaded from the `Atune.Plugins` directory, for example, `Atune.Plugin.SpectrumVisualizer`.
 
-## Контакты
+Each plugin consists of:
+- Logic implemented in files with the `.cs` extension.
+- Identifier described in the `plugin.json` file, which contains metadata about the plugin, such as name and version.
 
-Если у вас возникли вопросы или предложения, пожалуйста, свяжитесь с нами через:
+Example of a plugin:
+- `Atune.Plugin.SpectrumVisualizer` contains the `Plugin.cs` file, which implements the `IAudioVisualizerPlugin` interface.
+
+Currently, the functionality of plugins is under development, and they cannot be executable or loaded into the program itself. In the future, we plan to complete the implementation of this system, which will allow users to add and use plugins to expand the capabilities of Atune.
+
+## Building for iOS and browser
+
+Although iOS and browser are not target platforms for Atune now, Avalonia supports them. The project contains corresponding directories `Atune.iOS` and `Atune.Browser`, however, at the moment they are not supported. The community can take on their implementation, as they are not significantly different from `Atune.Desktop` and `Atune.Android`.
+
+## Testing
+
+For testing, the xUnit framework is used. The `Atune.Tests` project already contains some tests that check the functionality of different application components. Examples of tests can be found in the following files:
+- `HomeViewModelTests.cs`
+- `LocalizationServiceTests.cs`
+- `NavigationKeywordProviderTests.cs`
+- `SettingsViewModelTests.cs`
+
+### How to run tests
+
+1. Go to the `Atune.Tests` directory:
+   ```bash
+   cd Atune.Tests
+   ```
+
+2. Restore dependencies:
+   ```bash
+   dotnet restore
+   ```
+
+3. Run tests:
+   ```bash
+   dotnet test
+   ```
+   
+After executing these commands, you will see the test results in the console. Ensure that all tests pass to guarantee that changes do not break existing functionality.
+
+
+## Contribution
+
+We welcome contributions from the community and external developers! If you have ideas, improvements or found errors:
+- **GitHub Issues:** Create tasks for discussion and tracking.
+- **Pull Requests:** Send pull requests with your suggestions.
+
+Please refer to [CONTRIBUTING.md](CONTRIBUTING.md) for detailed information on the contribution process. We recommend following the code standards and writing tests for new features or corrections.
+
+## Community
+
+Join the discussions and share your ideas:
+- **GitHub Discussions/Issues:** For questions and suggestions.
+- **Chats/forums:** (If available, provide links to Discord, Telegram or other platforms).
+
+## License
+
+The project is distributed under the **GNU Lesser General Public License v3.0 (LGPL-3.0)**. This guarantees:
+- Free use, modification and distribution of software
+- The obligation to preserve copyright and license notices
+- The requirement to open the source code of derivatives when distributing
+
+The full text of the license is available in the file [LICENSE](LICENSE).
+
+## Contacts
+
+If you have any questions or suggestions, please contact us through:
 - [GitHub](https://github.com/shibaguin/Atune)
 - [Telegram](https://t.me/dazabrzezinski)
 - [Email](mailto:mizuguinalt@gmail.com)
 
 ---
 
-Спасибо за использование Atune! Надеемся, что наш аудиоплеер станет вашим надёжным помощником в мире качественного звука.
+Thank you for using Atune! We hope that our audio player will become your reliable assistant in the world of high-quality sound.

@@ -15,8 +15,19 @@
 *.userprefs
 
 # User-added files
+
+# Scripts
 Release.sh
+MigrationsRebuild.sh
+
+# Plugins
 Atune.Plugins/
+
+# Cursor
+.cursor/
+
+# Github
+.github/
 
 # Mono auto generated files
 mono_crash.*
