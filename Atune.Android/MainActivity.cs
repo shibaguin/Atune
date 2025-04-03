@@ -10,6 +10,8 @@ using LibVLCSharp.Platforms.Android;
 using LibVLCSharp.Shared;
 using System.Reflection;
 using System.Linq;
+using System;
+using System.Collections.Generic;
 
 namespace Atune.Android;
 
@@ -39,7 +41,7 @@ public class MainActivity : AvaloniaMainActivity<App>
         AppDomain.CurrentDomain.AssemblyResolve += (sender, args) =>
         {
             var asmName = new AssemblyName(args.Name);
-            return PluginLoader.LoadedAssemblies.FirstOrDefault(a => a.GetName().Name == asmName.Name);
+            return GetLoadedAssemblies().FirstOrDefault(a => a.GetName().Name == asmName.Name);
         };
     }
 
@@ -85,5 +87,12 @@ public class MainActivity : AvaloniaMainActivity<App>
     {
         return base.CustomizeAppBuilder(builder)
             .WithInterFont();
+    }
+
+    // Метод для получения загруженных сборок
+    private IEnumerable<Assembly> GetLoadedAssemblies()
+    {
+        // Реализуйте логику для получения загруженных сборок
+        return AppDomain.CurrentDomain.GetAssemblies();
     }
 }
