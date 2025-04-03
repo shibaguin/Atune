@@ -359,7 +359,11 @@ public partial class MediaView : UserControl
             var comboBox = sender as ComboBox;
             if (comboBox?.SelectedItem is ComboBoxItem selectedItem)
             {
-                vm.SortOrder = selectedItem.Content.ToString();
+                var content = selectedItem.Content?.ToString();
+                if (content != null)
+                {
+                    vm.SortOrder = content;
+                }
             }
         }
     }
