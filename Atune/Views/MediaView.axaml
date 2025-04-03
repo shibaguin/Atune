@@ -17,27 +17,6 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <Grid Margin="10" Grid.Row="0">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
-            
-            <Button Grid.Column="1"
-                    Content="{DynamicResource Media_AddMusic}" 
-                    Click="AddToLibrary_Click"
-                    Padding="15 5"
-                    FontSize="16"
-                    HorizontalAlignment="Right"/>
-            <Button Grid.Column="2"
-                    Content="{DynamicResource Media_AddFolder}"
-                    Command="{Binding AddFolderCommand}"
-                    Margin="5,0"
-                    Padding="15 5"
-                    FontSize="16"/>
-        </Grid>
-        
         <TabControl Grid.Row="1">
             <TabItem Header="{DynamicResource Media_Tracks}">
                 <ListBox ItemsSource="{Binding MediaItems}" 
@@ -100,9 +79,19 @@
                     VerticalAlignment="Bottom"
                     Margin="10"
                     Grid.Row="2">
+            <Button Content="{DynamicResource Media_AddMusic}" 
+                    Click="AddToLibrary_Click"
+                    Padding="15 5"
+                    FontSize="16"
+                    HorizontalAlignment="Right"/>
+            <Button Content="{DynamicResource Media_AddFolder}"
+                    Command="{Binding AddFolderCommand}"
+                    Margin="5,0"
+                    Padding="15 5"
+                    FontSize="16"/>
             <Button Content="{DynamicResource Media_Refresh}" 
                     Command="{Binding RefreshMediaCommand}"
-                    Margin="0"
+                    Margin="10,0,0,0"
                     Padding="10 5"
                     HorizontalAlignment="Left"
                     VerticalAlignment="Bottom"/>
