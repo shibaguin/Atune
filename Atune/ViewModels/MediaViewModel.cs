@@ -23,6 +23,8 @@ using Atune.Extensions;
 using Atune.Views;
 using Serilog;
 using System.ComponentModel;
+using Atune.ViewModels;
+using Atune.Helpers;
 
 namespace Atune.ViewModels;
 
@@ -33,6 +35,9 @@ public partial class MediaViewModel : ObservableObject, IDisposable
     private readonly ILoggerService? _logger;
     private readonly MediaPlayerService _mediaPlayerService;
     
+    // Кэш для альбомов
+    private List<AlbumInfo>? _albumCache;
+
     [ObservableProperty]
     private List<MediaItem> _mediaContent = new List<MediaItem>();
 
@@ -75,6 +80,9 @@ public partial class MediaViewModel : ObservableObject, IDisposable
 
     // Сохраняем отсортированный кэш для ускорения последующих операций сортировки
     private List<MediaItem> _sortedCache = new List<MediaItem>();
+
+    // Новое свойство для альбомов
+    public ObservableCollection<AlbumInfo> Albums { get; } = new ObservableCollection<AlbumInfo>();
 
     public MediaViewModel(
         IMemoryCache cache, 
@@ -291,8 +299,14 @@ public partial class MediaViewModel : ObservableObject, IDisposable
                 // Применяем сортировку после обновления коллекции
                 SortMediaItems();
                 OnPropertyChanged(nameof(MediaItems));
+
+                // Обновляем альбомы после загрузки треков
+                UpdateAlbums();
             });
             
+            // Сбрасываем кэш альбомов
+            _albumCache = null;
+
             _cache.Set("MediaContent", items, new MemoryCacheEntryOptions()
                 .SetSlidingExpiration(TimeSpan.FromMinutes(5))
                 .SetSize(items.Count * 500 + 1024));
@@ -668,6 +682,68 @@ public partial class MediaViewModel : ObservableObject, IDisposable
         _sortedCache.Insert(index, newItem);
         MediaItems.Insert(index, newItem);
         _logger?.LogInformation($"Inserted new item '{newItem.Title}' at index {index}");
+    }
+
+    // Новый асинхронный RelayCommand для открытия карточки альбома
+    [RelayCommand]
+    private async Task OpenAlbum(AlbumInfo album)
+    {
+        if (album == null)
+            return;
+
+        var albumView = new AlbumView
+        {
+            DataContext = new AlbumViewModel(album)
+        };
+
+        var mainWindow = (Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)?.MainWindow;
+
+        if (mainWindow != null)
+        {
+            await albumView.ShowDialog(mainWindow);
+        }
+        else
+        {
+            _logger?.LogWarning("Main window is null, cannot open album view.");
+        }
+    }
+
+    // Метод для обновления списка альбомов на основе MediaItems
+    private void UpdateAlbums()
+    {
+        // Проверяем, есть ли кэш альбомов
+        if (_albumCache == null)
+        {
+            var albumGroups = MediaItems
+                .GroupBy(m => new { m.Album, m.Artist, m.Year })
+                .Select(g => new AlbumInfo(
+                    g.Key.Album,
+                    g.Key.Artist,
+                    g.Key.Year,
+                    g.ToList()))
+                .Where(album => album.Tracks.Count >= 3) // Фильтруем альбомы с 3 или более треками
+                .OrderBy(a => a.AlbumName)
+                .ToList();
+
+            Albums.Clear();
+            foreach (var album in albumGroups)
+            {
+                Albums.Add(album);
+                _logger?.LogInformation($"Added album: {album.AlbumName} ({album.TrackCount} tracks)");
+            }
+
+            // Сохраняем альбомы в кэш
+            _albumCache = albumGroups;
+        }
+        else
+        {
+            // Если кэш уже существует, просто обновляем ObservableCollection
+            Albums.Clear();
+            foreach (var album in _albumCache)
+            {
+                Albums.Add(album);
+            }
+        }
     }
 
     public void Dispose()

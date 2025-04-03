@@ -7,9 +7,14 @@
              d:DesignWidth="800"
              d:DesignHeight="450"
              xmlns:vm="clr-namespace:Atune.ViewModels"
+             xmlns:models="clr-namespace:Atune.Models"
+             xmlns:helpers="clr-namespace:Atune.Helpers"
              x:Class="Atune.Views.MediaView"
              x:DataType="vm:MediaViewModel"
              d:DataContext="{d:DesignInstance Type=vm:MediaViewModel, IsDesignTimeCreatable=True}">
+    <UserControl.Resources>
+         <helpers:MediaViewModelBindingProxy x:Key="Proxy" Data="{Binding}" />
+    </UserControl.Resources>
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -75,7 +80,32 @@
                 </ListBox>
             </TabItem>
             <TabItem Header="{DynamicResource Media_Albums}">
-                <!-- Содержимое для вкладки Альбомы -->
+                <ScrollViewer>
+                    <ItemsControl x:Name="AlbumsList" ItemsSource="{Binding Albums}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="models:AlbumInfo">
+                                <Button Command="{Binding Data.OpenAlbumCommand, Source={StaticResource Proxy}}"
+                                        CommandParameter="{Binding}"
+                                        Background="Transparent"
+                                        BorderThickness="0"
+                                        Margin="5"
+                                        HorizontalAlignment="Stretch">
+                                    <StackPanel Orientation="Vertical" HorizontalAlignment="Stretch">
+                                        <TextBlock Text="{Binding AlbumName}" 
+                                                   FontWeight="Bold" 
+                                                   FontSize="14"/>
+                                        <TextBlock Text="{Binding ArtistName}" 
+                                                   FontSize="12"/>
+                                        <TextBlock Text="{Binding Year}" 
+                                                   FontSize="12"/>
+                                        <TextBlock Text="{Binding TrackCount, StringFormat='Треков: {0}'}" 
+                                                   FontSize="12"/>
+                                    </StackPanel>
+                                </Button>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
             </TabItem>
             <TabItem Header="{DynamicResource Media_Playlists}">
                 <!-- Содержимое для вкладки Плейлисты -->
