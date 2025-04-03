@@ -14,70 +14,8 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
-
-        <ScrollViewer HorizontalScrollBarVisibility="Auto" Grid.Row="0">
-            <TabControl>
-                <TabItem Header="{DynamicResource Media_Tracks}">
-                    <!-- Содержимое для вкладки Треки -->
-                </TabItem>
-                <TabItem Header="{DynamicResource Media_Albums}">
-                    <!-- Содержимое для вкладки Альбомы -->
-                </TabItem>
-                <TabItem Header="{DynamicResource Media_Playlists}">
-                    <!-- Содержимое для вкладки Плейлисты -->
-                </TabItem>
-                <TabItem Header="{DynamicResource Media_Artists}">
-                    <!-- Содержимое для вкладки Исполнители -->
-                </TabItem>
-            </TabControl>
-        </ScrollViewer>
-
-        <ListBox ItemsSource="{Binding MediaItems}" 
-                 SelectedItem="{Binding SelectedMediaItem, Mode=TwoWay}"
-                 Grid.Row="1">
-            <ListBox.ItemsPanel>
-                <ItemsPanelTemplate>
-                    <VirtualizingStackPanel />
-                </ItemsPanelTemplate>
-            </ListBox.ItemsPanel>
-            <ListBox.ItemTemplate>
-                <DataTemplate>
-                    <Button Command="{Binding PlayMediaItemCommand, ElementName=Root}"
-                            CommandParameter="{Binding}"
-                            Background="Transparent" 
-                            BorderThickness="0"
-                            Focusable="False"
-                            HorizontalAlignment="Stretch">
-                        <StackPanel Margin="5" Spacing="3" HorizontalAlignment="Stretch">
-                            <TextBlock Text="{Binding Title}" 
-                                       FontWeight="Bold"
-                                       MaxLines="1"
-                                       HorizontalAlignment="Stretch"/>
-                            <TextBlock Text="{Binding Artist}" 
-                                       MaxLines="1"
-                                       HorizontalAlignment="Stretch"/>
-                            <TextBlock Text="{Binding Album}" 
-                                       Foreground="Gray"
-                                       MaxLines="1"
-                                       HorizontalAlignment="Stretch"/>
-                            <TextBlock Text="{Binding Year}" 
-                                       Foreground="Gray"
-                                       HorizontalAlignment="Stretch"/>
-                            <Button Command="{Binding MoreInfoCommand, ElementName=Root}"
-                                    CommandParameter="{Binding}"
-                                    HorizontalAlignment="Right" 
-                                    Width="30" 
-                                    Margin="5,0,0,0">
-                                <Button.Content>
-                                    <PathIcon Data="M8 12a2 2 0 1 1-4 0 2 2 0 0 1 4 0ZM14 12a2 2 0 1 1-4 0 2 2 0 0 1 4 0ZM18 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"/>
-                                </Button.Content>
-                            </Button>
-                        </StackPanel>
-                    </Button>
-                </DataTemplate>
-            </ListBox.ItemTemplate>
-        </ListBox>
 
         <Grid Margin="10" Grid.Row="0">
             <Grid.ColumnDefinitions>
@@ -100,11 +38,68 @@
                     FontSize="16"/>
         </Grid>
         
+        <TabControl Grid.Row="1">
+            <TabItem Header="{DynamicResource Media_Tracks}">
+                <ListBox ItemsSource="{Binding MediaItems}" 
+                         SelectedItem="{Binding SelectedMediaItem, Mode=TwoWay}">
+                    <ListBox.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <VirtualizingStackPanel />
+                        </ItemsPanelTemplate>
+                    </ListBox.ItemsPanel>
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <Button Command="{Binding PlayMediaItemCommand, ElementName=Root}"
+                                    CommandParameter="{Binding}"
+                                    Background="Transparent" 
+                                    BorderThickness="0"
+                                    Focusable="False"
+                                    HorizontalAlignment="Stretch">
+                                <StackPanel Margin="5" Spacing="3" HorizontalAlignment="Stretch">
+                                    <TextBlock Text="{Binding Title}" 
+                                               FontWeight="Bold"
+                                               MaxLines="1"
+                                               HorizontalAlignment="Stretch"/>
+                                    <TextBlock Text="{Binding Artist}" 
+                                               MaxLines="1"
+                                               HorizontalAlignment="Stretch"/>
+                                    <TextBlock Text="{Binding Album}" 
+                                               Foreground="Gray"
+                                               MaxLines="1"
+                                               HorizontalAlignment="Stretch"/>
+                                    <TextBlock Text="{Binding Year}" 
+                                               Foreground="Gray"
+                                               HorizontalAlignment="Stretch"/>
+                                    <Button Command="{Binding MoreInfoCommand, ElementName=Root}"
+                                            CommandParameter="{Binding}"
+                                            HorizontalAlignment="Right" 
+                                            Width="30" Margin="5,0,0,0">
+                                        <Button.Content>
+                                            <PathIcon Data="M8 12a2 2 0 1 1-4 0 2 2 0 0 1 4 0ZM14 12a2 2 0 1 1-4 0 2 2 0 0 1 4 0ZM18 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"/>
+                                        </Button.Content>
+                                    </Button>
+                                </StackPanel>
+                            </Button>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </TabItem>
+            <TabItem Header="{DynamicResource Media_Albums}">
+                <!-- Содержимое для вкладки Альбомы -->
+            </TabItem>
+            <TabItem Header="{DynamicResource Media_Playlists}">
+                <!-- Содержимое для вкладки Плейлисты -->
+            </TabItem>
+            <TabItem Header="{DynamicResource Media_Artists}">
+                <!-- Содержимое для вкладки Исполнители -->
+            </TabItem>
+        </TabControl>
+        
         <StackPanel Orientation="Horizontal"
                     HorizontalAlignment="Left"
                     VerticalAlignment="Bottom"
                     Margin="10"
-                    Grid.Row="1">
+                    Grid.Row="2">
             <Button Content="{DynamicResource Media_Refresh}" 
                     Command="{Binding RefreshMediaCommand}"
                     Margin="0"
