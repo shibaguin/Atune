@@ -37,6 +37,32 @@ namespace Atune.Services
 
         public async Task<string> GetMediaPathAsync(string mediaId)
         {
+            // Проверяем, является ли это Android
+#if ANDROID
+            var mediaItem = await _context.MediaItems.FindAsync(mediaId);
+            if (mediaItem == null)
+            {
+                _logger.LogWarning($"Media item with ID {mediaId} not found.");
+                return string.Empty; // Или выбросьте исключение, если это более уместно
+            }
+
+            // Получаем путь к медиафайлу через ContentResolver
+            var uri = MediaStore.Audio.Media.ExternalContentUri;
+            var projection = new[] { MediaStore.Audio.Media.InterfaceConsts.Data };
+            using (var cursor = _androidContext.ContentResolver.Query(uri, projection, 
+                $"{MediaStore.Audio.Media.InterfaceConsts.Id} = ?", new[] { mediaId }, null))
+            {
+                if (cursor != null && cursor.MoveToFirst())
+                {
+                    return cursor.GetString(cursor.GetColumnIndexOrThrow(MediaStore.Audio.Media.InterfaceConsts.Data));
+                }
+                else
+                {
+                    _logger.LogWarning($"Media file with ID {mediaId} not found in ContentResolver.");
+                    return string.Empty; // Или выбросьте исключение, если это более уместно
+                }
+            }
+#else
             var mediaItem = await _context.MediaItems.FindAsync(mediaId);
             if (mediaItem == null)
             {
@@ -44,6 +70,7 @@ namespace Atune.Services
                 return string.Empty; // Или выбросьте исключение, если это более уместно
             }
             return mediaItem.Path;
+#endif
         }
 
         public async Task<List<MediaItem>> GetAllMediaItemsAsync()
