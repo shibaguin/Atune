@@ -10,6 +10,8 @@ namespace Atune.Models
         [Required(ErrorMessage = "Name is required")]
         public string Name { get; set; } = string.Empty;
 
+        public bool IsSmart { get; set; } // Умный плейлист
+
         // Связь с треками через связывающую таблицу
         public ICollection<PlaylistMediaItem> PlaylistMediaItems { get; set; } = new List<PlaylistMediaItem>();
     }

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
@@ -9,6 +10,9 @@ namespace Atune.Models
 
         [Required(ErrorMessage = "Name is required")]
         public string Name { get; set; } = string.Empty;
+
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow; // Дата создания
+        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow; // Дата обновления
 
         // Связь с альбомами через связывающую таблицу
         public ICollection<AlbumArtist> AlbumArtists { get; set; } = new List<AlbumArtist>();
