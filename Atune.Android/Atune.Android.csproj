@@ -47,7 +47,8 @@
     <PackageReference Include="Xamarin.AndroidX.Core" />
     <PackageReference Include="Xamarin.AndroidX.DocumentFile" />
     <PackageReference Include="LibVLCSharp" />
-    <PackageReference Include="LibVLCSharp.Avalonia"/>
+    <PackageReference Include="LibVLCSharp.Avalonia" />
+    <PackageReference Include="Xamarin.Essentials" />
   </ItemGroup>
 
   <ItemGroup>

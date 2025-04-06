@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 #if ANDROID
+using Xamarin.Essentials;
 using Android.Content;
 using Android.Provider;
 #endif
@@ -18,19 +19,19 @@ namespace Atune.Services
         private readonly AppDbContext _context;
         private readonly ILoggerService _logger;
 #if ANDROID
-        private readonly Context _context; // Добавлено для доступа к ContentResolver
+        private readonly Context _androidContext; // Переименовано для ясности
 #endif
 
         public MediaStorageService(AppDbContext context, ILoggerService logger
 #if ANDROID
-            , Context context // Внедрение Context для Android
+            , Context androidContext // Внедрение Context для Android
 #endif
         )
         {
             _context = context;
             _logger = logger;
 #if ANDROID
-            this._context = context; // Инициализация контекста
+            this._androidContext = androidContext; // Инициализация контекста
 #endif
         }
 
@@ -52,11 +53,11 @@ namespace Atune.Services
             var uri = MediaStore.Audio.Media.ExternalContentUri; // URI для медиатеки
             var projection = new[] { MediaStore.Audio.Media.InterfaceConsts.Id, MediaStore.Audio.Media.InterfaceConsts.Data, MediaStore.Audio.Media.InterfaceConsts.Title };
 
-            using (var cursor = _context.ContentResolver.Query(uri, projection, null, null, null))
+            using (var cursor = _androidContext.ContentResolver.Query(uri, projection, null, null, null))
             {
-                if (cursor != null)
+                if (cursor != null && cursor.MoveToFirst())
                 {
-                    while (cursor.MoveToNext())
+                    do
                     {
                         var id = cursor.GetLong(cursor.GetColumnIndexOrThrow(MediaStore.Audio.Media.InterfaceConsts.Id));
                         var path = cursor.GetString(cursor.GetColumnIndexOrThrow(MediaStore.Audio.Media.InterfaceConsts.Data));
@@ -68,7 +69,11 @@ namespace Atune.Services
                             Path = path,
                             Title = title
                         });
-                    }
+                    } while (cursor.MoveToNext());
+                }
+                else
+                {
+                    _logger.LogWarning("Cursor is null or empty.");
                 }
             }
             return mediaItems;
