@@ -51,7 +51,12 @@ namespace Atune.Services
 #if ANDROID
             var mediaItems = new List<MediaItem>();
             var uri = MediaStore.Audio.Media.ExternalContentUri; // URI для медиатеки
-            var projection = new[] { MediaStore.Audio.Media.InterfaceConsts.Id, MediaStore.Audio.Media.InterfaceConsts.Data, MediaStore.Audio.Media.InterfaceConsts.Title };
+            var projection = new[] { 
+                MediaStore.Audio.Media.InterfaceConsts.Id, 
+                MediaStore.Audio.Media.InterfaceConsts.Data, 
+                MediaStore.Audio.Media.InterfaceConsts.Title,
+                MediaStore.Audio.Media.InterfaceConsts.Artist // Добавляем колонку Artist
+            };
 
             using (var cursor = _androidContext.ContentResolver.Query(uri, projection, null, null, null))
             {
@@ -62,12 +67,21 @@ namespace Atune.Services
                         var id = cursor.GetLong(cursor.GetColumnIndexOrThrow(MediaStore.Audio.Media.InterfaceConsts.Id));
                         var path = cursor.GetString(cursor.GetColumnIndexOrThrow(MediaStore.Audio.Media.InterfaceConsts.Data));
                         var title = cursor.GetString(cursor.GetColumnIndexOrThrow(MediaStore.Audio.Media.InterfaceConsts.Title));
+                        var artist = cursor.GetString(cursor.GetColumnIndexOrThrow(MediaStore.Audio.Media.InterfaceConsts.Artist)); // Получаем имя артиста
 
                         mediaItems.Add(new MediaItem
                         {
                             Id = (int)id, // Приведение к int, если необходимо
                             Path = path,
-                            Title = title
+                            Title = title,
+                            Album = new Album { Title = "Unknown Album" }, // Устанавливаем альбом по умолчанию
+                            Year = 0, // Устанавливаем год по умолчанию
+                            Genre = "Unknown Genre", // Устанавливаем жанр по умолчанию
+                            TrackArtists = new List<TrackArtist> {
+                                new TrackArtist { 
+                                    Artist = new Artist { Name = artist ?? "Unknown Artist" } // Устанавливаем имя артиста
+                                }
+                            }
                         });
                     } while (cursor.MoveToNext());
                 }
