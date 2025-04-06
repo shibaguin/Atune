@@ -2,7 +2,7 @@ using Atune.Models;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace Atune.Services.Interfaces
+namespace Atune.Services
 {
     public interface IMediaStorageService
     {
