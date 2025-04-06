@@ -1,5 +1,6 @@
 namespace Atune.Models;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -13,9 +14,11 @@ public class MediaItem
     [StringLength(200)]
     public string Title { get; set; } = string.Empty;
     
-    public string Artist { get; set; } = string.Empty;
+    // Связь с альбомом (один альбом – много треков)
+    [ForeignKey("Album")]
+    public int AlbumId { get; set; }
+    public Album Album { get; set; } = null!;
     
-    public string Album { get; set; } = string.Empty;
     [Range(1900u, 2100u, ErrorMessage = "Invalid year")]
     public uint Year { get; set; }
     
@@ -34,20 +37,25 @@ public class MediaItem
     
     public TimeSpan Duration { get; set; }
     
-    // Добавляем конструктор для удобства
-    // Add a constructor for convenience
-    public MediaItem(string title, string artist, string album, uint year, string genre, string path, TimeSpan duration)
+    // Связь с артистами (многие ко многим через TrackArtist)
+    public ICollection<TrackArtist> TrackArtists { get; set; } = new List<TrackArtist>();
+    
+    // Связь с плейлистами (многие ко многим через PlaylistMediaItem)
+    public ICollection<PlaylistMediaItem> PlaylistMediaItems { get; set; } = new List<PlaylistMediaItem>();
+    
+    // Конструктор для удобства
+    public MediaItem(string title, Album album, uint year, string genre, string path, TimeSpan duration, ICollection<TrackArtist> trackArtists)
     {
         Title = title;
-        Artist = artist;
         Album = album;
+        AlbumId = album.Id;
         Year = year;
         Genre = genre;
         Path = path;
         Duration = duration;
+        TrackArtists = trackArtists;
     }
     
     // Пустой конструктор для EF Core
-    // Empty constructor for EF Core
     public MediaItem() { }
 } 

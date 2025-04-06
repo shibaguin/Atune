@@ -46,7 +46,7 @@ namespace Atune.Services
             try
             {
                 await dbContext.AddMediaAsync(item);
-                _logger.LogInformation($"Added media item: {item.Title} by {item.Artist}");
+                _logger.LogInformation($"Added media item: {item.Title} by {item.TrackArtists.FirstOrDefault()?.Artist.Name}");
             }
             catch (Exception ex)
             {
@@ -64,7 +64,7 @@ namespace Atune.Services
             foreach (var record in invalidRecords)
             {
                 dbContext.MediaItems.Remove(record);
-                _logger.LogInformation($"Removed invalid record: {record.Title} by {record.Artist}");
+                _logger.LogInformation($"Removed invalid record: {record.Title} by {record.TrackArtists.FirstOrDefault()?.Artist.Name}");
             }
             await dbContext.SaveChangesAsync();
             _logger.LogInformation("Database records validated and changes saved");
@@ -76,6 +76,14 @@ namespace Atune.Services
             string dbPath = dbContext.Database.GetDbConnection().DataSource ?? "not defined";
             _logger.LogInformation($"Database path retrieved: {dbPath}");
             return dbPath;
+        }
+
+        public Task<bool> ExistsByArtistAsync(string artist)
+        {
+            using var dbContext = _dbContextFactory.CreateDbContext();
+            return dbContext.MediaItems
+                .AnyAsync(m => m.TrackArtists
+                    .Any(ta => ta.Artist != null && ta.Artist.Name == artist));
         }
     }
 } 

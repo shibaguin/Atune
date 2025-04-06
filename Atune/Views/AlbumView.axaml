@@ -29,7 +29,9 @@
           <StackPanel Orientation="Horizontal" Margin="2">
             <TextBlock Text="{Binding Title}" FontWeight="Bold"/>
             <TextBlock Text=" - "/>
+            <!--
             <TextBlock Text="{Binding Artist}"/>
+            -->
           </StackPanel>
         </DataTemplate>
       </ListBox.ItemTemplate>

@@ -169,14 +169,22 @@ public partial class MediaView : UserControl
 #endif
                 var duration = tagInfo.Duration;
                
+                uint year = tagInfo.Year > 0 
+                    ? tagInfo.Year 
+                    : (uint)DateTime.Now.Year;
+
                 var mediaItem = new MediaItem(
-                    Path.GetFileNameWithoutExtension(file.Name),
-                    tagInfo.Artist ?? "Unknown Artist",
-                    tagInfo.Album ?? "Unknown Album",
-                    tagInfo.Year,
-                    tagInfo.Genre ?? "Unknown Genre",
-                    realPath,
-                    duration
+                    title: Path.GetFileNameWithoutExtension(file.Name),
+                    album: new Album { Title = tagInfo.Album ?? "Unknown Album" },
+                    year: year,
+                    genre: tagInfo.Genre ?? "Unknown Genre",
+                    path: realPath,
+                    duration: duration,
+                    trackArtists: new List<TrackArtist> {
+                        new TrackArtist { 
+                            Artist = new Artist { Name = tagInfo.Artist ?? "Unknown Artist" } 
+                        }
+                    }
                 );
                 await _mediaDatabaseService.AddMediaItemAsync(mediaItem);
                 successCount++;
@@ -367,4 +375,20 @@ public partial class MediaView : UserControl
             }
         }
     }
+/*
+    private void SomeMethod()
+    {
+        // Пример получения данных для создания MediaItem
+        string title = "Название трека";
+        Album album = new Album { Title = "Название альбома" };
+        uint yearUInt = 2023; // Значение года как uint
+        int year = (int)yearUInt; // Явное преобразование в int
+        string genre = "Жанр";
+        string path = "путь/к/файлу";
+        TimeSpan duration = TimeSpan.FromMinutes(3);
+        var trackArtists = new List<TrackArtist>(); // Создаем список TrackArtist
+
+        var mediaItem = new MediaItem(title, album, yearUInt, genre, path, duration, trackArtists);
+    }
+*/
 }

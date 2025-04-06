@@ -28,6 +28,7 @@ using Atune.Data.Interfaces;
 using Atune.Data.Repositories;
 using Atune.Data;
 using Microsoft.Extensions.Logging;
+using System.Collections.Generic;
 
 namespace Atune;
 
@@ -159,13 +160,14 @@ public partial class App : Application
 
             // Example of adding a test entry to the database
             var testItem = new MediaItem(
-                "Test Title", 
-                "Test Artist", 
-                "Test Album", 
-                2024, 
-                "Test Genre",
-                "/test/path.mp3", 
-                TimeSpan.FromSeconds(123));
+                "Title", 
+                new Album { Title = "Album" }, 
+                2023u, 
+                "Genre", 
+                "/path/to/file.mp3", 
+                TimeSpan.FromMinutes(3), 
+                new List<TrackArtist>()
+            );
         }
         catch (Exception ex)
         {

@@ -53,9 +53,11 @@
                                                FontWeight="Bold"
                                                MaxLines="1"
                                                HorizontalAlignment="Stretch"/>
+                                    <!--
                                     <TextBlock Text="{Binding Artist}" 
                                                MaxLines="1"
                                                HorizontalAlignment="Stretch"/>
+                                    -->
                                     <TextBlock Text="{Binding Album}" 
                                                Foreground="Gray"
                                                MaxLines="1"

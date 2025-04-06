@@ -10,9 +10,9 @@ namespace Atune.Models
         public int TrackCount { get; set; }
         public List<MediaItem> Tracks { get; set; }
 
-        public AlbumInfo(string albumName, string artistName, uint year, List<MediaItem> tracks)
+        public AlbumInfo(string albumTitle, string artistName, uint year, List<MediaItem> tracks)
         {
-            AlbumName = albumName;
+            AlbumName = albumTitle;
             ArtistName = artistName;
             Year = year;
             Tracks = tracks;

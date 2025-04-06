@@ -182,7 +182,7 @@ public partial class MediaViewModel : ObservableObject, IDisposable
                     {
                         new FilePickerFileType("Audio files")
                         {
-                            Patterns = new[] { "*.mp3", "*.flac", "*.wav", "*.ogg", "*.aac", "*.wma", "*.alac", "*.ape" },
+                            Patterns = new[] { "*.mp3", "*.flac", "*.wav", ".ogg", "*.aac", "*.wma", "*.alac", "*.ape" },
                             MimeTypes = new[] { "audio/mpeg", "audio/flac", "audio/wav", "audio/ogg", "audio/aac", "audio/wma", "audio/alac", "audio/ape" }
                         }
                     }
@@ -210,13 +210,16 @@ public partial class MediaViewModel : ObservableObject, IDisposable
                     var realPath = file.Path.LocalPath;
                     
                     var mediaItem = new MediaItem(
-                        Path.GetFileNameWithoutExtension(file.Name),
-                        "Unknown Artist",
-                        "Unknown Album",
-                        0,
-                        "Unknown Genre",
-                        realPath,
-                        TimeSpan.Zero);
+                        title: Path.GetFileNameWithoutExtension(file.Name),
+                        album: new Album { Title = "Unknown Album" },
+                        year: 0,
+                        genre: "Unknown Genre",
+                        path: realPath,
+                        duration: TimeSpan.Zero,
+                        trackArtists: new List<TrackArtist> {
+                            new TrackArtist { Artist = new Artist { Name = "Unknown Artist" } }
+                        }
+                    );
 
                     newItems.Add(mediaItem);
                     successCount++;
@@ -426,15 +429,21 @@ public partial class MediaViewModel : ObservableObject, IDisposable
 
     private MediaItem CreateMediaItemFromPath(string path)
     {
-        var tagInfo = GetDesktopTagInfo(path); // Use the method from MediaView / Используем метод из MediaView
+        var tagInfo = GetDesktopTagInfo(path); // Используем метод из MediaView
+        var trackArtists = new List<TrackArtist>(); // Создаем список TrackArtist
+
+        // Здесь вы можете добавить логику для заполнения trackArtists, если это необходимо
+        // Например, если у вас есть информация об артистах, вы можете добавить их в список
+
         return new MediaItem(
-            Path.GetFileNameWithoutExtension(path),
-            tagInfo.Artist ?? "Unknown Artist",
-            tagInfo.Album ?? "Unknown Album",
-            tagInfo.Year,
-            tagInfo.Genre ?? "Unknown Genre",
-            path,
-            tagInfo.Duration);
+            title: Path.GetFileNameWithoutExtension(path),
+            album: new Album { Title = tagInfo.Album ?? "Unknown Album" }, // Создаем новый объект Album
+            year: tagInfo.Year, // Убедитесь, что это uint
+            genre: tagInfo.Genre ?? "Unknown Genre",
+            path: path,
+            duration: tagInfo.Duration,
+            trackArtists: trackArtists // Передаем TrackArtists
+        );
     }
 
     private (string Artist, string Album, uint Year, string Genre, TimeSpan Duration) GetDesktopTagInfo(string path)
@@ -467,8 +476,10 @@ public partial class MediaViewModel : ObservableObject, IDisposable
             var allItems = await _unitOfWork.Media.GetAllWithDetailsAsync();
             var filtered = allItems.Where(item =>
                 (!string.IsNullOrEmpty(item.Title) && item.Title.ToLower().Contains(query)) ||
-                (!string.IsNullOrEmpty(item.Artist) && item.Artist.ToLower().Contains(query)) ||
-                (!string.IsNullOrEmpty(item.Album) && item.Album.ToLower().Contains(query)) ||
+                (item.TrackArtists.Any(ta => 
+                    ta.Artist != null && 
+                    ta.Artist.Name.ToLower().Contains(query))) ||
+                (!string.IsNullOrEmpty(item.Album.Title) && item.Album.Title.ToLower().Contains(query)) ||
                 (!string.IsNullOrEmpty(item.Genre) && item.Genre.ToLower().Contains(query)) ||
                 (!string.IsNullOrEmpty(item.Path) && item.Path.ToLower().Contains(query))
             ).ToList();
@@ -616,7 +627,7 @@ public partial class MediaViewModel : ObservableObject, IDisposable
             Log.Warning("MediaItem is null");
             return;
         }
-        Log.Information($"Title: {mediaItem.Title}, Artist: {mediaItem.Artist}, Album: {mediaItem.Album}");
+        Log.Information($"Title: {mediaItem.Title}, Artist: {mediaItem.TrackArtists.FirstOrDefault()?.Artist.Name}, Album: {mediaItem.Album.Title}");
         
         var mainWindow = Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop
             ? desktop.MainWindow
@@ -715,12 +726,17 @@ public partial class MediaViewModel : ObservableObject, IDisposable
         if (_albumCache == null)
         {
             var albumGroups = MediaItems
-                .GroupBy(m => new { m.Album, m.Artist, m.Year })
+                .GroupBy(m => new { 
+                    AlbumTitle = m.Album.Title,
+                    ArtistName = m.TrackArtists.FirstOrDefault()?.Artist?.Name ?? "Unknown Artist",
+                    m.Year
+                })
                 .Select(g => new AlbumInfo(
-                    g.Key.Album,
-                    g.Key.Artist,
-                    g.Key.Year,
-                    g.ToList()))
+                    albumTitle: g.Key.AlbumTitle,
+                    artistName: g.Key.ArtistName,
+                    year: g.Key.Year,
+                    tracks: g.ToList()
+                ))
                 .Where(album => album.Tracks.Count >= 3) // Фильтруем альбомы с 3 или более треками
                 .OrderBy(a => a.AlbumName)
                 .ToList();
