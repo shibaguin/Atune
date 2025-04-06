@@ -10,6 +10,8 @@ using System.Threading.Tasks;
 using Xamarin.Essentials;
 using Android.Content;
 using Android.Provider;
+using Android.App;
+using Android.Content.PM;
 #endif
 
 namespace Atune.Services
@@ -39,6 +41,12 @@ namespace Atune.Services
         {
             // Проверяем, является ли это Android
 #if ANDROID
+            if (Android.App.Application.Context.CheckSelfPermission(Android.Manifest.Permission.ReadExternalStorage) != (int)Permission.Granted)
+            {
+                _logger.LogWarning("ReadExternalStorage permission is not granted.");
+                return string.Empty; // Или выбросьте исключение, если это более уместно
+            }
+
             var mediaItem = await _context.MediaItems.FindAsync(mediaId);
             if (mediaItem == null)
             {

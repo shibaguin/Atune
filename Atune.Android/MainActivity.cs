@@ -80,6 +80,10 @@ public class MainActivity : AvaloniaMainActivity<App>
             {
                 // Permissions granted
             }
+            else
+            {
+                // Permissions denied
+            }
         }
         else
         {
