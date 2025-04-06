@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
@@ -10,16 +11,19 @@ public class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<AppDbConte
     public AppDbContext CreateDbContext(string[] args)
     {
         var optionsBuilder = new DbContextOptionsBuilder<AppDbContext>();
-        optionsBuilder.UseSqlite("Data Source=media_library.db");
         
-        var context = new AppDbContext(optionsBuilder.Options);
+        // Используем тот же путь, что и в основном контексте
+        string dbPath = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+            "Atune",
+            "Data",
+            "media_library.db");
         
-        // Synchronous execution of migrations
-        if (context.Database.GetPendingMigrationsAsync().GetAwaiter().GetResult().Any())
-        {
-            context.Database.MigrateAsync().GetAwaiter().GetResult();
-        }
+        // Создаем директорию, если не существует
+        Directory.CreateDirectory(Path.GetDirectoryName(dbPath));
         
-        return context;
+        optionsBuilder.UseSqlite($"Data Source={dbPath}");
+        
+        return new AppDbContext(optionsBuilder.Options);
     }
 } 

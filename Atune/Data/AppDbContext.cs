@@ -33,7 +33,9 @@ public class AppDbContext : DbContext
             EnsureDatabaseDirectory(dbPath);
             CreateDatabaseFile(dbPath);
 
-            optionsBuilder.UseSqlite($"Data Source={dbPath};");
+            optionsBuilder.UseSqlite($"Data Source={dbPath};")
+                .EnableSensitiveDataLogging()
+                .EnableDetailedErrors();
         }
     }
 
@@ -94,6 +96,10 @@ public class AppDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        // Явно указываем порядок применения миграций
+        modelBuilder.HasAnnotation("Relational:MigrationHistoryTable", "__EFMigrationsHistory");
+        modelBuilder.HasAnnotation("Relational:MigrationHistoryTableSchema", null);
+        
         modelBuilder.Entity<MediaItem>(entity =>
         {
             entity.ToTable("MediaItems");
@@ -106,8 +112,16 @@ public class AppDbContext : DbContext
             entity.HasIndex(e => new { e.AlbumId, e.Title })
                   .HasDatabaseName("IX_MediaItems_Album_Title");
                   
-            entity.Property(e => e.Title).IsRequired().HasMaxLength(200);
-            entity.Property(e => e.Path).IsRequired();
+            entity.Property(e => e.Title)
+                .IsRequired()
+                .HasMaxLength(200);
+                
+            entity.Property(e => e.Path)
+                .IsRequired();
+                
+            entity.Property(e => e.AlbumId)
+                .IsRequired();
+                
             entity.Property(e => e.Duration)
                 .HasConversion(
                     v => v.Ticks,
