@@ -125,7 +125,17 @@ namespace Atune.Services
 
         public async Task<bool> MediaExistsAsync(string mediaId)
         {
+#if ANDROID
+            var uri = MediaStore.Audio.Media.ExternalContentUri;
+            var projection = new[] { MediaStore.Audio.Media.InterfaceConsts.Id };
+            using (var cursor = _androidContext.ContentResolver.Query(uri, projection, 
+                $"{MediaStore.Audio.Media.InterfaceConsts.Id} = ?", new[] { mediaId }, null))
+            {
+                return cursor != null && cursor.MoveToFirst(); // Если курсор не null и содержит данные, файл существует
+            }
+#else
             return await _context.MediaItems.AnyAsync(m => m.Id.ToString() == mediaId);
+#endif
         }
     }
 } 
