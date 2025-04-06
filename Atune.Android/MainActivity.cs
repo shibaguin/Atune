@@ -12,6 +12,7 @@ using System.Reflection;
 using System.Linq;
 using System;
 using System.Collections.Generic;
+using Xamarin.Essentials;
 
 namespace Atune.Android;
 
@@ -27,6 +28,7 @@ public class MainActivity : AvaloniaMainActivity<App>
 
     protected override void OnCreate(Bundle? savedInstanceState)
     {
+        Xamarin.Essentials.Platform.Init(this, savedInstanceState);
         // Правильная инициализация через Core
         Core.Initialize();
         
@@ -67,6 +69,8 @@ public class MainActivity : AvaloniaMainActivity<App>
         string[] permissions, 
         [GeneratedEnum] Permission[] grantResults)
     {
+        Xamarin.Essentials.Platform.OnRequestPermissionsResult(requestCode, permissions, grantResults);
+        
         if ((int)Build.VERSION.SdkInt < 23) return;
 
         if (requestCode == RequestStoragePermission)
@@ -75,6 +79,10 @@ public class MainActivity : AvaloniaMainActivity<App>
                 grantResults[0] == Permission.Granted)
             {
                 // Permissions granted
+            }
+            else
+            {
+                // Permissions denied
             }
         }
         else
