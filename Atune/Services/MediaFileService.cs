@@ -19,18 +19,7 @@ namespace Atune.Services
         #if ANDROID
         public async Task<string> GetRealPathAsync(IStorageFile file)
         {
-            Android.Util.Log.Debug("MediaFileService", $"Start copying file: {file.Name}");
-            var destFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "AtuneMedia");
-            if (!Directory.Exists(destFolder))
-                Directory.CreateDirectory(destFolder);
-            var destPath = Path.Combine(destFolder, file.Name);
-            using (var sourceStream = await file.OpenReadAsync())
-            using (var destStream = File.Create(destPath))
-            {
-                await sourceStream.CopyToAsync(destStream);
-            }
-            Android.Util.Log.Debug("MediaFileService", $"File copied to: {destPath}");
-            return destPath;
+            return Task.FromResult(file.Path.LocalPath);
         }
         #else
         public Task<string> GetRealPathAsync(IStorageFile file)
