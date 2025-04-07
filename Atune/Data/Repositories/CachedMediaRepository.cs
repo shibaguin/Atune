@@ -58,5 +58,15 @@ namespace Atune.Data.Repositories
         {
             return await _decorated.GetExistingPathsAsync(paths);
         }
+        public async Task BulkUpdateAsync(IEnumerable<MediaItem> items, Action<IEnumerable<MediaItem>>? onBatchProcessed = null)
+        {
+            await _decorated.BulkUpdateAsync(items, onBatchProcessed);
+            _cache.Remove(CacheKey);
+        }
+        public async Task BulkDeleteAsync(IEnumerable<MediaItem> items, Action<IEnumerable<MediaItem>>? onBatchProcessed = null)
+        {
+            await _decorated.BulkDeleteAsync(items, onBatchProcessed);
+            _cache.Remove(CacheKey);
+        }
     }
 } 

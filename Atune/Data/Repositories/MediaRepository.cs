@@ -61,11 +61,11 @@ namespace Atune.Data.Repositories
 
         public async Task BulkInsertAsync(IEnumerable<MediaItem> items, Action<IEnumerable<MediaItem>>? onBatchProcessed = null)
         {
-            // Settings for different platforms
+            // Настройки для разных платформ
             var (batchSize, delayMs) = OperatingSystem.IsAndroid() 
-                ? (200, 20)    // Larger batches with delay
-                : (500, 50);  // Large batches for desktop
-
+                ? (200, 20)    // Для Android – большие батчи с задержкой
+                : (500, 50);   // Для desktop – большой батч
+            
             var batches = items.Chunk(batchSize);
             
             await using var transaction = await _context.Database.BeginTransactionAsync();
@@ -83,7 +83,7 @@ namespace Atune.Data.Repositories
                 onBatchProcessed?.Invoke(items);
                 
                 if (OperatingSystem.IsAndroid())
-                    await Task.Delay(delayMs); // Smoothness UI
+                    await Task.Delay(delayMs); // Для плавности UI
             }
             finally
             {
@@ -105,6 +105,49 @@ namespace Atune.Data.Repositories
                 .Select(Path.GetFullPath);
             
             return await GetExistingPathsAsync(allFiles);
+        }
+
+        // Новая реализация BulkUpdateAsync
+        public async Task BulkUpdateAsync(IEnumerable<MediaItem> items, Action<IEnumerable<MediaItem>>? onBatchProcessed = null)
+        {
+            // Выбираем размер батча в зависимости от платформы
+            var batchSize = OperatingSystem.IsAndroid() ? 200 : 500;
+            await using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                // Используем новый метод BulkUpdateAsync из контекста
+                await _context.BulkUpdateAsync(items, options => 
+                {
+                    options.BatchSize = batchSize;
+                });
+                await transaction.CommitAsync();
+                onBatchProcessed?.Invoke(items);
+            }
+            finally
+            {
+                await transaction.DisposeAsync();
+            }
+        }
+
+        // Новая реализация BulkDeleteAsync
+        public async Task BulkDeleteAsync(IEnumerable<MediaItem> items, Action<IEnumerable<MediaItem>>? onBatchProcessed = null)
+        {
+            var batchSize = OperatingSystem.IsAndroid() ? 200 : 500;
+            await using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                // Используем новый метод BulkDeleteAsync из контекста
+                await _context.BulkDeleteAsync(items, options =>
+                {
+                    options.BatchSize = batchSize;
+                });
+                await transaction.CommitAsync();
+                onBatchProcessed?.Invoke(items);
+            }
+            finally
+            {
+                await transaction.DisposeAsync();
+            }
         }
     }
 } 

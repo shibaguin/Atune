@@ -13,5 +13,7 @@ namespace Atune.Data.Interfaces
         Task<bool> ExistsByPathAsync(string path);
         Task BulkInsertAsync(IEnumerable<MediaItem> items, Action<IEnumerable<MediaItem>>? onBatchProcessed = null);
         Task<HashSet<string>> GetExistingPathsAsync(IEnumerable<string> paths);
+        Task BulkUpdateAsync(IEnumerable<MediaItem> items, Action<IEnumerable<MediaItem>>? onBatchProcessed = null);
+        Task BulkDeleteAsync(IEnumerable<MediaItem> items, Action<IEnumerable<MediaItem>>? onBatchProcessed = null);
     }
 } 

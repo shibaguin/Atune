@@ -330,10 +330,56 @@ public class AppDbContext : DbContext
         }
         await SaveChangesAsync();
     }
+
+    public async Task BulkUpdateAsync(IEnumerable<MediaItem> entities, Action<BulkUpdateOptions>? configureOptions = null)
+    {
+        var options = new BulkUpdateOptions();
+        configureOptions?.Invoke(options);
+        
+        int count = 0;
+        foreach (var entity in entities)
+        {
+            Entry(entity).State = EntityState.Modified;
+            count++;
+            if (options.BatchSize > 0 && count % options.BatchSize == 0)
+            {
+                await SaveChangesAsync();
+            }
+        }
+        await SaveChangesAsync();
+    }
+
+    public async Task BulkDeleteAsync(IEnumerable<MediaItem> entities, Action<BulkDeleteOptions>? configureOptions = null)
+    {
+        var options = new BulkDeleteOptions();
+        configureOptions?.Invoke(options);
+        
+        int count = 0;
+        foreach (var entity in entities)
+        {
+            Remove(entity);
+            count++;
+            if (options.BatchSize > 0 && count % options.BatchSize == 0)
+            {
+                await SaveChangesAsync();
+            }
+        }
+        await SaveChangesAsync();
+    }
 }
 
 public class BulkInsertOptions
 {
     public int BatchSize { get; set; } = 100;
     public bool InsertKeepIdentity { get; set; }
+}
+
+public class BulkUpdateOptions
+{
+    public int BatchSize { get; set; } = 100;
+}
+
+public class BulkDeleteOptions
+{
+    public int BatchSize { get; set; } = 100;
 } 
