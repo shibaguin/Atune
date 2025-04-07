@@ -14,6 +14,10 @@ using System.Threading.Tasks;
 public class AppDbContext : DbContext
 {
     public DbSet<MediaItem> MediaItems { get; set; }
+    public DbSet<Album> Albums { get; set; }
+    public DbSet<Artist> Artists { get; set; }
+    public DbSet<Playlist> Playlists { get; set; }
+    public DbSet<PlaylistMediaItem> PlaylistMediaItems { get; set; }
 
     public AppDbContext(DbContextOptions<AppDbContext> options) 
         : base(options) 

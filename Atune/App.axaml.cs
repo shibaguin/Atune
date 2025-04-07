@@ -260,6 +260,11 @@ public partial class App : Application
             );
         });
 
+        services.AddScoped<IAlbumRepository, AlbumRepository>();
+        services.AddScoped<IArtistRepository, ArtistRepository>();
+        services.AddScoped<IPlaylistRepository, PlaylistRepository>();
+        services.AddSingleton<IFoldersRepository, FoldersRepository>();
+
         services.AddSingleton<INavigationKeywordProvider, NavigationKeywordProvider>();
 
         // Регистрируем новый сервис воспроизведения
