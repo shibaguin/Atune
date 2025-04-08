@@ -39,43 +39,66 @@ namespace Atune.Services
 
         public async Task<string> GetMediaPathAsync(string mediaId)
         {
-            // Проверяем, является ли это Android
 #if ANDROID
+            // Проверяем разрешения для чтения внешнего хранилища
             if (Android.App.Application.Context.CheckSelfPermission(Android.Manifest.Permission.ReadExternalStorage) != (int)Permission.Granted)
             {
                 _logger.LogWarning("ReadExternalStorage permission is not granted.");
-                return string.Empty; // Или выбросьте исключение, если это более уместно
+                return string.Empty;
             }
 
-            var mediaItem = await _context.MediaItems.FindAsync(mediaId);
+            // Преобразуем mediaId в число для корректного вызова FindAsync
+            if (!int.TryParse(mediaId, out int id))
+            {
+                _logger.LogWarning($"Invalid media ID: {mediaId}");
+                return string.Empty;
+            }
+
+            var mediaItem = await _context.MediaItems.FindAsync(id);
             if (mediaItem == null)
             {
                 _logger.LogWarning($"Media item with ID {mediaId} not found.");
-                return string.Empty; // Или выбросьте исключение, если это более уместно
+                return string.Empty;
             }
 
-            // Получаем путь к медиафайлу через ContentResolver
-            var uri = MediaStore.Audio.Media.ExternalContentUri;
-            var projection = new[] { MediaStore.Audio.Media.InterfaceConsts.Data };
-            using (var cursor = _androidContext.ContentResolver.Query(uri, projection, 
-                $"{MediaStore.Audio.Media.InterfaceConsts.Id} = ?", new[] { mediaId }, null))
+            // Создаем корректный Content URI для доступа к медиафайлу
+            Android.Net.Uri contentUri = ContentUris.WithAppendedId(MediaStore.Audio.Media.ExternalContentUri, id);
+
+            // Проверяем доступность файла путем попытки открытия потока
+            try
             {
-                if (cursor != null && cursor.MoveToFirst())
+                using (var stream = _androidContext.ContentResolver.OpenInputStream(contentUri))
                 {
-                    return cursor.GetString(cursor.GetColumnIndexOrThrow(MediaStore.Audio.Media.InterfaceConsts.Data));
-                }
-                else
-                {
-                    _logger.LogWarning($"Media file with ID {mediaId} not found in ContentResolver.");
-                    return string.Empty; // Или выбросьте исключение, если это более уместно
+                    if (stream != null)
+                    {
+                        return contentUri.ToString();
+                    }
+                    else
+                    {
+                        _logger.LogWarning($"Unable to open stream for media file with ID {mediaId}.");
+                        return string.Empty;
+                    }
                 }
             }
-#else
-            var mediaItem = await _context.MediaItems.FindAsync(mediaId);
+            catch (System.Exception ex)
+            {
+                _logger.LogWarning($"Error accessing media file with ID {mediaId}: {ex.Message}");
+                return string.Empty;
+            }
+#endif
+#if !ANDROID
+            // Преобразуем mediaId в число для корректного вызова FindAsync
+            if (!int.TryParse(mediaId, out int id))
+            {
+                _logger.LogWarning($"Invalid media ID: {mediaId}");
+                return string.Empty;
+            }
+
+            var mediaItem = await _context.MediaItems.FindAsync(id);
             if (mediaItem == null)
             {
                 _logger.LogWarning($"Media item with ID {mediaId} not found.");
-                return string.Empty; // Или выбросьте исключение, если это более уместно
+                return string.Empty;
             }
             return mediaItem.Path;
 #endif
