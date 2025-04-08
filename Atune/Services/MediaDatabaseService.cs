@@ -46,7 +46,32 @@ namespace Atune.Services
             using var dbContext = _dbContextFactory.CreateDbContext();
             try
             {
+                // Проверка: ищем существующий альбом по названию
+                var existingAlbum = await dbContext.Albums.FirstOrDefaultAsync(a => a.Title == item.Album.Title);
+                if (existingAlbum != null)
+                {
+                    // Если альбом найден, используем его
+                    item.Album = existingAlbum;
+                    item.AlbumId = existingAlbum.Id;
+                }
+                
+                // Проверка для каждого артиста в списке TrackArtists
+                foreach (var trackArtist in item.TrackArtists)
+                {
+                    if (trackArtist.Artist != null)
+                    {
+                        var existingArtist = await dbContext.Artists.FirstOrDefaultAsync(a => a.Name == trackArtist.Artist.Name);
+                        if (existingArtist != null)
+                        {
+                            // Если артист найден, используем его
+                            trackArtist.Artist = existingArtist;
+                        }
+                    }
+                }
+                
+                // Добавляем объект в базу через метод AddMediaAsync (который выполняет await MediaItems.AddAsync(media))
                 await dbContext.AddMediaAsync(item);
+                
                 var artistNames = string.Join(", ", item.TrackArtists
                                             .Select(ta => ta.Artist?.Name)
                                             .Where(name => !string.IsNullOrEmpty(name)));

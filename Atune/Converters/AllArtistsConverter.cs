@@ -1,10 +1,9 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using Avalonia.Data.Converters;
-using Atune.Models; // Убедитесь, что TrackArtist и Artist находятся в этом пространстве имен
+using Atune.Models;
+using System.Collections.Generic;
 
 namespace Atune.Converters
 {
@@ -12,17 +11,11 @@ namespace Atune.Converters
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            // value ожидается как IEnumerable (например, ICollection<TrackArtist>)
-            if (value is IEnumerable trackArtists)
+            if (value is IEnumerable<TrackArtist> trackArtists)
             {
-                var artistNames = new List<string>();
-                foreach (var item in trackArtists)
-                {
-                    if (item is TrackArtist trackArtist && trackArtist.Artist != null && !string.IsNullOrEmpty(trackArtist.Artist.Name))
-                    {
-                        artistNames.Add(trackArtist.Artist.Name);
-                    }
-                }
+                var artistNames = trackArtists
+                    .Select(ta => ta.Artist?.Name)
+                    .Where(name => !string.IsNullOrWhiteSpace(name));
                 return string.Join(", ", artistNames);
             }
             return string.Empty;

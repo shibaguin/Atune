@@ -68,5 +68,10 @@ namespace Atune.Data.Repositories
             await _decorated.BulkDeleteAsync(items, onBatchProcessed);
             _cache.Remove(CacheKey);
         }
+
+        public async Task<List<MediaItem>> GetAllMediaItemsAsync()
+        {
+            return await _decorated.GetAllMediaItemsAsync();
+        }
     }
 } 

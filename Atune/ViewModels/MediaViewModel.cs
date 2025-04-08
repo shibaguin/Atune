@@ -249,6 +249,16 @@ public partial class MediaViewModel : ObservableObject, IDisposable
                 });
                 
                 await _unitOfWork.CommitAsync();
+
+                var updatedMediaItems = await _unitOfWork.Media.GetAllMediaItemsAsync();
+                Dispatcher.UIThread.Post(() =>
+                {
+                    MediaItems.Clear();
+                    foreach (var item in updatedMediaItems)
+                    {
+                        MediaItems.Add(item);
+                    }
+                });
             }
         }
         finally

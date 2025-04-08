@@ -168,5 +168,15 @@ namespace Atune.Data.Repositories
                 await transaction.DisposeAsync();
             }
         }
+
+        public async Task<List<MediaItem>> GetAllMediaItemsAsync()
+        {
+            return await _context.MediaItems
+                .Include(m => m.Album)
+                .Include(m => m.TrackArtists)
+                    .ThenInclude(ta => ta.Artist)
+                .OrderBy(m => m.Title)
+                .ToListAsync();
+        }
     }
 } 
