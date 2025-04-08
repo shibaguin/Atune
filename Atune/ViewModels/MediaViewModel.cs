@@ -792,14 +792,24 @@ public partial class MediaViewModel : ObservableObject, IDisposable
             Console.WriteLine("Содержимое базы данных:");
             foreach (var item in items)
             {
-                // Формируем строку с информацией о медиа-объекте
-                var artists = string.Join(", ", item.TrackArtists.Select(ta => ta.Artist?.Name ?? "Unknown Artist"));
-                var album = item.Album?.Title ?? "No Album";
-                Console.WriteLine($"ID: {item.Id}, Title: {item.Title}, Album: {album}, Artists: {artists}, Path: {item.Path}");
+                try
+                {
+                    // Формируем строку с информацией о медиа-объекте
+                    var artists = string.Join(", ", item.TrackArtists.Select(ta => ta.Artist?.Name ?? "Unknown Artist"));
+                    var album = item.Album?.Title ?? "No Album";
+                    Console.WriteLine($"ID: {item.Id}, Title: {item.Title}, Album: {album}, Artists: {artists}, Path: {item.Path}");
+                }
+                catch (Exception innerEx)
+                {
+                    // Логируем ошибку для конкретного элемента и продолжаем обработку остальных
+                    _logger?.LogError($"Ошибка при выводе информации для медиа-объекта с ID: {item.Id}", innerEx);
+                }
             }
         }
         catch (Exception ex)
         {
+            // Логируем ошибку получения данных из базы
+            _logger?.LogError("Ошибка при получении медиа-объектов из базы данных", ex);
             Console.WriteLine($"Ошибка при выводе содержимого БД: {ex.Message}");
         }
     }
