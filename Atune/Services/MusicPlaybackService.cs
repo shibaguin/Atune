@@ -5,6 +5,7 @@ using LibVLCSharp.Shared;
 using Atune.Models;
 using Avalonia.Threading;
 using Microsoft.Extensions.Logging;
+using System.Linq;
 
 namespace Atune.Services
 {
@@ -132,7 +133,12 @@ namespace Atune.Services
                     path,
                     TimeSpan.Zero,
                     new List<TrackArtist>());
-                _logger.LogInformation("Playback started successfully for media: {Path}", path);
+
+                var artistNames = string.Join(", ", CurrentTrack.TrackArtists
+                                    .Select(ta => ta.Artist?.Name)
+                                    .Where(name => !string.IsNullOrEmpty(name)));
+                _logger.LogInformation("Playback started successfully for media: File='{Path}', Title='{Title}', Album='{Album}', Artist(s)='{Artists}'", 
+                    path, CurrentTrack.Title, CurrentTrack.Album?.Title ?? "Unknown Album", artistNames);
             }
             catch (Exception ex)
             {

@@ -46,11 +46,14 @@ namespace Atune.Services
             try
             {
                 await dbContext.AddMediaAsync(item);
-                _logger.LogInformation($"Added media item: {item.Title} by {item.TrackArtists.FirstOrDefault()?.Artist.Name}");
+                var artistNames = string.Join(", ", item.TrackArtists
+                                            .Select(ta => ta.Artist?.Name)
+                                            .Where(name => !string.IsNullOrEmpty(name)));
+                _logger.LogInformation($"Media item added successfully: Title='{item.Title}', Album='{(item.Album?.Title ?? "Unknown Album")}', Artist(s)='{artistNames}', Path='{item.Path}'");
             }
             catch (Exception ex)
             {
-                _logger.LogError("Error adding media item: {Message}", ex);
+                _logger.LogError($"Error adding media item: Title='{item.Title}', Path='{item.Path}'", ex);
             }
         }
 
@@ -60,14 +63,18 @@ namespace Atune.Services
             var invalidRecords = await dbContext.MediaItems
                 .Where(m => string.IsNullOrEmpty(m.Path) || !File.Exists(m.Path))
                 .ToListAsync();
-            _logger.LogInformation($"Found {invalidRecords.Count} invalid records in the database");
+            _logger.LogInformation($"Found {invalidRecords.Count} invalid media records in the database.");
+            
             foreach (var record in invalidRecords)
             {
+                var artistNames = string.Join(", ", record.TrackArtists
+                                            .Select(ta => ta.Artist?.Name)
+                                            .Where(name => !string.IsNullOrEmpty(name)));
+                _logger.LogInformation($"Removing invalid record: Title='{record.Title}', Album='{(record.Album?.Title ?? "Unknown Album")}', Artist(s)='{artistNames}', Path='{record.Path}'");
                 dbContext.MediaItems.Remove(record);
-                _logger.LogInformation($"Removed invalid record: {record.Title} by {record.TrackArtists.FirstOrDefault()?.Artist.Name}");
             }
             await dbContext.SaveChangesAsync();
-            _logger.LogInformation("Database records validated and changes saved");
+            _logger.LogInformation("Database records validated and changes saved.");
         }
 
         public string GetDatabasePath()
@@ -92,9 +99,21 @@ namespace Atune.Services
             using var dbContext = _dbContextFactory.CreateDbContext();
             try
             {
-                return await dbContext.MediaItems
+                var mediaItem = await dbContext.MediaItems
                     .AsNoTracking()
                     .FirstOrDefaultAsync(m => m.Path == path);
+                if (mediaItem != null)
+                {
+                    var artistNames = string.Join(", ", mediaItem.TrackArtists
+                                                .Select(ta => ta.Artist?.Name)
+                                                .Where(name => !string.IsNullOrEmpty(name)));
+                    _logger.LogInformation($"Media item retrieved: Title='{mediaItem.Title}', Album='{(mediaItem.Album?.Title ?? "Unknown Album")}', Artist(s)='{artistNames}', Path='{path}'");
+                }
+                else
+                {
+                    _logger.LogWarning($"No media item found for the path: '{path}'");
+                }
+                return mediaItem;
             }
             catch (Exception ex)
             {
