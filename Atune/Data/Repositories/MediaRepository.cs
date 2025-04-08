@@ -61,27 +61,46 @@ namespace Atune.Data.Repositories
 
         public async Task BulkInsertAsync(IEnumerable<MediaItem> items, Action<IEnumerable<MediaItem>>? onBatchProcessed = null)
         {
+            // Фильтрация дубликатов: получаем список всех путей из переданных элементов
+            var allPaths = items.Select(x => x.Path).Distinct().ToList();
+            
+            // Запрашиваем существующие пути из БД
+            var existingPaths = await _context.MediaItems
+                .Where(m => allPaths.Contains(m.Path))
+                .Select(m => m.Path)
+                .ToListAsync();
+            
+            // Исключаем медиа-объекты, у которых Path уже присутствует в БД
+            var newItems = items.Where(item => !existingPaths.Contains(item.Path)).ToList();
+            
+            if (!newItems.Any())
+            {
+                // Если все элементы являются дубликатами, вызываем callback (если он задан) и завершаем метод
+                onBatchProcessed?.Invoke(items);
+                return;
+            }
+
             // Настройки для разных платформ
             var (batchSize, delayMs) = OperatingSystem.IsAndroid() 
-                ? (200, 20)    // Для Android – большие батчи с задержкой
-                : (500, 50);   // Для desktop – большой батч
-            
-            var batches = items.Chunk(batchSize);
-            
+                ? (200, 20)    // Для Android – меньшие батчи с небольшой задержкой
+                : (500, 50);   // Для desktop – большие батчи
+
+            var batches = newItems.Chunk(batchSize);
+
             await using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
                 foreach (var batch in batches)
                 {
-                    await _context.BulkInsertAsync(batch, options => 
+                    await _context.BulkInsertAsync(batch, options =>
                     {
                         options.InsertKeepIdentity = true;
                         options.BatchSize = batchSize;
                     });
                 }
                 await transaction.CommitAsync();
-                onBatchProcessed?.Invoke(items);
-                
+                onBatchProcessed?.Invoke(newItems);
+
                 if (OperatingSystem.IsAndroid())
                     await Task.Delay(delayMs); // Для плавности UI
             }

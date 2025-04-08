@@ -85,5 +85,22 @@ namespace Atune.Services
                 .AnyAsync(m => m.TrackArtists
                     .Any(ta => ta.Artist != null && ta.Artist.Name == artist));
         }
+
+        // Новая реализация: получение медиа-объекта по пути
+        public async Task<MediaItem?> GetMediaItemByPathAsync(string path)
+        {
+            using var dbContext = _dbContextFactory.CreateDbContext();
+            try
+            {
+                return await dbContext.MediaItems
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(m => m.Path == path);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error retrieving media item by path '{path}': {ex.Message}");
+                throw new InvalidOperationException("Error retrieving media item by path", ex);
+            }
+        }
     }
 } 
