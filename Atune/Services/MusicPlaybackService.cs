@@ -296,7 +296,7 @@ namespace Atune.Services
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError("Error extracting metadata from file", ex);
+                    _logger.LogError(ex, "Error extracting metadata from file");
                     return new MediaMetadata
                     {
                         Title = System.IO.Path.GetFileNameWithoutExtension(path),
