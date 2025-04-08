@@ -686,6 +686,8 @@ public partial class MediaViewModel : ObservableObject, IDisposable
                 MediaItems.Add(item);
             }
             _logger?.LogInformation($"MediaItems has been sorted in {SortOrder} order.");
+            // Обновляем кэш отсортированных элементов после сортировки
+            _sortedCache = new List<MediaItem>(MediaItems);
         });
     }
 
@@ -693,20 +695,20 @@ public partial class MediaViewModel : ObservableObject, IDisposable
     public void InsertItemSorted(MediaItem newItem)
     {
         var titleComparer = new CustomTitleComparer(SortOrder == "A-Z");
-        // Если кэш пуст или не содержит нового элемента, пересчитываем его полностью
-        if (_sortedCache == null)
+        // Если кэш не синхронизирован с MediaItems, пересчитываем его
+        if (_sortedCache.Count != MediaItems.Count)
         {
             _sortedCache = MediaItems.ToList();
             _sortedCache.Sort(new MediaItemComparer(titleComparer));
         }
-
+        
         // Ищем индекс для вставки нового элемента с помощью бинарного поиска
         int index = _sortedCache.BinarySearch(newItem, new MediaItemComparer(titleComparer));
         if (index < 0)
         {
             index = ~index;
         }
-
+        
         _sortedCache.Insert(index, newItem);
         MediaItems.Insert(index, newItem);
         _logger?.LogInformation($"Inserted new item '{newItem.Title}' at index {index}");
