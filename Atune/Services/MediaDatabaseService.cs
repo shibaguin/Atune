@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -6,9 +7,9 @@ using Atune.Models;
 using Atune.Data;
 using Atune.Services;
 using Microsoft.Extensions.Logging;
-using System;
 using Atune.Exceptions;
 using System.Collections.Generic;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace Atune.Services
 {
@@ -18,11 +19,13 @@ namespace Atune.Services
     {
         private readonly IDbContextFactory<AppDbContext> _dbContextFactory;
         private readonly ILoggerService _logger;
+        private readonly IMemoryCache _cache;
 
-        public MediaDatabaseService(IDbContextFactory<AppDbContext> dbContextFactory, ILoggerService logger)
+        public MediaDatabaseService(IDbContextFactory<AppDbContext> dbContextFactory, ILoggerService logger, IMemoryCache cache)
         {
             _dbContextFactory = dbContextFactory;
             _logger = logger;
+            _cache = cache;
         }
 
         public async Task<bool> CanConnectAsync()
@@ -122,33 +125,29 @@ namespace Atune.Services
         // Новая реализация: получение медиа-объекта по пути
         public async Task<MediaItem?> GetMediaItemByPathAsync(string path)
         {
+            if (string.IsNullOrEmpty(path))
+                return null;
+
+            string cacheKey = "MediaDatabaseService_GetMediaItemByPath_" + path;
+            if (_cache.TryGetValue(cacheKey, out MediaItem? cachedItem) && cachedItem is not null)
+            {
+                return cachedItem;
+            }
+            
             using var dbContext = _dbContextFactory.CreateDbContext();
-            try
+            var mediaItem = await dbContext.MediaItems
+                .AsNoTracking()
+                .Include(m => m.Album)
+                .Include(m => m.TrackArtists)
+                    .ThenInclude(ta => ta.Artist)
+                .FirstOrDefaultAsync(m => m.Path == path);
+            
+            if (mediaItem != null)
             {
-                var mediaItem = await dbContext.MediaItems
-                    .AsNoTracking()
-                    .Include(m => m.Album)
-                    .Include(m => m.TrackArtists)
-                        .ThenInclude(ta => ta.Artist)
-                    .FirstOrDefaultAsync(m => m.Path == path);
-                if (mediaItem != null)
-                {
-                    var artistNames = string.Join(", ", mediaItem.TrackArtists
-                                                .Select(ta => ta.Artist?.Name)
-                                                .Where(name => !string.IsNullOrEmpty(name)));
-                    _logger.LogInformation($"Media item retrieved: Title='{mediaItem.Title}', Album='{(mediaItem.Album?.Title ?? "Unknown Album")}', Artist(s)='{artistNames}', Path='{path}'");
-                }
-                else
-                {
-                    _logger.LogWarning($"No media item found for the path: '{path}'");
-                }
-                return mediaItem;
+                _cache.Set(cacheKey, mediaItem, new MemoryCacheEntryOptions()
+                    .SetSlidingExpiration(TimeSpan.FromMinutes(5)));
             }
-            catch (Exception ex)
-            {
-                _logger.LogError($"Error retrieving media item by path '{path}': {ex.Message}");
-                throw new InvalidOperationException("Error retrieving media item by path", ex);
-            }
+            return mediaItem;
         }
 
         // Новый метод для получения медиа-объектов с включенными сущностями Album и Artist через TrackArtists:

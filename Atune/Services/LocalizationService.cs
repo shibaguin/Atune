@@ -7,12 +7,14 @@ using Avalonia;
 using System.IO;
 using Avalonia.Markup.Xaml;
 using System.Resources;
+using System.Collections.Generic;
 
 public class LocalizationService : INotifyPropertyChanged
 {
     private ResourceDictionary _currentResources = new ResourceDictionary();
     private readonly ISettingsService _settingsService;
     private readonly ILoggerService _logger;
+    private readonly Dictionary<string, ResourceDictionary> _resourceCache = new Dictionary<string, ResourceDictionary>(StringComparer.OrdinalIgnoreCase);
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -101,11 +103,15 @@ public class LocalizationService : INotifyPropertyChanged
     // New helper method for loading a .resx file and converting it to a ResourceDictionary
     private ResourceDictionary? LoadResxAsResourceDictionary(string languageCode)
     {
+        if (string.IsNullOrEmpty(languageCode))
+            return null;
+        
+        if (_resourceCache.TryGetValue(languageCode, out var cachedRd))
+            return cachedRd;
+        
         var resourceDictionary = new ResourceDictionary();
         try
         {
-            // Формируем имя базового ресурса, например "Atune.Resources.Localization.en" или "Atune.Resources.Localization.ru"
-            // Form the base resource name, for example "Atune.Resources.Localization.en" or "Atune.Resources.Localization.ru"
             var baseName = $"Atune.Resources.Localization.{languageCode}";
             var rm = new ResourceManager(baseName, typeof(LocalizationService).Assembly);
             var resourceSet = rm.GetResourceSet(System.Globalization.CultureInfo.InvariantCulture, true, true);
@@ -117,13 +123,15 @@ public class LocalizationService : INotifyPropertyChanged
             {
                 resourceDictionary[entry.Key] = entry.Value;
             }
-            return resourceDictionary;
         }
         catch (Exception ex)
         {
             _logger.LogError($"Error loading resource for language: {languageCode}. Exception: {ex.Message}", ex);
             return null;
         }
+        
+        _resourceCache[languageCode] = resourceDictionary;
+        return resourceDictionary;
     }
 
     public void Refresh() => 

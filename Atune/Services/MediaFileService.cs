@@ -9,6 +9,7 @@ using Android.App;
 using Android.Provider;
 using Android.Util;
 #endif
+using Microsoft.Extensions.Caching.Memory;
 
 namespace Atune.Services
 {
@@ -16,10 +17,31 @@ namespace Atune.Services
     // Service for performing file operations such as copying, checking existence, and path conversion.
     public class MediaFileService
     {
+        // Поле для кеша
+        private readonly IMemoryCache _cache;
+
+        // Обновлённый конструктор с зависимостью IMemoryCache
+        public MediaFileService(IMemoryCache cache)
+        {
+            _cache = cache;
+        }
+
         #if ANDROID
         public async Task<string> GetRealPathAsync(IStorageFile file)
         {
-            return Task.FromResult(file.Path.LocalPath);
+            if (file == null)
+                return string.Empty;
+
+            string cacheKey = "MediaFileService_RealPath_" + file.Path.LocalPath;
+            if (_cache.TryGetValue(cacheKey, out string cachedRealPath) && !string.IsNullOrEmpty(cachedRealPath))
+            {
+                return cachedRealPath;
+            }
+            
+            string realPath = await Task.FromResult(file.Path.LocalPath);
+            _cache.Set(cacheKey, realPath, new MemoryCacheEntryOptions()
+                .SetSlidingExpiration(TimeSpan.FromMinutes(5)));
+            return realPath;
         }
         #else
         public Task<string> GetRealPathAsync(IStorageFile file)
@@ -30,7 +52,19 @@ namespace Atune.Services
 
         public Task<bool> FileExistsAsync(string path)
         {
-            return Task.Run(() => File.Exists(path));
+            if (string.IsNullOrEmpty(path))
+                return Task.FromResult(false);
+
+            string cacheKey = "MediaFileService_FileExists_" + path;
+            if (_cache.TryGetValue(cacheKey, out bool exists))
+            {
+                return Task.FromResult(exists);
+            }
+            
+            bool fileExists = File.Exists(path);
+            _cache.Set(cacheKey, fileExists, new MemoryCacheEntryOptions()
+                .SetAbsoluteExpiration(TimeSpan.FromMinutes(1)));
+            return Task.FromResult(fileExists);
         }
 
 #if ANDROID

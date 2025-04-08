@@ -7,6 +7,7 @@ using Avalonia.Threading;
 using Microsoft.Extensions.Logging;
 using System.Linq;
 using ATL;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace Atune.Services
 {
@@ -20,6 +21,7 @@ namespace Atune.Services
         private Media? _currentMedia;
         private int _volume = 50;
         private readonly ILogger<MusicPlaybackService> _logger;
+        private readonly IMemoryCache _cache;
 
         // Добавляем необходимые события для уведомления о начале, паузе и окончании воспроизведения.
         public event EventHandler? PlaybackStarted;
@@ -32,7 +34,7 @@ namespace Atune.Services
         public int Volume { get; private set; }
 
         // Конструктор – инициализируем LibVLC и создаём MediaPlayer, а также подписываемся на событие окончания трека.
-        public MusicPlaybackService(ILogger<MusicPlaybackService> logger)
+        public MusicPlaybackService(ILogger<MusicPlaybackService> logger, IMemoryCache cache)
         {
             // Инициализация библиотеки VLC (вызывается один раз в приложении).
             Core.Initialize();
@@ -43,6 +45,7 @@ namespace Atune.Services
             _playbackQueue = new List<MediaItem>();
             _currentIndex = 0;
             _logger = logger;
+            _cache = cache;
 
             // Подписываемся на событие окончания трека и оповещаем подписчиков.
             _mediaPlayer.EndReached += (sender, args) =>
@@ -104,6 +107,9 @@ namespace Atune.Services
         // Метод для запуска воспроизведения по пути к файлу.
         public async Task Play(string path)
         {
+            if (string.IsNullOrWhiteSpace(path))
+                throw new ArgumentException("Path cannot be null or empty", nameof(path));
+            
             _logger.LogInformation("Starting playback for media: {Path}", path);
             try
             {
@@ -147,7 +153,8 @@ namespace Atune.Services
                 // Логирование успешного старта воспроизведения с правильными метаданными
                 var artistNames = string.Join(", ", CurrentTrack.TrackArtists
                                     .Select(ta => ta.Artist?.Name)
-                                    .Where(name => !string.IsNullOrEmpty(name)));
+                                    .Where(name => !string.IsNullOrEmpty(name))
+                                    .Select(name => name!));
                 _logger.LogInformation("Playback started successfully for media: File={Path}, Title={Title}, Album={Album}, Artist(s)={Artists}", 
                     path, CurrentTrack.Title, CurrentTrack.Album?.Title ?? "Unknown Album", artistNames);
             }
@@ -277,36 +284,97 @@ namespace Atune.Services
 
         // Добавьте в класс MusicPlaybackService новый метод для извлечения метаданных.
         // Пример использования ATL (или другого метода) для асинхронного получения данных.
-        private async Task<MediaMetadata> ExtractMetadataAsync(string path)
+        private Task<MediaMetadata> ExtractMetadataAsync(string path)
         {
-            return await Task.Run(() =>
+            if (string.IsNullOrEmpty(path))
+                return Task.FromResult(new MediaMetadata
+                {
+                    Title = string.Empty,        // или, например, "Unknown Title"
+                    Artist = "Unknown Artist",
+                    Album = "Unknown Album",
+                    Genre = "Unknown Genre",
+                    Year = "0"
+                });
+
+            string cacheKey = "MusicPlaybackService_Metadata_" + path;
+            if (_cache.TryGetValue(cacheKey, out MediaMetadata cachedMetadata) && cachedMetadata != null)
             {
-                try
+                return Task.FromResult(cachedMetadata);
+            }
+
+            try
+            {
+                var track = new ATL.Track(path);
+                MediaMetadata metadata = new MediaMetadata
                 {
-                    var track = new ATL.Track(path);
-                    return new MediaMetadata
-                    {
-                        Title = string.IsNullOrWhiteSpace(track.Title) ? 
-                                    System.IO.Path.GetFileNameWithoutExtension(path) : track.Title,
-                        Artist = track.Artist ?? "Unknown Artist",
-                        Album = track.Album,
-                        Genre = track.Genre,
-                        Year = track.Year > 0 ? track.Year.ToString() : "0"
-                    };
-                }
-                catch (Exception ex)
+                    Title = string.IsNullOrWhiteSpace(track.Title)
+                                ? System.IO.Path.GetFileNameWithoutExtension(path)
+                                : track.Title!,
+                    Artist = track.Artist ?? "Unknown Artist",
+                    Album = track.Album ?? "Unknown Album",
+                    Genre = track.Genre ?? "Unknown Genre",
+                    Year = track.Year > 0 ? track.Year.ToString() : "0"
+                };
+
+                _cache.Set(cacheKey, metadata, new MemoryCacheEntryOptions()
+                    .SetSlidingExpiration(TimeSpan.FromMinutes(10)));
+                return Task.FromResult(metadata);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error extracting metadata from file");
+                return Task.FromResult(new MediaMetadata
                 {
-                    _logger.LogError(ex, "Error extracting metadata from file");
-                    return new MediaMetadata
-                    {
-                        Title = System.IO.Path.GetFileNameWithoutExtension(path),
-                        Artist = "Unknown Artist",
-                        Album = "Unknown Album",
-                        Genre = "Unknown Genre",
-                        Year = "0"
-                    };
-                }
-            });
+                    Title = System.IO.Path.GetFileNameWithoutExtension(path),
+                    Artist = "Unknown Artist",
+                    Album = "Unknown Album",
+                    Genre = "Unknown Genre",
+                    Year = "0"
+                });
+            }
+        }
+
+        public Task<MediaMetadata> GetMetadataFromPathAsync(string path)
+        {
+            if (string.IsNullOrEmpty(path))
+                return Task.FromResult(new MediaMetadata());
+            
+            string cacheKey = "MusicPlaybackService_Metadata_" + path;
+            if (_cache.TryGetValue(cacheKey, out MediaMetadata? cachedMetadata) && cachedMetadata is not null)
+            {
+                return Task.FromResult(cachedMetadata);
+            }
+            
+            try
+            {
+                var track = new ATL.Track(path);
+                MediaMetadata metadata = new MediaMetadata
+                {
+                    Title = string.IsNullOrWhiteSpace(track.Title)
+                        ? System.IO.Path.GetFileNameWithoutExtension(path)
+                        : track.Title!,
+                    Artist = track.Artist ?? "Unknown Artist",
+                    Album = track.Album ?? "Unknown Album",
+                    Genre = track.Genre ?? "Unknown Genre",
+                    Year = track.Year > 0 ? track.Year.ToString() : "0"
+                };
+
+                _cache.Set(cacheKey, metadata, new MemoryCacheEntryOptions()
+                    .SetSlidingExpiration(TimeSpan.FromMinutes(10)));
+                return Task.FromResult(metadata);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error extracting metadata from file");
+                return Task.FromResult(new MediaMetadata
+                {
+                    Title = System.IO.Path.GetFileNameWithoutExtension(path),
+                    Artist = "Unknown Artist",
+                    Album = "Unknown Album",
+                    Genre = "Unknown Genre",
+                    Year = "0"
+                });
+            }
         }
     }
 } 

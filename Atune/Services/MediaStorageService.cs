@@ -1,3 +1,4 @@
+using System;
 using Atune.Data;
 using Atune.Data.Interfaces;
 using Atune.Models;
@@ -13,6 +14,7 @@ using Android.Provider;
 using Android.App;
 using Android.Content.PM;
 #endif
+using Microsoft.Extensions.Caching.Memory;
 
 namespace Atune.Services
 {
@@ -20,11 +22,12 @@ namespace Atune.Services
     {
         private readonly AppDbContext _context;
         private readonly ILoggerService _logger;
+        private readonly IMemoryCache _cache;
 #if ANDROID
         private readonly Context _androidContext; // Переименовано для ясности
 #endif
 
-        public MediaStorageService(AppDbContext context, ILoggerService logger
+        public MediaStorageService(AppDbContext context, ILoggerService logger, IMemoryCache cache
 #if ANDROID
             , Context androidContext // Внедрение Context для Android
 #endif
@@ -32,6 +35,7 @@ namespace Atune.Services
         {
             _context = context;
             _logger = logger;
+            _cache = cache;
 #if ANDROID
             this._androidContext = androidContext; // Инициализация контекста
 #endif
@@ -39,6 +43,15 @@ namespace Atune.Services
 
         public async Task<string> GetMediaPathAsync(string mediaId)
         {
+            if (string.IsNullOrEmpty(mediaId))
+                return string.Empty;
+
+            string cacheKey = "MediaStorageService_GetMediaPath_" + mediaId;
+            if (_cache.TryGetValue(cacheKey, out string? cachedPath) && !string.IsNullOrEmpty(cachedPath))
+            {
+                return cachedPath;
+            }
+
 #if ANDROID
             // Проверяем разрешения для чтения внешнего хранилища
             if (Android.App.Application.Context.CheckSelfPermission(Android.Manifest.Permission.ReadExternalStorage) != (int)Permission.Granted)
@@ -71,7 +84,9 @@ namespace Atune.Services
                 {
                     if (stream != null)
                     {
-                        return contentUri.ToString();
+                        cachedPath = contentUri.ToString();
+                        _cache.Set(cacheKey, cachedPath, new MemoryCacheEntryOptions().SetAbsoluteExpiration(TimeSpan.FromMinutes(5)));
+                        return cachedPath;
                     }
                     else
                     {
@@ -100,7 +115,9 @@ namespace Atune.Services
                 _logger.LogWarning($"Media item with ID {mediaId} not found.");
                 return string.Empty;
             }
-            return mediaItem.Path;
+            cachedPath = mediaItem.Path;
+            _cache.Set(cacheKey, cachedPath, new MemoryCacheEntryOptions().SetAbsoluteExpiration(TimeSpan.FromMinutes(5)));
+            return cachedPath;
 #endif
         }
 

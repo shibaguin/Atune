@@ -1,32 +1,92 @@
 using System;
 using System.IO;
+using System.Collections.Generic;
 
 namespace Atune.Services
 {
     public class PlatformPathService : IPlatformPathService
     {
+        // Добавляем статический кэш для путей
+        private static readonly Dictionary<string, string> _pathCache = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+        // Объявляем поля, которые не должны содержать null.
+        private readonly string _basePath;
+        private readonly string _configPath;
+
+        public PlatformPathService()
+        {
+            _basePath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) ?? string.Empty;
+            _configPath = GetConfigPath() ?? string.Empty;
+        }
+
+        // Изменён метод: теперь возвращает string вместо string?
+        private string GetConfigPath()
+        {
+            // Ваша логика для получения пути конфигурации.
+            // Если нет данных – возвращаем пустую строку.
+            return string.Empty;
+        }
+
+        public string GetPlatformPath()
+        {
+            return _basePath;
+        }
+
+        public string GetConfigurationPath()
+        {
+            return _configPath ?? string.Empty;
+        }
+
         public string GetSettingsPath(string fileName = "settings.ini")
         {
+            string key = "settings_" + fileName;
+            if (_pathCache.TryGetValue(key, out string cachedPath))
+                return cachedPath;
+        
+            string path;
             if (OperatingSystem.IsAndroid())
             {
-                // For Android, use MyDocuments for storing settings
                 // Для Android используйте MyDocuments для хранения настроек
-                return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), fileName);
+                path = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) ?? string.Empty, 
+                    fileName);
             }
-            // For desktop OS, use ApplicationData + application folder
-            // Для операционной системы настольного компьютера используйте ApplicationData + папку приложения
-            return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Atune", fileName);
+            else
+            {
+                // Для ОС настольного компьютера используйте ApplicationData + папку приложения
+                path = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) ?? string.Empty, 
+                    "Atune", 
+                    fileName);
+            }
+            _pathCache[key] = path;
+            return path;
         }
 
         public string GetDatabasePath(string databaseFileName = "media_library.db")
         {
+            string key = "database_" + databaseFileName;
+            if (_pathCache.TryGetValue(key, out string cachedPath))
+                return cachedPath;
+        
+            string path;
             if (OperatingSystem.IsAndroid())
             {
-                // For Android, use Personal for storing database
                 // Для Android используйте Personal для хранения базы данных
-                return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Personal), databaseFileName);
+                path = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.Personal) ?? string.Empty, 
+                    databaseFileName);
             }
-            return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Atune", "Data", databaseFileName);
+            else
+            {
+                path = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) ?? string.Empty, 
+                    "Atune", 
+                    "Data", 
+                    databaseFileName);
+            }
+            _pathCache[key] = path;
+            return path;
         }
 
         public string GetPluginsDirectory()
@@ -34,12 +94,12 @@ namespace Atune.Services
             if (OperatingSystem.IsAndroid())
             {
                 return Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), 
+                    Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) ?? string.Empty, 
                     "AtunePlugins");
             }
             
             return Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), 
+                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) ?? string.Empty, 
                 "Atune", 
                 "Plugins");
         }

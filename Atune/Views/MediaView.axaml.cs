@@ -24,6 +24,7 @@ using Android.Util;
 using ATL;
 using Microsoft.Extensions.Logging;
 using Atune.Services;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace Atune.Views;
 
@@ -40,20 +41,23 @@ public partial class MediaView : UserControl
 
     private readonly IDbContextFactory<AppDbContext>? _dbContextFactory;
     private readonly ILoggerService? _logger;
+    private readonly IMemoryCache _cache = default!;
     private readonly MediaDatabaseService _mediaDatabaseService = default!;
-    private readonly MediaFileService _mediaFileService = new MediaFileService();
+    private readonly MediaFileService _mediaFileService = default!;
 
     public MediaView()
     {
         InitializeComponent();
     }
     
-    public MediaView(MediaViewModel vm, IDbContextFactory<AppDbContext> dbContextFactory, ILoggerService logger) : this()
+    public MediaView(MediaViewModel vm, IDbContextFactory<AppDbContext> dbContextFactory, ILoggerService logger, IMemoryCache cache) : this()
     {
         DataContext = vm;
         _dbContextFactory = dbContextFactory;
         _logger = logger;
-        _mediaDatabaseService = new MediaDatabaseService(dbContextFactory, logger);
+        _cache = cache;
+        _mediaDatabaseService = new MediaDatabaseService(dbContextFactory, logger, cache);
+        _mediaFileService = new MediaFileService(cache);
     }
 
     private async void AddToLibrary_Click(object sender, RoutedEventArgs e)

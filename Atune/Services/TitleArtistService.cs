@@ -4,11 +4,14 @@ using System.Linq;
 using LibVLCSharp.Shared;
 using System.Diagnostics;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 
 namespace Atune.Services
 {
     public static class TitleArtistService
     {
+        private static readonly Dictionary<string, string> _titleCache = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
         public static string? Sanitize(string? input)
         {
             if (string.IsNullOrWhiteSpace(input)) 
@@ -31,20 +34,20 @@ namespace Atune.Services
                 
                 Debug.WriteLine($"Raw artist data: Artist={rawArtist}, AlbumArtist={rawAlbumArtist}");
                 
-                var artist = Sanitize(rawArtist) ?? Sanitize(rawAlbumArtist);
+                var artist = Sanitize(rawArtist) ?? Sanitize(rawAlbumArtist) ?? string.Empty;
                 
-                if (string.IsNullOrEmpty(artist))
+                if (string.IsNullOrWhiteSpace(artist))
                 {
                     artist = GetFallbackArtist(path);
                     Debug.WriteLine($"Using fallback artist: {artist}");
                 }
 
-                return artist ?? string.Empty;
+                return artist;
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"Artist parse error: {ex}");
-                return GetFallbackArtist(path) ?? string.Empty;
+                return GetFallbackArtist(path);
             }
         }
 
@@ -56,32 +59,48 @@ namespace Atune.Services
                 
                 if (string.IsNullOrEmpty(title))
                 {
-                    var fileName = Uri.UnescapeDataString(path); // Декодируем URL
+                    var fileName = Uri.UnescapeDataString(path);
                     title = Path.GetFileNameWithoutExtension(fileName);
                     title = Sanitize(title) ?? "Неизвестный трек";
                 }
                 
-                return title ?? string.Empty;
+                return title;
             }
             catch
             {
-                return GetFallbackTitle(path) ?? string.Empty;
+                return GetFallbackTitle(path);
             }
         }
 
         public static string GetFallbackArtist(string path)
         {
+            if (string.IsNullOrEmpty(path))
+                return "Неизвестный исполнитель";
+
+            string cacheKey = "artist_" + path;
+            if (_titleCache.TryGetValue(cacheKey, out string? cachedArtist))
+                return cachedArtist!;
+
             var dirName = Path.GetDirectoryName(Uri.UnescapeDataString(path))?
-                .Split(Path.DirectorySeparatorChar)
-                .LastOrDefault();
-            
-            return Sanitize(dirName) ?? "Неизвестный исполнитель";
+                      .Split(Path.DirectorySeparatorChar)
+                      .LastOrDefault();
+            string artist = Sanitize(dirName) ?? "Неизвестный исполнитель";
+            _titleCache[cacheKey] = artist;
+            return artist;
         }
 
         public static string GetFallbackTitle(string path)
         {
+            if (string.IsNullOrEmpty(path))
+                return "Неизвестный трек";
+        
+            if (_titleCache.TryGetValue(path, out string? cachedTitle))
+                return cachedTitle!;
+        
             var fileName = Path.GetFileNameWithoutExtension(Uri.UnescapeDataString(path));
-            return Sanitize(fileName) ?? "Неизвестный трек";
+            string title = Sanitize(fileName) ?? "Неизвестный трек";
+            _titleCache[path] = title;
+            return title;
         }
     }
 } 

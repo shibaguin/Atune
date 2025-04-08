@@ -20,6 +20,9 @@ namespace Atune.Services
         private readonly string _iniFilePath;
         private readonly ILoggerService _logger;
 
+        // Добавляем кэш для секций INI файла
+        private Dictionary<string, List<string>>? _iniCache;
+
         public double HeaderFontSize { get; private set; }
         public double NavigationDividerWidth { get; private set; }
         public double NavigationDividerHeight { get; private set; }
@@ -53,7 +56,6 @@ namespace Atune.Services
         
         public void LoadSettings()
         {
-            // Если файл настроек не найден, устанавливаем дефолтные значения и сразу сохраняем их.
             if (!File.Exists(_iniFilePath))
             {
                 _logger.LogInformation($"Settings file not found at {_iniFilePath}. Creating new file with default values.");
@@ -62,97 +64,98 @@ namespace Atune.Services
                 return;
             }
             
-            try
+            // Используем кэш, если он уже загружен
+            Dictionary<string, List<string>> sections;
+            if (_iniCache != null)
             {
-                // Используем ParseIniFile для получения секций
-                var sections = ParseIniFile();
-                if (!sections.ContainsKey("InterfaceDimensions"))
-                {
-                    _logger.LogWarning("Section [InterfaceDimensions] not found in INI file. Using default interface settings.");
-                    SetDefaults();
-                    SaveSettings();
-                    return;
-                }
-                
-                var section = sections["InterfaceDimensions"];
-                // Разбираем секцию в словарь ключ-значение
-                var kv = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-                foreach (var line in section)
-                {
-                    var parts = line.Split('=', 2);
-                    if (parts.Length != 2)
-                    {
-                        _logger.LogWarning($"Ignoring malformed line in InterfaceDimensions section: '{line}'");
-                        continue;
-                    }
-                    kv[parts[0].Trim()] = parts[1].Trim();
-                }
-                
-                // Безопасное чтение настроек с проверкой корректности значений
-                if (!kv.TryGetValue("HeaderFontSize", out var headerStr) || !double.TryParse(headerStr, out double headerValue))
-                {
-                    _logger.LogWarning("Invalid or missing HeaderFontSize. Using default.");
-                    headerValue = DefaultHeaderFontSize;
-                }
-                if (!kv.TryGetValue("NavigationDividerWidth", out var navWidthStr) || !double.TryParse(navWidthStr, out double navWidth))
-                {
-                    _logger.LogWarning("Invalid or missing NavigationDividerWidth. Using default.");
-                    navWidth = DefaultNavigationDividerWidth;
-                }
-                if (!kv.TryGetValue("NavigationDividerHeight", out var navHeightStr) || !double.TryParse(navHeightStr, out double navHeight))
-                {
-                    _logger.LogWarning("Invalid or missing NavigationDividerHeight. Using default.");
-                    navHeight = DefaultNavigationDividerHeight;
-                }
-                if (!kv.TryGetValue("TopDockHeight", out var topDockStr) || !double.TryParse(topDockStr, out double topDock))
-                {
-                    _logger.LogWarning("Invalid or missing TopDockHeight. Using default.");
-                    topDock = DefaultTopDockHeight;
-                }
-                if (!kv.TryGetValue("BarHeight", out var barHeightStr) || !double.TryParse(barHeightStr, out double barHeight))
-                {
-                    _logger.LogWarning("Invalid or missing BarHeight. Using default.");
-                    barHeight = DefaultBarHeight;
-                }
-                if (!kv.TryGetValue("NavigationFontSize", out var navFontStr) || !double.TryParse(navFontStr, out double navFont))
-                {
-                    _logger.LogWarning("Invalid or missing NavigationFontSize. Using default.");
-                    navFont = DefaultNavigationFontSize;
-                }
-                if (!kv.TryGetValue("BarPadding", out var barPaddingStr) || !double.TryParse(barPaddingStr, out double barPadding))
-                {
-                    _logger.LogWarning("Invalid or missing BarPadding. Using default.");
-                    barPadding = DefaultBarPadding;
-                }
-                
-                // Дополнительные проверки логических зависимостей
-                if (headerValue > topDock)
-                {
-                    _logger.LogError($"HeaderFontSize ({headerValue}) cannot be greater than TopDockHeight ({topDock}). Using default HeaderFontSize.");
-                    headerValue = DefaultHeaderFontSize;
-                }
-                if (navHeight > barHeight)
-                {
-                    _logger.LogError($"NavigationDividerHeight ({navHeight}) cannot be greater than BarHeight ({barHeight}). Using BarHeight value.");
-                    navHeight = barHeight;
-                }
-                
-                HeaderFontSize = headerValue;
-                NavigationDividerWidth = navWidth;
-                NavigationDividerHeight = navHeight;
-                TopDockHeight = topDock;
-                BarHeight = barHeight;
-                NavigationFontSize = navFont;
-                BarPadding = barPadding;
-                
-                SaveSettings();
+                sections = _iniCache;
             }
-            catch (Exception ex)
+            else
             {
-                _logger.LogError("Error loading interface settings from INI file.", ex);
+                sections = ParseIniFile();
+                _iniCache = sections;
+            }
+            
+            if (!sections.ContainsKey("InterfaceDimensions"))
+            {
+                _logger.LogWarning("Section [InterfaceDimensions] not found in INI file. Using default interface settings.");
                 SetDefaults();
                 SaveSettings();
+                return;
             }
+            
+            var section = sections["InterfaceDimensions"];
+            // Разбираем секцию в словарь ключ-значение
+            var kv = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var line in section)
+            {
+                var parts = line.Split('=', 2);
+                if (parts.Length != 2)
+                {
+                    _logger.LogWarning($"Ignoring malformed line in InterfaceDimensions section: '{line}'");
+                    continue;
+                }
+                kv[parts[0].Trim()] = parts[1].Trim();
+            }
+            
+            // Безопасное чтение настроек с проверкой корректности значений
+            if (!kv.TryGetValue("HeaderFontSize", out var headerStr) || !double.TryParse(headerStr, out double headerValue))
+            {
+                _logger.LogWarning("Invalid or missing HeaderFontSize. Using default.");
+                headerValue = DefaultHeaderFontSize;
+            }
+            if (!kv.TryGetValue("NavigationDividerWidth", out var navWidthStr) || !double.TryParse(navWidthStr, out double navWidth))
+            {
+                _logger.LogWarning("Invalid or missing NavigationDividerWidth. Using default.");
+                navWidth = DefaultNavigationDividerWidth;
+            }
+            if (!kv.TryGetValue("NavigationDividerHeight", out var navHeightStr) || !double.TryParse(navHeightStr, out double navHeight))
+            {
+                _logger.LogWarning("Invalid or missing NavigationDividerHeight. Using default.");
+                navHeight = DefaultNavigationDividerHeight;
+            }
+            if (!kv.TryGetValue("TopDockHeight", out var topDockStr) || !double.TryParse(topDockStr, out double topDock))
+            {
+                _logger.LogWarning("Invalid or missing TopDockHeight. Using default.");
+                topDock = DefaultTopDockHeight;
+            }
+            if (!kv.TryGetValue("BarHeight", out var barHeightStr) || !double.TryParse(barHeightStr, out double barHeight))
+            {
+                _logger.LogWarning("Invalid or missing BarHeight. Using default.");
+                barHeight = DefaultBarHeight;
+            }
+            if (!kv.TryGetValue("NavigationFontSize", out var navFontStr) || !double.TryParse(navFontStr, out double navFont))
+            {
+                _logger.LogWarning("Invalid or missing NavigationFontSize. Using default.");
+                navFont = DefaultNavigationFontSize;
+            }
+            if (!kv.TryGetValue("BarPadding", out var barPaddingStr) || !double.TryParse(barPaddingStr, out double barPadding))
+            {
+                _logger.LogWarning("Invalid or missing BarPadding. Using default.");
+                barPadding = DefaultBarPadding;
+            }
+            
+            // Дополнительные проверки логических зависимостей
+            if (headerValue > topDock)
+            {
+                _logger.LogError($"HeaderFontSize ({headerValue}) cannot be greater than TopDockHeight ({topDock}). Using default HeaderFontSize.");
+                headerValue = DefaultHeaderFontSize;
+            }
+            if (navHeight > barHeight)
+            {
+                _logger.LogError($"NavigationDividerHeight ({navHeight}) cannot be greater than BarHeight ({barHeight}). Using BarHeight value.");
+                navHeight = barHeight;
+            }
+            
+            HeaderFontSize = headerValue;
+            NavigationDividerWidth = navWidth;
+            NavigationDividerHeight = navHeight;
+            TopDockHeight = topDock;
+            BarHeight = barHeight;
+            NavigationFontSize = navFont;
+            BarPadding = barPadding;
+            
+            SaveSettings();
         }
         
         private void SetDefaults()

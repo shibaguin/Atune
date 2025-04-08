@@ -216,12 +216,12 @@ public partial class App : Application
         // Explicit registration of Views with constructors
         services.AddTransient<MainView>(sp => new MainView());
         services.AddTransient<HomeView>(sp => new HomeView(sp.GetRequiredService<HomeViewModel>()));
-        services.AddTransient<MediaView>(sp => 
-            new MediaView(
-                sp.GetRequiredService<MediaViewModel>(),
-                sp.GetRequiredService<IDbContextFactory<AppDbContext>>(),
-                sp.GetRequiredService<ILoggerService>()
-            ));
+        services.AddTransient<MediaView>(sp => new MediaView(
+            sp.GetRequiredService<MediaViewModel>(),
+            sp.GetRequiredService<IDbContextFactory<AppDbContext>>(),
+            sp.GetRequiredService<ILoggerService>(),
+            sp.GetRequiredService<IMemoryCache>()
+        ));
         services.AddTransient<HistoryView>(sp => new HistoryView());
         services.AddTransient<SettingsView>(sp => 
             new SettingsView(
