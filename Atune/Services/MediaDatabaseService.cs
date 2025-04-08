@@ -8,6 +8,7 @@ using Atune.Services;
 using Microsoft.Extensions.Logging;
 using System;
 using Atune.Exceptions;
+using System.Collections.Generic;
 
 namespace Atune.Services
 {
@@ -101,6 +102,9 @@ namespace Atune.Services
             {
                 var mediaItem = await dbContext.MediaItems
                     .AsNoTracking()
+                    .Include(m => m.Album)
+                    .Include(m => m.TrackArtists)
+                        .ThenInclude(ta => ta.Artist)
                     .FirstOrDefaultAsync(m => m.Path == path);
                 if (mediaItem != null)
                 {
@@ -120,6 +124,19 @@ namespace Atune.Services
                 _logger.LogError($"Error retrieving media item by path '{path}': {ex.Message}");
                 throw new InvalidOperationException("Error retrieving media item by path", ex);
             }
+        }
+
+        // Новый метод для получения медиа-объектов с включенными сущностями Album и Artist через TrackArtists:
+        public async Task<List<MediaItem>> GetAllMediaItemsAsync()
+        {
+            using var dbContext = _dbContextFactory.CreateDbContext();
+            // Используем Include для загрузки связей с Album и Artist (через TrackArtists)
+            return await dbContext.MediaItems
+                .Include(m => m.Album)
+                .Include(m => m.TrackArtists)
+                    .ThenInclude(ta => ta.Artist)
+                .OrderBy(m => m.Title)
+                .ToListAsync();
         }
     }
 } 

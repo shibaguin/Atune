@@ -6,6 +6,7 @@ using Atune.Models;
 using Avalonia.Threading;
 using Microsoft.Extensions.Logging;
 using System.Linq;
+using ATL;
 
 namespace Atune.Services
 {
@@ -116,6 +117,9 @@ namespace Atune.Services
                 // Парсинг медиа (базовый)
                 await Task.Run(() => _currentMedia.Parse(MediaParseOptions.ParseLocal));
 
+                // Получаем метаданные через новый метод (асинхронно)
+                var metadata = await ExtractMetadataAsync(path);
+                
                 // Запускаем воспроизведение на UI‑потоке.
                 await Dispatcher.UIThread.InvokeAsync(() =>
                 {
@@ -124,20 +128,27 @@ namespace Atune.Services
                     PlaybackStarted?.Invoke(this, EventArgs.Empty);
                 });
 
-                // Обновляем метаданные текущего трека (простейшая реализация)
+                // Обновляем метаданные текущего трека на основе извлечённых данных
                 CurrentTrack = new MediaItem(
-                    System.IO.Path.GetFileNameWithoutExtension(path),
-                    new Album { Title = "Unknown Album" },
-                    0,
-                    "Unknown Genre",
-                    path,
-                    TimeSpan.Zero,
-                    new List<TrackArtist>());
-
+                    title: metadata.Title,
+                    album: new Album { Title = metadata.Album ?? "Unknown Album" },
+                    year: uint.TryParse(metadata.Year, out uint years) ? years : 0,
+                    genre: metadata.Genre ?? "Unknown Genre",
+                    path: path,
+                    duration: TimeSpan.FromMilliseconds(_currentMedia.Duration),
+                    trackArtists: new List<TrackArtist>
+                    {
+                        new TrackArtist 
+                        { 
+                            Artist = new Artist { Name = metadata.Artist ?? "Unknown Artist" }
+                        }
+                    });
+                
+                // Логирование успешного старта воспроизведения с правильными метаданными
                 var artistNames = string.Join(", ", CurrentTrack.TrackArtists
                                     .Select(ta => ta.Artist?.Name)
                                     .Where(name => !string.IsNullOrEmpty(name)));
-                _logger.LogInformation("Playback started successfully for media: File='{Path}', Title='{Title}', Album='{Album}', Artist(s)='{Artists}'", 
+                _logger.LogInformation("Playback started successfully for media: File={Path}, Title={Title}, Album={Album}, Artist(s)={Artists}", 
                     path, CurrentTrack.Title, CurrentTrack.Album?.Title ?? "Unknown Album", artistNames);
             }
             catch (Exception ex)
@@ -262,6 +273,40 @@ namespace Atune.Services
         public void UpdateCurrentTrack(MediaItem? track)
         {
             CurrentTrack = track;
+        }
+
+        // Добавьте в класс MusicPlaybackService новый метод для извлечения метаданных.
+        // Пример использования ATL (или другого метода) для асинхронного получения данных.
+        private async Task<MediaMetadata> ExtractMetadataAsync(string path)
+        {
+            return await Task.Run(() =>
+            {
+                try
+                {
+                    var track = new ATL.Track(path);
+                    return new MediaMetadata
+                    {
+                        Title = string.IsNullOrWhiteSpace(track.Title) ? 
+                                    System.IO.Path.GetFileNameWithoutExtension(path) : track.Title,
+                        Artist = track.Artist ?? "Unknown Artist",
+                        Album = track.Album,
+                        Genre = track.Genre,
+                        Year = track.Year > 0 ? track.Year.ToString() : "0"
+                    };
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError("Error extracting metadata from file", ex);
+                    return new MediaMetadata
+                    {
+                        Title = System.IO.Path.GetFileNameWithoutExtension(path),
+                        Artist = "Unknown Artist",
+                        Album = "Unknown Album",
+                        Genre = "Unknown Genre",
+                        Year = "0"
+                    };
+                }
+            });
         }
     }
 } 

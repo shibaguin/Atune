@@ -246,7 +246,11 @@ public class AppDbContext : DbContext
     {
         try
         {
+            // Используем Include для загрузки связанных сущностей Album и TrackArtists, затем Include для Artist
             return await MediaItems
+                .Include(m => m.Album)
+                .Include(m => m.TrackArtists)
+                    .ThenInclude(ta => ta.Artist)
                 .AsNoTracking()
                 .OrderBy(m => m.Title)
                 .ToListAsync();
@@ -370,6 +374,12 @@ public class AppDbContext : DbContext
         }
         await SaveChangesAsync();
     }
+
+    public async Task<List<MediaItem>> GetMediaItemsAsync()
+    {
+        return await MediaItems.ToListAsync();
+    }
+
 }
 
 public class BulkInsertOptions

@@ -73,7 +73,7 @@ public partial class MediaViewModel : ObservableObject, IDisposable
 
     public Action<string>? UpdateStatusMessage { get; set; }
 
-    public IAsyncRelayCommand PlayCommand { get; }
+    public IAsyncRelayCommand<MediaItem> PlayCommand { get; }
     public IRelayCommand StopCommand { get; }
 
     private bool _disposed;
@@ -653,23 +653,18 @@ public partial class MediaViewModel : ObservableObject, IDisposable
 
     private void SortMediaItems()
     {
-        // Логируем текущее значение SortOrder
-        _logger?.LogInformation($"Sorting media items by: {SortOrder}");
-
-        // Получаем компаратор в зависимости от SortOrder (если "A-Z", то ascending; "Z-A" - descending)
-        var titleComparer = new CustomTitleComparer(SortOrder == "A-Z");
-
-        // Полностью пересчитываем кэш из текущей коллекции
-        _sortedCache = MediaItems.ToList();
-        _sortedCache.Sort(new MediaItemComparer(titleComparer));
-
-        // Обновляем ObservableCollection из кешированного списка
-        MediaItems.Clear();
-        foreach (var item in _sortedCache)
+        // Выполняем обновление коллекции в UI-потоке
+        Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
         {
-            MediaItems.Add(item);
-            _logger?.LogInformation($"Added item to sorted list: {item.Title}");
-        }
+            var titleComparer = new CustomTitleComparer(SortOrder == "A-Z");
+            var sortedList = MediaItems.OrderBy(item => item.Title, titleComparer).ToList();
+            MediaItems.Clear();
+            foreach (var item in sortedList)
+            {
+                MediaItems.Add(item);
+            }
+            _logger?.LogInformation($"MediaItems has been sorted in {SortOrder} order.");
+        });
     }
 
     // Новый метод для инкрементального добавления нового элемента в отсортированное представление

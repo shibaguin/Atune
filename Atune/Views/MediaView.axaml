@@ -58,7 +58,7 @@
                                     <TextBlock Text="{Binding TrackArtists, Converter={StaticResource AllArtistsConverter}}" 
                                                MaxLines="1"
                                                HorizontalAlignment="Stretch"/>
-                                    <TextBlock Text="{Binding Album}" 
+                                    <TextBlock Text="{Binding Album.Title}" 
                                                Foreground="Gray"
                                                MaxLines="1"
                                                HorizontalAlignment="Stretch"/>

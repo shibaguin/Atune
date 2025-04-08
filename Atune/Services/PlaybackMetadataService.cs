@@ -11,16 +11,17 @@ namespace Atune.Services
     public class PlaybackMetadataService : INotifyPropertyChanged, IDisposable
     {
         private readonly MusicPlaybackService _playbackService;
-        private readonly MediaDatabaseService _mediaDatabaseService;
+        // Удалена зависимость от MediaDatabaseService, так как метаданные будут обновляться напрямую из плеера.
+        // private readonly MediaDatabaseService _mediaDatabaseService;
         private readonly ILogger<PlaybackMetadataService> _logger;
         private readonly DispatcherTimer _timer;
 
         public event PropertyChangedEventHandler? PropertyChanged;
 
-        public PlaybackMetadataService(MusicPlaybackService playbackService, MediaDatabaseService mediaDatabaseService, ILogger<PlaybackMetadataService> logger)
+        // Обновлённый конструктор без MediaDatabaseService
+        public PlaybackMetadataService(MusicPlaybackService playbackService, ILogger<PlaybackMetadataService> logger)
         {
             _playbackService = playbackService;
-            _mediaDatabaseService = mediaDatabaseService;
             _logger = logger;
             _timer = new DispatcherTimer
             {
@@ -34,14 +35,16 @@ namespace Atune.Services
         {
             try 
             {
-                if (CurrentTrack != null && !string.IsNullOrEmpty(CurrentTrack.Path))
+                if (CurrentTrack != null)
                 {
-                    var updatedTrack = await _mediaDatabaseService.GetMediaItemByPathAsync(CurrentTrack.Path);
-                    if (updatedTrack != null)
+                    // Получаем актуальные метаданные напрямую из плеера,
+                    // а не из БД, чтобы избежать пустых значений.
+                    var currentMetadata = await _playbackService.GetCurrentMetadataAsync();
+                    if (currentMetadata != null)
                     {
-                        _playbackService.UpdateCurrentTrack(updatedTrack!);
+                        _playbackService.UpdateCurrentTrack(currentMetadata);
                         OnPropertyChanged(nameof(CurrentTrack));
-                        _logger.LogInformation("Playback metadata updated for track: {Title}", updatedTrack.Title);
+                        _logger.LogInformation("Playback metadata updated for track: {Title}", currentMetadata.Title);
                     }
                 }
             }
@@ -74,7 +77,7 @@ namespace Atune.Services
             }
         }
 
-        // Метаданные текущего трека, берутся из модели MediaItem
+        // Метаданные текущего трека, берутся из модели MediaItem напрямую из MusicPlaybackService.
         public MediaItem? CurrentTrack => _playbackService.CurrentTrack;
 
         // Метод перемотки: принимает новое время в миллисекундах
