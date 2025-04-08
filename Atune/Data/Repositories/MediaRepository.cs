@@ -55,6 +55,9 @@ namespace Atune.Data.Repositories
         {
             return await _context.MediaItems
                 .AsNoTracking()
+                .Include(m => m.Album)
+                .Include(m => m.TrackArtists)
+                    .ThenInclude(ta => ta.Artist)
                 .OrderBy(m => m.Title)
                 .ToListAsync(cancellationToken);
         }
