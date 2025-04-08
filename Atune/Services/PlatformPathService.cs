@@ -46,18 +46,13 @@ namespace Atune.Services
             string path;
             if (OperatingSystem.IsAndroid())
             {
-                // Для Android используйте MyDocuments для хранения настроек
                 path = Path.Combine(
                     Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) ?? string.Empty, 
                     fileName);
             }
             else
             {
-                // Для ОС настольного компьютера используйте ApplicationData + папку приложения
-                path = Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) ?? string.Empty, 
-                    "Atune", 
-                    fileName);
+                path = Path.Combine(_basePath, "Atune", fileName);
             }
             _pathCache[key] = path;
             return path;
@@ -72,18 +67,13 @@ namespace Atune.Services
             string path;
             if (OperatingSystem.IsAndroid())
             {
-                // Для Android используйте Personal для хранения базы данных
                 path = Path.Combine(
                     Environment.GetFolderPath(Environment.SpecialFolder.Personal) ?? string.Empty, 
                     databaseFileName);
             }
             else
             {
-                path = Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) ?? string.Empty, 
-                    "Atune", 
-                    "Data", 
-                    databaseFileName);
+                path = Path.Combine(_basePath, "Atune", "Data", databaseFileName);
             }
             _pathCache[key] = path;
             return path;

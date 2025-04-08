@@ -289,14 +289,14 @@ namespace Atune.Services
             if (string.IsNullOrEmpty(path))
                 return Task.FromResult(new MediaMetadata
                 {
-                    Title = string.Empty,        // или, например, "Unknown Title"
+                    Title = "Unknown Title",
                     Artist = "Unknown Artist",
                     Album = "Unknown Album",
                     Genre = "Unknown Genre",
                     Year = "0"
                 });
 
-            string cacheKey = "MusicPlaybackService_Metadata_" + path;
+            string cacheKey = "MusicPlaybackService_Metadata_" + (path ?? string.Empty);
             if (_cache.TryGetValue(cacheKey, out MediaMetadata cachedMetadata) && cachedMetadata != null)
             {
                 return Task.FromResult(cachedMetadata);

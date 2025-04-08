@@ -43,8 +43,14 @@ namespace Atune.Services
 
         public async Task<string> GetMediaPathAsync(string mediaId)
         {
-            if (string.IsNullOrEmpty(mediaId))
-                return string.Empty;
+            if (string.IsNullOrWhiteSpace(mediaId))
+                throw new ArgumentException("Media ID не может быть null, пустым или состоять только из пробелов.", nameof(mediaId));
+
+            mediaId = mediaId.Trim();
+
+            // Предварительная попытка преобразования mediaId в число для валидации ожидаемого формата
+            if (!int.TryParse(mediaId, out int id))
+                throw new ArgumentException($"Недопустимый формат media ID: {mediaId}. Ожидается целочисленное значение.", nameof(mediaId));
 
             string cacheKey = "MediaStorageService_GetMediaPath_" + mediaId;
             if (_cache.TryGetValue(cacheKey, out string? cachedPath) && !string.IsNullOrEmpty(cachedPath))
@@ -60,20 +66,13 @@ namespace Atune.Services
                 return string.Empty;
             }
 
-            // Преобразуем mediaId в число для корректного вызова FindAsync
-            if (!int.TryParse(mediaId, out int id))
-            {
-                _logger.LogWarning($"Invalid media ID: {mediaId}");
-                return string.Empty;
-            }
-
             var mediaItem = await _context.MediaItems.FindAsync(id);
             if (mediaItem == null)
             {
                 _logger.LogWarning($"Media item with ID {mediaId} not found.");
                 return string.Empty;
             }
-
+            
             // Создаем корректный Content URI для доступа к медиафайлу
             Android.Net.Uri contentUri = ContentUris.WithAppendedId(MediaStore.Audio.Media.ExternalContentUri, id);
 
@@ -102,13 +101,6 @@ namespace Atune.Services
             }
 #endif
 #if !ANDROID
-            // Преобразуем mediaId в число для корректного вызова FindAsync
-            if (!int.TryParse(mediaId, out int id))
-            {
-                _logger.LogWarning($"Invalid media ID: {mediaId}");
-                return string.Empty;
-            }
-
             var mediaItem = await _context.MediaItems.FindAsync(id);
             if (mediaItem == null)
             {
