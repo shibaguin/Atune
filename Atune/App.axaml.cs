@@ -201,6 +201,9 @@ public partial class App : Application
         services.AddSingleton<ILoggerService, LoggerService>();
         services.AddSingleton<LocalizationService>();
 
+        // Новая регистрация для MediaDatabaseService
+        services.AddTransient<MediaDatabaseService>();
+
         // Явное регистрация ViewModels
         // Explicit registration of ViewModels
         services.AddTransient<MainViewModel>();

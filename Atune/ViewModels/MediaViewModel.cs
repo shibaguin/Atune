@@ -34,6 +34,7 @@ public partial class MediaViewModel : ObservableObject, IDisposable
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILoggerService? _logger;
     private readonly MediaPlayerService _mediaPlayerService;
+    private readonly MediaDatabaseService _mediaDatabaseService;
     
     // Кэш для альбомов
     private List<AlbumInfo>? _albumCache;
@@ -88,12 +89,14 @@ public partial class MediaViewModel : ObservableObject, IDisposable
         IMemoryCache cache, 
         IUnitOfWork unitOfWork, 
         ILoggerService logger,
-        MediaPlayerService mediaPlayerService)
+        MediaPlayerService mediaPlayerService,
+        MediaDatabaseService mediaDatabaseService)
     {
         _cache = cache;
         _unitOfWork = unitOfWork;
         _logger = logger;
         _mediaPlayerService = mediaPlayerService;
+        _mediaDatabaseService = mediaDatabaseService;
         
         // Заменяем команды на релейтед команды из методов
         PlayCommand = new AsyncRelayCommand<MediaItem>(PlayMediaItem);
@@ -360,20 +363,55 @@ public partial class MediaViewModel : ObservableObject, IDisposable
         }
     }
 
+    #region Новые методы для обработки артистов и создания MediaItem
+
+    // Новый метод для разбора строки артистов, разделённых запятыми или точками с запятой
+    private List<string> ParseArtists(string artistString)
+    {
+        if (string.IsNullOrWhiteSpace(artistString))
+            return new List<string> { "Unknown Artist" };
+
+        var separators = new[] { ',', ';' };
+        return artistString
+                .Split(separators, StringSplitOptions.RemoveEmptyEntries)
+                .Select(a => a.Trim())
+                .Where(a => !string.IsNullOrEmpty(a))
+                .ToList();
+    }
+
+    // Обновлённый метод для создания MediaItem с учётом метаданных и списка артистов
+    private MediaItem CreateMediaItemFromPath(string path)
+    {
+        var tagInfo = GetDesktopTagInfo(path); // Метод для получения метаданных из файла
+        var artists = ParseArtists(tagInfo.Artist); // Разбираем строку артистов
+        var trackArtists = artists.Select(artistName => new TrackArtist
+        {
+            Artist = new Artist { Name = artistName }
+        }).ToList();
+
+        return new MediaItem(
+            title: Path.GetFileNameWithoutExtension(path),
+            album: new Album { Title = tagInfo.Album ?? "Unknown Album" },
+            year: tagInfo.Year,
+            genre: tagInfo.Genre ?? "Unknown Genre",
+            path: path,
+            duration: tagInfo.Duration,
+            trackArtists: trackArtists
+        );
+    }
+
+    #endregion
+
+    #region Обновлённый метод AddFolderAsync
+
     [RelayCommand]
     private async Task AddFolderAsync()
     {
         try
         {
             IsBusy = true;
-            var mainWindow = Application.Current?.ApplicationLifetime?.TryGetTopLevel();
-            if (mainWindow == null)
-            {
-                _logger?.LogError("MainWindow is null");
-                return;
-            }
-
-            var storageProvider = mainWindow.StorageProvider;
+            // Получаем StorageProvider из верхнего уровня приложения
+            var storageProvider = Application.Current?.ApplicationLifetime?.TryGetTopLevel()?.StorageProvider;
             if (storageProvider == null)
             {
                 _logger?.LogError("StorageProvider is not available");
@@ -389,58 +427,37 @@ public partial class MediaViewModel : ObservableObject, IDisposable
             var allFiles = new List<string>();
             foreach (var folder in folders)
             {
-                try 
+                try
                 {
                     var folderPath = folder.Path.LocalPath;
-                    // Асинхронное перечисление файлов для предотвращения блокировки UI
-                    // Asynchronous enumeration of files to prevent UI blocking
                     var files = await Task.Run(() =>
                         Directory.EnumerateFiles(folderPath, "*.*", SearchOption.AllDirectories)
                             .Where(f => _supportedFormats.Contains(Path.GetExtension(f).ToLower()))
                             .ToList());
                     allFiles.AddRange(files);
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     _logger?.LogError($"Error accessing folder: {ex.Message}");
                 }
             }
 
+            // Получаем пути уже существующих элементов из базы
             var existingPaths = await _unitOfWork.Media.GetExistingPathsAsync(allFiles);
-            var newItems = allFiles.Except(existingPaths)
-                .Select(path => CreateMediaItemFromPath(path))
-                .ToList();
+            var newPaths = allFiles.Except(existingPaths).ToList();
 
-            if (newItems.Count > 0)
+            if (newPaths.Count > 0)
             {
-                // Переносим тяжелые операции в отдельный поток
-                // Move heavy operations to a separate thread
-                await Task.Run(async () =>
+                foreach (var path in newPaths)
                 {
-                    await _unitOfWork.Media.BulkInsertAsync(newItems, batch =>
-                    {
-                        Dispatcher.UIThread.Post(() =>
-                        {
-                            foreach (var item in batch)
-                            {
-                                MediaItems.Insert(0, item);
-                            }
-                        });
-                    });
-                    await _unitOfWork.CommitAsync();
+                    // Создаем объект MediaItem с корректными метаданными, включая TrackArtists
+                    var mediaItem = CreateMediaItemFromPath(path);
+                    // Добавляем объект через сервис, который обрабатывает связь с альбомами и артистами
+                    await _mediaDatabaseService.AddMediaItemAsync(mediaItem);
+                }
 
-                    // После коммита выполняем повторное получение объектов из БД,
-                    // чтобы навигационные свойства (Album и Artist через TrackArtists) были заполнены.
-                    var updatedItems = await _unitOfWork.Media.GetAllMediaItemsAsync();
-                    Dispatcher.UIThread.Post(() =>
-                    {
-                        MediaItems.Clear();
-                        foreach (var item in updatedItems)
-                        {
-                            MediaItems.Add(item);
-                        }
-                    });
-                });
+                // Обновляем UI после добавления новых медиа-элементов
+                await RefreshMedia();
             }
         }
         finally
@@ -449,24 +466,7 @@ public partial class MediaViewModel : ObservableObject, IDisposable
         }
     }
 
-    private MediaItem CreateMediaItemFromPath(string path)
-    {
-        var tagInfo = GetDesktopTagInfo(path); // Используем метод из MediaView
-        var trackArtists = new List<TrackArtist>(); // Создаем список TrackArtist
-
-        // Здесь вы можете добавить логику для заполнения trackArtists, если это необходимо
-        // Например, если у вас есть информация об артистах, вы можете добавить их в список
-
-        return new MediaItem(
-            title: Path.GetFileNameWithoutExtension(path),
-            album: new Album { Title = tagInfo.Album ?? "Unknown Album" }, // Создаем новый объект Album
-            year: tagInfo.Year, // Убедитесь, что это uint
-            genre: tagInfo.Genre ?? "Unknown Genre",
-            path: path,
-            duration: tagInfo.Duration,
-            trackArtists: trackArtists // Передаем TrackArtists
-        );
-    }
+    #endregion
 
     private (string Artist, string Album, uint Year, string Genre, TimeSpan Duration) GetDesktopTagInfo(string path)
     {
