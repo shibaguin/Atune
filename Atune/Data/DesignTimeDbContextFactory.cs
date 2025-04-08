@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Extensions.Configuration;
 using System.Threading.Tasks;
 using System.Linq;
+using System.Runtime.InteropServices;
 
 public class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<AppDbContext>
 {
@@ -12,9 +13,21 @@ public class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<AppDbConte
     {
         var optionsBuilder = new DbContextOptionsBuilder<AppDbContext>();
         
-        // Используем тот же путь, что и в основном контексте
+        // Определяем базовый путь для хранения базы данных в зависимости от ОС
+        string basePath;
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        {
+            // Для Linux используем переменную окружения HOME
+            basePath = Environment.GetEnvironmentVariable("HOME") ??
+                throw new Exception("HOME environment variable is not set for Linux platform.");
+        }
+        else
+        {
+            basePath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+        }
+
         string dbPath = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+            basePath,
             "Atune",
             "Data",
             "media_library.db");
