@@ -33,7 +33,11 @@ public class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<AppDbConte
             "media_library.db");
         
         // Создаем директорию, если не существует
-        Directory.CreateDirectory(Path.GetDirectoryName(dbPath));
+        var directory = Path.GetDirectoryName(dbPath);
+        if (directory != null)
+        {
+            Directory.CreateDirectory(directory);
+        }
         
         optionsBuilder.UseSqlite($"Data Source={dbPath}");
         
