@@ -9,11 +9,13 @@
              xmlns:vm="clr-namespace:Atune.ViewModels"
              xmlns:models="clr-namespace:Atune.Models"
              xmlns:helpers="clr-namespace:Atune.Helpers"
+             xmlns:converters="clr-namespace:Atune.Converters"
              x:Class="Atune.Views.MediaView"
              x:DataType="vm:MediaViewModel"
              d:DataContext="{d:DesignInstance Type=vm:MediaViewModel, IsDesignTimeCreatable=True}">
     <UserControl.Resources>
          <helpers:MediaViewModelBindingProxy x:Key="Proxy" Data="{Binding}" />
+         <converters:AllArtistsConverter x:Key="AllArtistsConverter"/>
     </UserControl.Resources>
     <Grid>
         <Grid.RowDefinitions>
@@ -53,11 +55,9 @@
                                                FontWeight="Bold"
                                                MaxLines="1"
                                                HorizontalAlignment="Stretch"/>
-                                    <!--
-                                    <TextBlock Text="{Binding Artist}" 
+                                    <TextBlock Text="{Binding TrackArtists, Converter={StaticResource AllArtistsConverter}}" 
                                                MaxLines="1"
                                                HorizontalAlignment="Stretch"/>
-                                    -->
                                     <TextBlock Text="{Binding Album}" 
                                                Foreground="Gray"
                                                MaxLines="1"
