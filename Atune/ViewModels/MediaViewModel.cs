@@ -727,15 +727,17 @@ public partial class MediaViewModel : ObservableObject, IDisposable
         };
 
         var mainWindow = (Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)?.MainWindow;
-
+        /*
         if (mainWindow != null)
         {
             await albumView.ShowDialog(mainWindow);
         }
+
         else
         {
             _logger?.LogWarning("Main window is null, cannot open album view.");
         }
+        */
     }
 
     // Метод для обновления списка альбомов на основе MediaItems
