@@ -716,28 +716,23 @@ public partial class MediaViewModel : ObservableObject, IDisposable
 
     // Новый асинхронный RelayCommand для открытия карточки альбома
     [RelayCommand]
-    private async Task OpenAlbum(AlbumInfo album)
+    private Task OpenAlbum(AlbumInfo album)
     {
         if (album == null)
-            return;
-
-        var albumView = new AlbumView
-        {
-            DataContext = new AlbumViewModel(album)
-        };
+            return Task.CompletedTask;
 
         var mainWindow = (Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)?.MainWindow;
-        /*
-        if (mainWindow != null)
+        if (mainWindow?.DataContext is MainViewModel mainVm)
         {
-            await albumView.ShowDialog(mainWindow);
+            var albumControl = new AlbumView { DataContext = new AlbumViewModel(album) };
+            mainVm.CurrentView = albumControl;
+            mainVm.HeaderText = album.AlbumName;
         }
-
         else
         {
-            _logger?.LogWarning("Main window is null, cannot open album view.");
+            _logger?.LogWarning("MainViewModel not found, cannot open album view.");
         }
-        */
+        return Task.CompletedTask;
     }
 
     // Метод для обновления списка альбомов на основе MediaItems

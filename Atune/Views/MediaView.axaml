@@ -10,11 +10,11 @@
              xmlns:models="clr-namespace:Atune.Models"
              xmlns:helpers="clr-namespace:Atune.Helpers"
              xmlns:converters="clr-namespace:Atune.Converters"
+             xmlns:views="clr-namespace:Atune.Views"
              x:Class="Atune.Views.MediaView"
              x:DataType="vm:MediaViewModel"
              d:DataContext="{d:DesignInstance Type=vm:MediaViewModel, IsDesignTimeCreatable=True}">
     <UserControl.Resources>
-         <helpers:MediaViewModelBindingProxy x:Key="Proxy" Data="{Binding}" />
          <converters:AllArtistsConverter x:Key="AllArtistsConverter"/>
     </UserControl.Resources>
     <Grid>
@@ -86,7 +86,7 @@
                     <ItemsControl x:Name="AlbumsList" ItemsSource="{Binding Albums}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate x:DataType="models:AlbumInfo">
-                                <Button Command="{Binding Data.OpenAlbumCommand, Source={StaticResource Proxy}}"
+                                <Button Command="{Binding OpenAlbumCommand, RelativeSource={RelativeSource AncestorType=views:MediaView}}"
                                         CommandParameter="{Binding}"
                                         Background="Transparent"
                                         BorderThickness="0"
