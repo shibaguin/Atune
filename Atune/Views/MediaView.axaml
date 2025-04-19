@@ -44,7 +44,7 @@
                     </ListBox.ItemsPanel>
                     <ListBox.ItemTemplate>
                         <DataTemplate>
-                            <Button Command="{Binding PlayMediaItemCommand, ElementName=Root}"
+                            <Button Command="{Binding PlayTrackCommand, ElementName=Root}"
                                     CommandParameter="{Binding}"
                                     Background="Transparent" 
                                     BorderThickness="0"

@@ -94,6 +94,7 @@ public partial class MediaViewModel : ObservableObject, IDisposable
     public IAsyncRelayCommand PlayNextInQueueCommand { get; }
     public IAsyncRelayCommand<AlbumInfo> PlayAlbumCommand { get; }
     public IAsyncRelayCommand PlayAllTracksCommand { get; }
+    public IAsyncRelayCommand<MediaItem> PlayTrackCommand { get; }
 
     public MediaViewModel(
         IMemoryCache cache, 
@@ -118,6 +119,22 @@ public partial class MediaViewModel : ObservableObject, IDisposable
         PlayNextInQueueCommand = new AsyncRelayCommand(PlayNextInQueue);
         PlayAlbumCommand = new AsyncRelayCommand<AlbumInfo>(PlayAlbum);
         PlayAllTracksCommand = new AsyncRelayCommand(PlayAllTracks);
+        PlayTrackCommand = new AsyncRelayCommand<MediaItem>(async track =>
+        {
+            if (track == null) return;
+            // Clear existing queue
+            ClearQueueCommand.Execute(null);
+            // Enqueue tracks starting from the selected one
+            var tracks = MediaItems.ToList();
+            int startIndex = tracks.IndexOf(track);
+            if (startIndex < 0) startIndex = 0;
+            foreach (var t in tracks.Skip(startIndex))
+            {
+                AddToQueueCommand.Execute(t);
+            }
+            // Start playback
+            await PlayNextInQueueCommand.ExecuteAsync(null);
+        });
 
         _mediaPlayerService.PlaybackEnded += OnPlaybackEnded;
         

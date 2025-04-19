@@ -1,4 +1,5 @@
 using Avalonia.Controls;
+using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Interactivity;
 using Microsoft.EntityFrameworkCore;
 using System.IO;
@@ -39,6 +40,7 @@ public partial class MediaView : UserControl
     public IRelayCommand PlayMediaItemCommand => DataContext.PlayMediaItemCommand;
     public IRelayCommand MoreInfoCommand => DataContext.MoreInfoCommand;
     public IAsyncRelayCommand<AlbumInfo> OpenAlbumCommand => DataContext.OpenAlbumCommand;
+    public IAsyncRelayCommand<MediaItem> PlayTrackCommand => DataContext.PlayTrackCommand;
 
     private readonly IDbContextFactory<AppDbContext>? _dbContextFactory;
     private readonly ILoggerService? _logger;
@@ -358,10 +360,10 @@ public partial class MediaView : UserControl
     {
         if (sender is Button button && button.DataContext is MediaItem mediaItem)
         {
-            if (DataContext is MediaViewModel vm)
-            {
-                vm.PlayMediaItemCommand.Execute(mediaItem);
-            }
+            // Route through MainViewModel to clear and rebuild the playback queue
+            var mainVm = (Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)
+                ?.MainWindow?.DataContext as MainViewModel;
+            mainVm?.PlayAlbumFromTrackCommand.Execute(mediaItem);
         }
     }
 
