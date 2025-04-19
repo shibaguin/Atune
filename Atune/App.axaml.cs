@@ -188,6 +188,8 @@ public partial class App : Application
         
         // Register service layer for playlists
         services.AddScoped<IPlaylistService, PlaylistService>();
+        // Register utility service for admin/debug operations
+        services.AddScoped<IUtilityService, UtilityService>();
         
         // Остальные сервисы
         // Other services
@@ -209,7 +211,9 @@ public partial class App : Application
 
         // Новая регистрация для MediaDatabaseService
         services.AddTransient<MediaDatabaseService>();
-
+        // Register MediaFileService for file operations
+        services.AddSingleton<MediaFileService>();
+        
         // Явное регистрация ViewModels
         // Explicit registration of ViewModels
         services.AddTransient<MainViewModel>();

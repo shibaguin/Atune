@@ -6,6 +6,7 @@ using Atune.Views;
 using ThemeVariant = Atune.Models.ThemeVariant;
 using System.Collections.Generic;
 using System.Timers;
+using System.Threading.Tasks;
 
 namespace Atune.ViewModels;
 
@@ -25,16 +26,19 @@ public partial class SettingsViewModel : ViewModelBase
 
     private readonly ISettingsService _settingsService;
     private readonly IInterfaceSettingsService _interfaceSettingsService;
+    private readonly IUtilityService _utilityService;
 
     // Новое поле для таймера debounce
     // New field for debounce timer
     private Timer? _autoSaveTimer;
 
     public SettingsViewModel(ISettingsService settingsService,
-                             IInterfaceSettingsService interfaceSettingsService)
+                             IInterfaceSettingsService interfaceSettingsService,
+                             IUtilityService utilityService)
     {
         _settingsService = settingsService;
         _interfaceSettingsService = interfaceSettingsService;
+        _utilityService = utilityService;
         
         // Обновляем настройки интерфейса из файла settings.ini
         // Update interface settings from the settings.ini file
@@ -168,4 +172,23 @@ public partial class SettingsViewModel : ViewModelBase
         NavigationFontSize = _interfaceSettingsService.NavigationFontSize;
         BarPadding = _interfaceSettingsService.BarPadding;
     }
+
+    // Utility commands for admin operations
+    [RelayCommand]
+    private async Task AddMusic() => await _utilityService.AddMusicAsync();
+
+    [RelayCommand]
+    private async Task AddFolder() => await _utilityService.AddFolderAsync();
+
+    [RelayCommand]
+    private async Task RefreshMedia() => await _utilityService.RefreshMediaAsync();
+
+    [RelayCommand]
+    private async Task DropMediaRecords() => await _utilityService.DropMediaRecordsAsync();
+
+    [RelayCommand]
+    private async Task PrintDatabase() => await _utilityService.PrintDatabaseAsync();
+
+    [RelayCommand]
+    private void ClearQueue() => _utilityService.ClearQueue();
 } 

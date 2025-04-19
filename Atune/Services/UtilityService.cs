@@ -1,0 +1,106 @@
+using System;
+using System.Threading.Tasks;
+using Atune.Data.Interfaces;
+using Microsoft.Extensions.Caching.Memory;
+using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Controls.ApplicationLifetimes;
+using Atune.ViewModels;
+using Atune.Views;
+
+namespace Atune.Services
+{
+    public interface IUtilityService
+    {
+        Task AddMusicAsync();
+        Task AddFolderAsync();
+        Task RefreshMediaAsync();
+        Task DropMediaRecordsAsync();
+        Task PrintDatabaseAsync();
+        void ClearQueue();
+    }
+
+    public class UtilityService : IUtilityService
+    {
+        private readonly IUnitOfWork _unitOfWork;
+        private readonly IMemoryCache _cache;
+        private readonly ILoggerService _logger;
+        private readonly MediaDatabaseService _mediaDatabaseService;
+        private readonly MediaFileService _mediaFileService;
+        private readonly IPlaylistService _playlistService;
+        private readonly ISettingsService _settingsService;
+
+        public UtilityService(
+            IUnitOfWork unitOfWork,
+            IMemoryCache cache,
+            ILoggerService logger,
+            MediaDatabaseService mediaDatabaseService,
+            MediaFileService mediaFileService,
+            IPlaylistService playlistService,
+            ISettingsService settingsService)
+        {
+            _unitOfWork = unitOfWork;
+            _cache = cache;
+            _logger = logger;
+            _mediaDatabaseService = mediaDatabaseService;
+            _mediaFileService = mediaFileService;
+            _playlistService = playlistService;
+            _settingsService = settingsService;
+        }
+
+        private MediaViewModel? GetMediaViewModel()
+        {
+            if (Application.Current?.ApplicationLifetime is not IClassicDesktopStyleApplicationLifetime desktop)
+                return null;
+            var mainVm = desktop.MainWindow?.DataContext as MainViewModel;
+            if (mainVm == null)
+                return null;
+            // Ensure Media view is active
+            mainVm.GoMediaCommand.Execute(null);
+            if (mainVm.CurrentView is MediaView mediaView)
+                return mediaView.DataContext as MediaViewModel;
+            return null;
+        }
+
+        public async Task AddMusicAsync()
+        {
+            var mvm = GetMediaViewModel();
+            if (mvm != null)
+                await mvm.AddMediaCommand.ExecuteAsync(null);
+        }
+
+        public async Task AddFolderAsync()
+        {
+            var mvm = GetMediaViewModel();
+            if (mvm != null)
+                await mvm.AddFolderCommand.ExecuteAsync(null);
+        }
+
+        public async Task RefreshMediaAsync()
+        {
+            var mvm = GetMediaViewModel();
+            if (mvm != null)
+                await mvm.RefreshMediaCommand.ExecuteAsync(null);
+        }
+
+        public async Task DropMediaRecordsAsync()
+        {
+            var mvm = GetMediaViewModel();
+            if (mvm != null)
+                await mvm.DropMediaRecordsCommand.ExecuteAsync(null);
+        }
+
+        public async Task PrintDatabaseAsync()
+        {
+            var mvm = GetMediaViewModel();
+            if (mvm != null)
+                await mvm.PrintDatabaseCommand.ExecuteAsync(null);
+        }
+
+        public void ClearQueue()
+        {
+            var mvm = GetMediaViewModel();
+            mvm?.ClearQueueCommand.Execute(null);
+        }
+    }
+} 

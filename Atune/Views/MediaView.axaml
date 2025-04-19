@@ -172,7 +172,6 @@
                 <DockPanel>
                     <StackPanel Orientation="Horizontal" DockPanel.Dock="Top" Margin="5">
                         <Button Content="Play Next" Command="{Binding PlayNextInQueueCommand}" Margin="0,0,5,0"/>
-                        <Button Content="Clear Queue" Command="{Binding ClearQueueCommand}"/>
                     </StackPanel>
                     <ListBox ItemsSource="{Binding PlaybackQueue}" SelectedItem="{Binding SelectedMediaItem}" Margin="5">
                         <ListBox.ItemTemplate>
@@ -188,48 +187,6 @@
             </TabItem>
         </TabControl>
         
-        <StackPanel Orientation="Horizontal"
-                    HorizontalAlignment="Left"
-                    VerticalAlignment="Bottom"
-                    Margin="10"
-                    Grid.Row="2">
-            <Button Content="{DynamicResource Media_AddMusic}" 
-                    Click="AddToLibrary_Click"
-                    Padding="5 5"
-                    FontSize="16"
-                    Width="100"
-                    HorizontalAlignment="Right"/>
-            <Button Content="{DynamicResource Media_AddFolder}"
-                    Command="{Binding AddFolderCommand}"
-                    Margin="5,0"
-                    Padding="5 5"
-                    FontSize="16"
-                    Width="100"
-                    HorizontalAlignment="Right"/>
-            <Button Content="{DynamicResource Media_Refresh}" 
-                    Command="{Binding RefreshMediaCommand}"
-                    Margin="10,0,0,0"
-                    Padding="5 5"
-                    FontSize="16"
-                    Width="100"
-                    HorizontalAlignment="Left"
-                    VerticalAlignment="Bottom"/>
-            <Button Content="{DynamicResource Media_Drop}" 
-                    Command="{Binding DropMediaRecordsCommand}"
-                    Margin="10,0,0,0"
-                    Padding="5 5"
-                    FontSize="16"
-                    Width="100"
-                    HorizontalAlignment="Left"
-                    VerticalAlignment="Bottom"/>
-            <Button Content="{DynamicResource Media_PrintDatabase}" 
-                    Command="{Binding PrintDatabaseCommand}"
-                    Margin="10,0,0,0"
-                    Padding="5 5"
-                    FontSize="16"
-                    Width="100"
-                    HorizontalAlignment="Left"
-                    VerticalAlignment="Bottom"/>
-        </StackPanel>
+        <!-- Removed admin toolbar; controls moved to Settings -->
     </Grid>
 </UserControl>
