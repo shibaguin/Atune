@@ -366,36 +366,4 @@ public partial class MediaView : UserControl
             mainVm?.PlayAlbumFromTrackCommand.Execute(mediaItem);
         }
     }
-
-    private void ComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
-    {
-        if (DataContext is MediaViewModel vm)
-        {
-            var comboBox = sender as ComboBox;
-            if (comboBox?.SelectedItem is ComboBoxItem selectedItem)
-            {
-                var content = selectedItem.Content?.ToString();
-                if (content != null)
-                {
-                    vm.SortOrder = content;
-                }
-            }
-        }
-    }
-/*
-    private void SomeMethod()
-    {
-        // Пример получения данных для создания MediaItem
-        string title = "Название трека";
-        Album album = new Album { Title = "Название альбома" };
-        uint yearUInt = 2023; // Значение года как uint
-        int year = (int)yearUInt; // Явное преобразование в int
-        string genre = "Жанр";
-        string path = "путь/к/файлу";
-        TimeSpan duration = TimeSpan.FromMinutes(3);
-        var trackArtists = new List<TrackArtist>(); // Создаем список TrackArtist
-
-        var mediaItem = new MediaItem(title, album, yearUInt, genre, path, duration, trackArtists);
-    }
-*/
 }
