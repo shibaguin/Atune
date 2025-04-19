@@ -155,4 +155,9 @@
   <data name="Album_TrackCountLabel" xml:space="preserve">
     <value>Количество треков: </value>
   </data>
+  <!-- localization keys for playlists -->
+  <data name="Media_CreatePlaylist" xml:space="preserve">
+    <value>Создать плейлист</value>
+  </data>
+  <!-- end playlists -->
 </root> 

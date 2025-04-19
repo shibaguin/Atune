@@ -19,6 +19,7 @@ using Avalonia.Platform;
 using System.IO;
 using LibVLCSharp.Shared;
 using Atune.Models;
+using Atune.ViewModels;
 namespace Atune.ViewModels;
 public partial class MainViewModel : ViewModelBase
 {
@@ -223,12 +224,9 @@ public partial class MainViewModel : ViewModelBase
     [RelayCommand]
     private void GoSettings()
     {
-        if (_views.TryGetValue(SectionType.Settings, out var vm))
-        {
-            SelectedSection = SectionType.Settings;
-            HeaderText = _localizationService["Nav_Settings"];
-            CurrentView = vm;
-        }
+        SelectedSection = SectionType.Settings;
+        CurrentView = _views[SectionType.Settings];
+        HeaderText = _localizationService["Nav_Settings"];
     }
 
     [RelayCommand]
@@ -928,5 +926,15 @@ public partial class MainViewModel : ViewModelBase
             // Start playback of the first enqueued track
             await mediaVm.PlayNextInQueueCommand.ExecuteAsync(null);
         }
+    }
+
+    [RelayCommand]
+    private void GoPlaylist(Playlist playlist)
+    {
+        if (playlist == null) return;
+        var playlistControl = new PlaylistView { DataContext = new PlaylistViewModel(playlist) };
+        SelectedSection = SectionType.Media;
+        CurrentView = playlistControl;
+        HeaderText = playlist.Name;
     }
 }

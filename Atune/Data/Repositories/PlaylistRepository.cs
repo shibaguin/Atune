@@ -85,5 +85,14 @@ namespace Atune.Data.Repositories
             _context.Playlists.Remove(playlist);
             return await _context.SaveChangesAsync();
         }
+
+        public async Task RenamePlaylistAsync(int playlistId, string newName)
+        {
+            var playlist = await _context.Playlists.FindAsync(playlistId);
+            if (playlist == null)
+                return;
+            playlist.Name = newName;
+            await _context.SaveChangesAsync();
+        }
     }
 } 

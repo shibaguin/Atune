@@ -1,0 +1,41 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:Atune.ViewModels"
+             xmlns:models="clr-namespace:Atune.Models"
+             mc:Ignorable="d"
+             d:DesignWidth="400" d:DesignHeight="600"
+             x:Class="Atune.Views.PlaylistView"
+             x:DataType="vm:PlaylistViewModel"
+             PointerPressed="OnPointerPressed"
+             KeyDown="OnKeyDown"
+             Focusable="True">
+  <Grid Margin="10">
+    <Grid.RowDefinitions>
+      <RowDefinition Height="Auto"/>
+      <RowDefinition Height="*"/>
+    </Grid.RowDefinitions>
+    <StackPanel Grid.Row="0" Spacing="10">
+      <Button Content="{DynamicResource Playlist_Back}" Click="GoBack_Click" HorizontalAlignment="Left"/>
+      <StackPanel Orientation="Horizontal" Spacing="5">
+        <TextBlock Text="{DynamicResource Playlist_Name}" VerticalAlignment="Center"/>
+        <TextBox Text="{Binding Name, Mode=TwoWay}" MinWidth="200"/>
+        <Button Content="{DynamicResource Playlist_Rename}" Command="{Binding RenameCommand}" VerticalAlignment="Center"/>
+      </StackPanel>
+    </StackPanel>
+    <ListBox Grid.Row="1" ItemsSource="{Binding Tracks}" Margin="0,20,0,0">
+      <ListBox.ItemTemplate>
+        <DataTemplate x:DataType="models:MediaItem">
+          <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+            <Rectangle Width="16" Height="16" Fill="Gray"/>
+            <TextBlock Text="{Binding Title}" FontWeight="Bold"/>
+            <TextBlock Text=" - "/>
+            <TextBlock Text="{Binding Album.Title}" Foreground="Gray"/>
+            <Button Content="⋮" Background="Transparent" BorderThickness="0" Margin="5,0,0,0"/>
+          </StackPanel>
+        </DataTemplate>
+      </ListBox.ItemTemplate>
+    </ListBox>
+  </Grid>
+</UserControl> 

@@ -30,6 +30,7 @@ namespace Atune.ViewModels;
 
 public partial class MediaViewModel : ObservableObject, IDisposable
 {
+    private readonly IPlaylistService _playlistService;
     private readonly IMemoryCache _cache;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILoggerService? _logger;
@@ -154,6 +155,9 @@ public partial class MediaViewModel : ObservableObject, IDisposable
     // New collection to hold the playback queue
     public ObservableCollection<MediaItem> PlaybackQueue { get; } = new ObservableCollection<MediaItem>();
 
+    // New collection for playlists
+    public ObservableCollection<Playlist> Playlists { get; } = new ObservableCollection<Playlist>();
+
     // Commands to manage playback queue
     public IRelayCommand<MediaItem> AddToQueueCommand { get; }
     public IRelayCommand ClearQueueCommand { get; }
@@ -164,12 +168,17 @@ public partial class MediaViewModel : ObservableObject, IDisposable
     public IAsyncRelayCommand PlayPreviousInQueueCommand { get; }
     public IRelayCommand<int> SetQueuePositionCommand { get; }
 
+    // Playlist commands
+    public IAsyncRelayCommand CreatePlaylistCommand { get; }
+    public IAsyncRelayCommand<Playlist> OpenPlaylistCommand { get; }
+
     public MediaViewModel(
         IMemoryCache cache, 
         IUnitOfWork unitOfWork, 
         ILoggerService logger,
         MediaPlayerService mediaPlayerService,
         MediaDatabaseService mediaDatabaseService,
+        IPlaylistService playlistService,
         ISettingsService settingsService)
     {
         _cache = cache;
@@ -177,6 +186,7 @@ public partial class MediaViewModel : ObservableObject, IDisposable
         _logger = logger;
         _mediaPlayerService = mediaPlayerService;
         _mediaDatabaseService = mediaDatabaseService;
+        _playlistService = playlistService;
         _settingsService = settingsService;
         
         // Load saved sort orders
@@ -230,6 +240,9 @@ public partial class MediaViewModel : ObservableObject, IDisposable
 
         MediaItems = new ObservableCollection<MediaItem>();
         SortOrder = "A-Z"; // Установите значение по умолчанию
+
+        // Load existing playlists
+        _ = LoadPlaylistsAsync();
     }
 
     private async Task<List<MediaItem>> LoadFromDatabaseAsync()
@@ -1057,6 +1070,36 @@ public partial class MediaViewModel : ObservableObject, IDisposable
     private void SortArtists()
     {
         // TODO: implement artist sorting when collection is available
+    }
+
+    // Playlists commands
+    private async Task LoadPlaylistsAsync()
+    {
+        Playlists.Clear();
+        var list = await _playlistService.GetPlaylistsAsync();
+        foreach (var p in list)
+            Playlists.Add(p);
+    }
+
+    private async Task CreatePlaylistAsync()
+    {
+        var id = await _playlistService.CreatePlaylistAsync("New Playlist");
+        if (id > 0)
+        {
+            await LoadPlaylistsAsync();
+            var newPl = Playlists.FirstOrDefault(pl => pl.Id == id);
+            if (newPl != null)
+                await OpenPlaylistAsync(newPl);
+        }
+    }
+
+    private async Task OpenPlaylistAsync(Playlist playlist)
+    {
+        if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+        {
+            var mainVm = desktop.MainWindow?.DataContext as MainViewModel;
+            mainVm?.GoPlaylistCommand.Execute(playlist);
+        }
     }
 }
 

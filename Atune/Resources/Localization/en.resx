@@ -155,4 +155,14 @@
   <data name="Album_TrackCountLabel" xml:space="preserve">
     <value>Track count: </value>
   </data>
+  <!-- localization keys for playlists -->
+  <data name="Media_CreatePlaylist" xml:space="preserve">
+    <value>Create Playlist</value>
+  </data>
+  <!-- end playlists -->
+  <!-- localization keys for playlist view -->
+  <data name="Playlist_Back" xml:space="preserve">
+    <value>Back</value>
+  </data>
+  <!-- end playlist view -->
 </root> 

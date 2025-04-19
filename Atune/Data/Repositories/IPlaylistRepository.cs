@@ -12,5 +12,6 @@ namespace Atune.Data.Repositories
         Task<IEnumerable<MediaItem>> GetSongsInPlaylistAsync(int playlistId);
         Task RemoveFromPlaylistAsync(int playlistId, int mediaItemId);
         Task<int> DeletePlaylistAsync(int playlistId);
+        Task RenamePlaylistAsync(int playlistId, string newName);
     }
 } 
