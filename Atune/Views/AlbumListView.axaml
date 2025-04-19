@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:models="clr-namespace:Atune.Models"
+             x:Class="Atune.Views.AlbumListView"
+             x:DataType="models:AlbumInfo">
+  <Grid ColumnDefinitions="Auto,*" VerticalAlignment="Center" Margin="5">
+    <!-- Play album button -->
+    <Button x:Name="PlayButton"
+            Grid.Column="0"
+            Background="Transparent"
+            BorderThickness="0"
+            Focusable="False">
+      <TextBlock Text="▶" FontSize="16"/>
+    </Button>
+
+    <!-- Album info / open details -->
+    <Button x:Name="OpenButton"
+            Grid.Column="1"
+            Background="Transparent"
+            BorderThickness="0"
+            HorizontalAlignment="Stretch"
+            Focusable="False">
+      <StackPanel Spacing="2">
+        <TextBlock Text="{Binding AlbumName}" FontWeight="Bold" FontSize="14"/>
+        <TextBlock Text="{Binding ArtistName}" FontSize="12" Foreground="Gray"/>
+        <TextBlock Text="{Binding Year}" FontSize="12" Foreground="Gray"/>
+        <TextBlock Text="{Binding TrackCount, StringFormat='Tracks: {0}'}" FontSize="12" Foreground="Gray"/>
+      </StackPanel>
+    </Button>
+  </Grid>
+</UserControl> 

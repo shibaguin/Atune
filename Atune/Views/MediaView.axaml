@@ -76,24 +76,8 @@
                         <ItemsControl x:Name="AlbumsList" ItemsSource="{Binding Albums}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate x:DataType="models:AlbumInfo">
-                                    <Button Command="{Binding OpenAlbumCommand, RelativeSource={RelativeSource AncestorType=views:MediaView}}"
-                                            CommandParameter="{Binding}"
-                                            Background="Transparent"
-                                            BorderThickness="0"
-                                            Margin="5"
-                                            HorizontalAlignment="Stretch">
-                                        <StackPanel Orientation="Vertical" HorizontalAlignment="Stretch">
-                                            <TextBlock Text="{Binding AlbumName}" 
-                                                       FontWeight="Bold" 
-                                                       FontSize="14"/>
-                                            <TextBlock Text="{Binding ArtistName}" 
-                                                       FontSize="12"/>
-                                            <TextBlock Text="{Binding Year}" 
-                                                       FontSize="12"/>
-                                            <TextBlock Text="{Binding TrackCount, StringFormat='Треков: {0}'}" 
-                                                       FontSize="12"/>
-                                        </StackPanel>
-                                    </Button>
+                                    <views:AlbumListView
+                                        OpenCommand="{Binding OpenAlbumCommand, RelativeSource={RelativeSource AncestorType=views:MediaView}}"/>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
