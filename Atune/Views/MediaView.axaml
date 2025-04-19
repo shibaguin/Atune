@@ -77,7 +77,8 @@
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate x:DataType="models:AlbumInfo">
                                     <views:AlbumListView
-                                        OpenCommand="{Binding OpenAlbumCommand, RelativeSource={RelativeSource AncestorType=views:MediaView}}"/>
+                                        OpenCommand="{Binding OpenAlbumCommand, RelativeSource={RelativeSource AncestorType=views:MediaView}}"
+                                        PlayCommand="{Binding PlayAlbumButton_Click, RelativeSource={RelativeSource AncestorType=views:AlbumView}}"/>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>

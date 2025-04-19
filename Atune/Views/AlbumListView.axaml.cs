@@ -18,6 +18,16 @@ namespace Atune.Views
             set => SetValue(OpenCommandProperty, value);
         }
 
+        // PlayCommand for playing entire album
+        public static readonly StyledProperty<ICommand?> PlayCommandProperty =
+            AvaloniaProperty.Register<AlbumListView, ICommand?>(nameof(PlayCommand));
+
+        public ICommand? PlayCommand
+        {
+            get => GetValue(PlayCommandProperty);
+            set => SetValue(PlayCommandProperty, value);
+        }
+
         public AlbumListView()
         {
             InitializeComponent();
@@ -27,6 +37,11 @@ namespace Atune.Views
             {
                 openBtn.Click += OpenBtn_Click;
             }
+            var playBtn = this.FindControl<Button>("PlayButton");
+            if (playBtn != null)
+            {
+                playBtn.Click += PlayBtn_Click;
+            }
         }
 
         private void OpenBtn_Click(object? sender, RoutedEventArgs e)
@@ -34,6 +49,14 @@ namespace Atune.Views
             if (OpenCommand != null)
             {
                 OpenCommand.Execute(DataContext as AlbumInfo);
+            }
+        }
+
+        private void PlayBtn_Click(object? sender, RoutedEventArgs e)
+        {
+            if (PlayCommand != null)
+            {
+                PlayCommand.Execute(DataContext as AlbumInfo);
             }
         }
     }
