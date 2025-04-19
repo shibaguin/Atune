@@ -182,6 +182,12 @@ public partial class App : Application
     {
         services.AddDbContext<AppDbContext>();
         services.AddDbContextFactory<AppDbContext>();
+        // Register playlist repository and unit of work for playlist management
+        services.AddScoped<IPlaylistRepository, PlaylistRepository>();
+        services.AddScoped<IUnitOfWork, UnitOfWork>();
+        
+        // Register service layer for playlists
+        services.AddScoped<IPlaylistService, PlaylistService>();
         
         // Остальные сервисы
         // Other services
