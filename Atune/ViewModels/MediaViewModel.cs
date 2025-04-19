@@ -35,6 +35,7 @@ public partial class MediaViewModel : ObservableObject, IDisposable
     private readonly ILoggerService? _logger;
     private readonly MediaPlayerService _mediaPlayerService;
     private readonly MediaDatabaseService _mediaDatabaseService;
+    private readonly ISettingsService _settingsService;
     
     // Кэш для альбомов
     private List<AlbumInfo>? _albumCache;
@@ -61,6 +62,12 @@ public partial class MediaViewModel : ObservableObject, IDisposable
     private string _playPauseIcon = "fa-solid fa-play";
 
     private string? _sortOrder;
+    // Backing fields for per-tab sort orders
+    private string? _sortOrderTracks;
+    private string? _sortOrderAlbums;
+    private string? _sortOrderPlaylists;
+    private string? _sortOrderArtists;
+
     public string SortOrder
     {
         get => _sortOrder ?? "A-Z";
@@ -69,6 +76,64 @@ public partial class MediaViewModel : ObservableObject, IDisposable
             _sortOrder = value;
             OnPropertyChanged(nameof(SortOrder));
             SortMediaItems();
+        }
+    }
+
+    // New per-tab sort-order properties
+    public string SortOrderTracks
+    {
+        get => _sortOrderTracks ?? "A-Z";
+        set
+        {
+            if (_sortOrderTracks != value)
+            {
+                _sortOrderTracks = value;
+                OnPropertyChanged(nameof(SortOrderTracks));
+                SortTracks();
+                SaveSettings();
+            }
+        }
+    }
+    public string SortOrderAlbums
+    {
+        get => _sortOrderAlbums ?? "A-Z";
+        set
+        {
+            if (_sortOrderAlbums != value)
+            {
+                _sortOrderAlbums = value;
+                OnPropertyChanged(nameof(SortOrderAlbums));
+                SortAlbums();
+                SaveSettings();
+            }
+        }
+    }
+    public string SortOrderPlaylists
+    {
+        get => _sortOrderPlaylists ?? "A-Z";
+        set
+        {
+            if (_sortOrderPlaylists != value)
+            {
+                _sortOrderPlaylists = value;
+                OnPropertyChanged(nameof(SortOrderPlaylists));
+                SortPlaylists();
+                SaveSettings();
+            }
+        }
+    }
+    public string SortOrderArtists
+    {
+        get => _sortOrderArtists ?? "A-Z";
+        set
+        {
+            if (_sortOrderArtists != value)
+            {
+                _sortOrderArtists = value;
+                OnPropertyChanged(nameof(SortOrderArtists));
+                SortArtists();
+                SaveSettings();
+            }
         }
     }
 
@@ -104,14 +169,28 @@ public partial class MediaViewModel : ObservableObject, IDisposable
         IUnitOfWork unitOfWork, 
         ILoggerService logger,
         MediaPlayerService mediaPlayerService,
-        MediaDatabaseService mediaDatabaseService)
+        MediaDatabaseService mediaDatabaseService,
+        ISettingsService settingsService)
     {
         _cache = cache;
         _unitOfWork = unitOfWork;
         _logger = logger;
         _mediaPlayerService = mediaPlayerService;
         _mediaDatabaseService = mediaDatabaseService;
+        _settingsService = settingsService;
         
+        // Load saved sort orders
+        var settings = _settingsService.LoadSettings();
+        _sortOrderTracks = settings.SortOrderTracks;
+        _sortOrderAlbums = settings.SortOrderAlbums;
+        _sortOrderPlaylists = settings.SortOrderPlaylists;
+        _sortOrderArtists = settings.SortOrderArtists;
+        // Notify initial values for bindings
+        OnPropertyChanged(nameof(SortOrderTracks));
+        OnPropertyChanged(nameof(SortOrderAlbums));
+        OnPropertyChanged(nameof(SortOrderPlaylists));
+        OnPropertyChanged(nameof(SortOrderArtists));
+
         // Заменяем команды на релейтед команды из методов
         PlayCommand = new AsyncRelayCommand<MediaItem>(PlayMediaItem);
         StopCommand = new RelayCommand(StopPlayback);
@@ -357,6 +436,8 @@ public partial class MediaViewModel : ObservableObject, IDisposable
 
                 // Обновляем альбомы после загрузки треков
                 UpdateAlbums();
+                // Apply album sorting from settings
+                SortAlbums();
             });
             
             // Сбрасываем кэш альбомов
@@ -721,14 +802,14 @@ public partial class MediaViewModel : ObservableObject, IDisposable
         // Выполняем обновление коллекции в UI-потоке
         Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
         {
-            var titleComparer = new CustomTitleComparer(SortOrder == "A-Z");
+            var titleComparer = new CustomTitleComparer(SortOrderTracks == "A-Z");
             var sortedList = MediaItems.OrderBy(item => item.Title, titleComparer).ToList();
             MediaItems.Clear();
             foreach (var item in sortedList)
             {
                 MediaItems.Add(item);
             }
-            _logger?.LogInformation($"MediaItems has been sorted in {SortOrder} order.");
+            _logger?.LogInformation($"MediaItems has been sorted in {SortOrderTracks} order.");
             // Обновляем кэш отсортированных элементов после сортировки
             _sortedCache = new List<MediaItem>(MediaItems);
         });
@@ -737,7 +818,7 @@ public partial class MediaViewModel : ObservableObject, IDisposable
     // Новый метод для инкрементального добавления нового элемента в отсортированное представление
     public void InsertItemSorted(MediaItem newItem)
     {
-        var titleComparer = new CustomTitleComparer(SortOrder == "A-Z");
+        var titleComparer = new CustomTitleComparer(SortOrderTracks == "A-Z");
         // Если кэш не синхронизирован с MediaItems, пересчитываем его
         if (_sortedCache.Count != MediaItems.Count)
         {
@@ -754,7 +835,7 @@ public partial class MediaViewModel : ObservableObject, IDisposable
         
         _sortedCache.Insert(index, newItem);
         MediaItems.Insert(index, newItem);
-        _logger?.LogInformation($"Inserted new item '{newItem.Title}' at index {index}");
+        _logger?.LogInformation($"Inserted new item '{newItem.Title}' at index {index}, SortOrderTracks={SortOrderTracks}");
     }
 
     // Новый асинхронный RelayCommand для открытия карточки альбома
@@ -913,6 +994,35 @@ public partial class MediaViewModel : ObservableObject, IDisposable
         }
         
         _disposed = true;
+    }
+
+    // Persist all sort settings
+    private void SaveSettings()
+    {
+        var s = _settingsService.LoadSettings();
+        s.SortOrderTracks = SortOrderTracks;
+        s.SortOrderAlbums = SortOrderAlbums;
+        s.SortOrderPlaylists = SortOrderPlaylists;
+        s.SortOrderArtists = SortOrderArtists;
+        _settingsService.SaveSettings(s);
+    }
+
+    // Sorting implementations per tab
+    private void SortTracks() => SortMediaItems();
+    private void SortAlbums()
+    {
+        var comparer = new CustomTitleComparer(SortOrderAlbums == "A-Z");
+        var sorted = Albums.OrderBy(a => a.AlbumName, comparer).ToList();
+        Albums.Clear();
+        foreach (var album in sorted) Albums.Add(album);
+    }
+    private void SortPlaylists()
+    {
+        // TODO: implement playlist sorting when collection is available
+    }
+    private void SortArtists()
+    {
+        // TODO: implement artist sorting when collection is available
     }
 }
 

@@ -29,7 +29,7 @@
                 <StackPanel Margin="10">
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
                         <TextBlock Text="Sort by:" VerticalAlignment="Center" Margin="0,0,5,0"/>
-                        <ComboBox SelectedItem="{Binding SortOrder, Mode=TwoWay}" Width="120">
+                        <ComboBox SelectedItem="{Binding SortOrderTracks, Mode=TwoWay}" Width="120">
                             <x:String>A-Z</x:String>
                             <x:String>Z-A</x:String>
                         </ComboBox>
@@ -85,7 +85,7 @@
                 <StackPanel Margin="10">
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
                         <TextBlock Text="Sort by:" VerticalAlignment="Center" Margin="0,0,5,0"/>
-                        <ComboBox SelectedItem="{Binding SortOrder, Mode=TwoWay}" Width="120">
+                        <ComboBox SelectedItem="{Binding SortOrderAlbums, Mode=TwoWay}" Width="120">
                             <x:String>A-Z</x:String>
                             <x:String>Z-A</x:String>
                         </ComboBox>
@@ -122,7 +122,7 @@
                 <StackPanel Margin="10">
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
                         <TextBlock Text="Sort by:" VerticalAlignment="Center" Margin="0,0,5,0"/>
-                        <ComboBox SelectedItem="{Binding SortOrder, Mode=TwoWay}" Width="120">
+                        <ComboBox SelectedItem="{Binding SortOrderPlaylists, Mode=TwoWay}" Width="120">
                             <x:String>A-Z</x:String>
                             <x:String>Z-A</x:String>
                         </ComboBox>
@@ -134,7 +134,7 @@
                 <StackPanel Margin="10">
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
                         <TextBlock Text="Sort by:" VerticalAlignment="Center" Margin="0,0,5,0"/>
-                        <ComboBox SelectedItem="{Binding SortOrder, Mode=TwoWay}" Width="120">
+                        <ComboBox SelectedItem="{Binding SortOrderArtists, Mode=TwoWay}" Width="120">
                             <x:String>A-Z</x:String>
                             <x:String>Z-A</x:String>
                         </ComboBox>
