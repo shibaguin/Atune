@@ -115,6 +115,24 @@
             <TabItem Header="{DynamicResource Media_Artists}">
                 <!-- Содержимое для вкладки Исполнители -->
             </TabItem>
+            <TabItem Header="Queue">
+                <DockPanel>
+                    <StackPanel Orientation="Horizontal" DockPanel.Dock="Top" Margin="5">
+                        <Button Content="Play Next" Command="{Binding PlayNextInQueueCommand}" Margin="0,0,5,0"/>
+                        <Button Content="Clear Queue" Command="{Binding ClearQueueCommand}"/>
+                    </StackPanel>
+                    <ListBox ItemsSource="{Binding PlaybackQueue}" SelectedItem="{Binding SelectedMediaItem}" Margin="5">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal" Spacing="5">
+                                    <TextBlock Text="{Binding Title}"/>
+                                    <Button Content="▶" Command="{Binding PlayMediaItemCommand, ElementName=Root}" CommandParameter="{Binding}"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </DockPanel>
+            </TabItem>
         </TabControl>
         
         <StackPanel Orientation="Horizontal"

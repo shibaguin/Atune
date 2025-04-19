@@ -85,6 +85,16 @@ public partial class MediaViewModel : ObservableObject, IDisposable
     // Новое свойство для альбомов
     public ObservableCollection<AlbumInfo> Albums { get; } = new ObservableCollection<AlbumInfo>();
 
+    // New collection to hold the playback queue
+    public ObservableCollection<MediaItem> PlaybackQueue { get; } = new ObservableCollection<MediaItem>();
+
+    // Commands to manage playback queue
+    public IRelayCommand<MediaItem> AddToQueueCommand { get; }
+    public IRelayCommand ClearQueueCommand { get; }
+    public IAsyncRelayCommand PlayNextInQueueCommand { get; }
+    public IAsyncRelayCommand<AlbumInfo> PlayAlbumCommand { get; }
+    public IAsyncRelayCommand PlayAllTracksCommand { get; }
+
     public MediaViewModel(
         IMemoryCache cache, 
         IUnitOfWork unitOfWork, 
@@ -101,6 +111,13 @@ public partial class MediaViewModel : ObservableObject, IDisposable
         // Заменяем команды на релейтед команды из методов
         PlayCommand = new AsyncRelayCommand<MediaItem>(PlayMediaItem);
         StopCommand = new RelayCommand(StopPlayback);
+
+        // Initialize playback queue commands
+        AddToQueueCommand = new RelayCommand<MediaItem>(item => { if (item != null) PlaybackQueue.Add(item); });
+        ClearQueueCommand = new RelayCommand(() => PlaybackQueue.Clear());
+        PlayNextInQueueCommand = new AsyncRelayCommand(PlayNextInQueue);
+        PlayAlbumCommand = new AsyncRelayCommand<AlbumInfo>(PlayAlbum);
+        PlayAllTracksCommand = new AsyncRelayCommand(PlayAllTracks);
 
         _mediaPlayerService.PlaybackEnded += OnPlaybackEnded;
         
@@ -615,6 +632,10 @@ public partial class MediaViewModel : ObservableObject, IDisposable
             {
                 PlayCurrentMediaItem();
             }
+            else if (PlaybackQueue.Count > 0)
+            {
+                PlayNextInQueueCommand.Execute(null);
+            }
             else
             {
                 NextMediaItemCommand.Execute(null);
@@ -809,6 +830,36 @@ public partial class MediaViewModel : ObservableObject, IDisposable
             _logger?.LogError("Ошибка при получении медиа-объектов из базы данных", ex);
             Console.WriteLine($"Ошибка при выводе содержимого БД: {ex.Message}");
         }
+    }
+
+    // New method: play next item from the queue
+    private async Task PlayNextInQueue()
+    {
+        if (PlaybackQueue.Count > 0)
+        {
+            var next = PlaybackQueue[0];
+            PlaybackQueue.RemoveAt(0);
+            await PlayMediaItem(next);
+        }
+    }
+
+    // New method: enqueue all tracks and play
+    private async Task PlayAllTracks()
+    {
+        PlaybackQueue.Clear();
+        foreach (var item in MediaItems)
+            PlaybackQueue.Add(item);
+        await PlayNextInQueue();
+    }
+
+    // New method: enqueue album tracks and play
+    private async Task PlayAlbum(AlbumInfo album)
+    {
+        if (album == null) return;
+        PlaybackQueue.Clear();
+        foreach (var item in album.Tracks)
+            PlaybackQueue.Add(item);
+        await PlayNextInQueue();
     }
 
     public void Dispose()
