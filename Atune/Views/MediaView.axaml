@@ -48,35 +48,10 @@
                             </ItemsPanelTemplate>
                         </ListBox.ItemsPanel>
                         <ListBox.ItemTemplate>
-                            <DataTemplate>
-                                <Border Margin="2" Padding="5" Background="Transparent">
-                                    <Grid ColumnDefinitions="Auto,*,Auto" VerticalAlignment="Center">
-                                        <!-- Play button -->
-                                        <Button Grid.Column="0"
-                                                Command="{Binding PlayTrackCommand, ElementName=Root}"
-                                                CommandParameter="{Binding}"
-                                                Background="Transparent" BorderThickness="0" Focusable="False">
-                                            <TextBlock Text="▶" FontSize="16"/>
-                                        </Button>
-                                        <!-- Track info -->
-                                        <StackPanel Grid.Column="1" Spacing="2">
-                                            <TextBlock Text="{Binding Title}" FontWeight="Bold"/>
-                                            <TextBlock Text="{Binding TrackArtists, Converter={StaticResource AllArtistsConverter}}" FontSize="12" Foreground="Gray"/>
-                                            <TextBlock Text="{Binding Album.Title}" FontSize="12" Foreground="Gray"/>
-                                            <TextBlock Text="{Binding Year}" FontSize="12" Foreground="Gray"/>
-                                        </StackPanel>
-                                        <!-- Playlist menu -->
-                                        <Button Grid.Column="2"
-                                                Name="PlaylistMenuButton"
-                                                Click="PlaylistMenuButton_Click"
-                                                Content="⋮"
-                                                Background="Transparent" BorderThickness="0" Focusable="False">
-                                            <Button.ContextMenu>
-                                                <ContextMenu Opened="PlaylistContextMenu_Opened"/>
-                                            </Button.ContextMenu>
-                                        </Button>
-                                    </Grid>
-                                </Border>
+                            <DataTemplate DataType="models:MediaItem">
+                                <views:TrackItemView
+                                    PlayCommand="{Binding DataContext.PlayTrackCommand, ElementName=Root}"
+                                    AddToPlaylistCommand="{Binding DataContext.AddToPlaylistCommand, ElementName=Root}"/>
                             </DataTemplate>
                         </ListBox.ItemTemplate>
                     </ListBox>

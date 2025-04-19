@@ -4,6 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:Atune.ViewModels"
              xmlns:models="clr-namespace:Atune.Models"
+             xmlns:views="clr-namespace:Atune.Views"
              mc:Ignorable="d"
              d:DesignWidth="400" d:DesignHeight="600"
              x:Class="Atune.Views.PlaylistView"
@@ -27,14 +28,9 @@
     </StackPanel>
     <ListBox Grid.Row="1" ItemsSource="{Binding Tracks}" Margin="0,20,0,0">
       <ListBox.ItemTemplate>
-        <DataTemplate x:DataType="models:MediaItem">
-          <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
-            <Rectangle Width="16" Height="16" Fill="Gray"/>
-            <TextBlock Text="{Binding Title}" FontWeight="Bold"/>
-            <TextBlock Text=" - "/>
-            <TextBlock Text="{Binding Album.Title}" Foreground="Gray"/>
-            <Button Content="⋮" Background="Transparent" BorderThickness="0" Margin="5,0,0,0"/>
-          </StackPanel>
+        <DataTemplate DataType="models:MediaItem">
+          <views:TrackItemView
+            RemoveCommand="{Binding DataContext.RemoveTrackCommand, RelativeSource={RelativeSource AncestorType=views:PlaylistView}}"/>
         </DataTemplate>
       </ListBox.ItemTemplate>
     </ListBox>

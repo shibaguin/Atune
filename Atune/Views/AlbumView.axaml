@@ -4,6 +4,7 @@
               xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
               xmlns:vm="clr-namespace:Atune.ViewModels"
               xmlns:models="clr-namespace:Atune.Models"
+              xmlns:views="clr-namespace:Atune.Views"
               mc:Ignorable="d"
               d:DesignWidth="400"
               d:DesignHeight="600"
@@ -39,16 +40,10 @@
     </StackPanel>
     <ListBox Grid.Row="1" ItemsSource="{Binding Album.Tracks}" Margin="0,20,0,0">
       <ListBox.ItemTemplate>
-        <DataTemplate x:DataType="models:MediaItem">
-          <Button Click="TrackButton_Click" Background="Transparent" BorderThickness="0" Padding="0">
-            <StackPanel Orientation="Horizontal" Margin="2">
-              <TextBlock Text="{Binding Title}" FontWeight="Bold"/>
-              <TextBlock Text=" - "/>
-              <!--
-              <TextBlock Text="{Binding Artist}"/>
-              -->
-            </StackPanel>
-          </Button>
+        <DataTemplate DataType="models:MediaItem">
+          <views:TrackItemView
+            PlayCommand="{Binding DataContext.PlayMediaItemCommand, RelativeSource={RelativeSource AncestorType=AlbumView}}"
+            AddToPlaylistCommand="{Binding DataContext.AddToPlaylistCommand, RelativeSource={RelativeSource AncestorType=AlbumView}}"/>
         </DataTemplate>
       </ListBox.ItemTemplate>
     </ListBox>
