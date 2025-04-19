@@ -159,5 +159,15 @@
   <data name="Media_CreatePlaylist" xml:space="preserve">
     <value>Создать плейлист</value>
   </data>
-  <!-- end playlists -->
+  <!-- localization keys for playlist view -->
+  <data name="Playlist_Name" xml:space="preserve">
+    <value>Имя:</value>
+  </data>
+  <data name="Playlist_Rename" xml:space="preserve">
+    <value>Переименовать</value>
+  </data>
+  <data name="Playlist_Delete" xml:space="preserve">
+    <value>Удалить</value>
+  </data>
+  <!-- end playlist view -->
 </root> 

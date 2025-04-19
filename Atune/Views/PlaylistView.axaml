@@ -22,6 +22,7 @@
         <TextBlock Text="{DynamicResource Playlist_Name}" VerticalAlignment="Center"/>
         <TextBox Text="{Binding Name, Mode=TwoWay}" MinWidth="200"/>
         <Button Content="{DynamicResource Playlist_Rename}" Command="{Binding RenameCommand}" VerticalAlignment="Center"/>
+        <Button Content="{DynamicResource Playlist_Delete}" Command="{Binding DeleteCommand}" VerticalAlignment="Center"/>
       </StackPanel>
     </StackPanel>
     <ListBox Grid.Row="1" ItemsSource="{Binding Tracks}" Margin="0,20,0,0">

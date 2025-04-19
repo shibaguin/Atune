@@ -171,6 +171,7 @@ public partial class MediaViewModel : ObservableObject, IDisposable
     // Playlist commands
     public IAsyncRelayCommand CreatePlaylistCommand { get; }
     public IAsyncRelayCommand<Playlist> OpenPlaylistCommand { get; }
+    public IAsyncRelayCommand<Playlist> AddToPlaylistCommand { get; }
 
     public MediaViewModel(
         IMemoryCache cache, 
@@ -243,6 +244,11 @@ public partial class MediaViewModel : ObservableObject, IDisposable
 
         // Load existing playlists
         _ = LoadPlaylistsAsync();
+
+        // Initialize playlist commands
+        CreatePlaylistCommand = new AsyncRelayCommand(CreatePlaylistAsync);
+        OpenPlaylistCommand = new AsyncRelayCommand<Playlist>(OpenPlaylistAsync);
+        AddToPlaylistCommand = new AsyncRelayCommand<Playlist>(AddToPlaylistAsync);
     }
 
     private async Task<List<MediaItem>> LoadFromDatabaseAsync()
@@ -1100,6 +1106,13 @@ public partial class MediaViewModel : ObservableObject, IDisposable
             var mainVm = desktop.MainWindow?.DataContext as MainViewModel;
             mainVm?.GoPlaylistCommand.Execute(playlist);
         }
+    }
+
+    private async Task AddToPlaylistAsync(Playlist playlist)
+    {
+        if (playlist == null || SelectedMediaItem == null)
+            return;
+        await _playlistService.AddToPlaylistAsync(playlist.Id, SelectedMediaItem.Id);
     }
 }
 

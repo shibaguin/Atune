@@ -55,5 +55,20 @@ namespace Atune.ViewModels
                 mainVm?.GoMediaCommand.Execute(null);
             }
         }
+
+        [RelayCommand]
+        public async Task DeleteAsync()
+        {
+            await _playlistService.DeletePlaylistAsync(Playlist.Id);
+            GoBack();
+        }
+
+        [RelayCommand]
+        public async Task RemoveTrackAsync(MediaItem track)
+        {
+            if (track == null) return;
+            await _playlistService.RemoveFromPlaylistAsync(Playlist.Id, track.Id);
+            await LoadTracksAsync();
+        }
     }
 } 

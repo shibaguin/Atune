@@ -164,5 +164,14 @@
   <data name="Playlist_Back" xml:space="preserve">
     <value>Back</value>
   </data>
+  <data name="Playlist_Name" xml:space="preserve">
+    <value>Name:</value>
+  </data>
+  <data name="Playlist_Rename" xml:space="preserve">
+    <value>Rename</value>
+  </data>
+  <data name="Playlist_Delete" xml:space="preserve">
+    <value>Delete</value>
+  </data>
   <!-- end playlist view -->
 </root> 

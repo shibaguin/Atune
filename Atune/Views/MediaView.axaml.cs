@@ -42,6 +42,7 @@ public partial class MediaView : UserControl
     public IAsyncRelayCommand<AlbumInfo> OpenAlbumCommand => DataContext.OpenAlbumCommand;
     public IAsyncRelayCommand<MediaItem> PlayTrackCommand => DataContext.PlayTrackCommand;
     public IAsyncRelayCommand<Playlist> OpenPlaylistCommand => DataContext.OpenPlaylistCommand;
+    public IAsyncRelayCommand<Playlist> AddToPlaylistCommand => DataContext.AddToPlaylistCommand;
 
     private readonly IDbContextFactory<AppDbContext>? _dbContextFactory;
     private readonly ILoggerService? _logger;
@@ -365,6 +366,23 @@ public partial class MediaView : UserControl
             var mainVm = (Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)
                 ?.MainWindow?.DataContext as MainViewModel;
             mainVm?.PlayAlbumFromTrackCommand.Execute(mediaItem);
+        }
+    }
+
+    private void PlaylistContextMenu_Opened(object? sender, RoutedEventArgs e)
+    {
+        if (sender is ContextMenu menu && menu.PlacementTarget is Button btn && btn.DataContext is MediaItem)
+        {
+            if (DataContext is MediaViewModel vm)
+            {
+                // Populate menu items
+                menu.ItemsSource = vm.Playlists.Select(pl => new MenuItem
+                {
+                    Header = pl.Name,
+                    Command = vm.AddToPlaylistCommand,
+                    CommandParameter = pl
+                });
+            }
         }
     }
 }
