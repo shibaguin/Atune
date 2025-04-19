@@ -834,8 +834,8 @@ public partial class MainViewModel : ViewModelBase
             }
             else
             {
-                // Переход к предыдущему треку
-                mediaView.PreviousMediaItemCommand.Execute(null);
+                // Переход к предыдущему треку в очереди
+                await mediaView.PlayPreviousInQueueCommand.ExecuteAsync(null);
                 await UpdateMetadataAsync(true);
                 _logger.LogInformation("Previous track played");
             }
@@ -901,26 +901,28 @@ public partial class MainViewModel : ViewModelBase
         {
             // Clear existing queue
             mediaVm.ClearQueueCommand.Execute(null);
-            // Enqueue tracks starting from selected track
+            // Replace enqueue logic to add entire album and set starting track position
             if (albumVm != null)
             {
                 var tracks = albumVm.Album.Tracks;
                 int startIndex = tracks.IndexOf(track);
-                foreach (var t in tracks.Skip(startIndex))
+                foreach (var t in tracks)
                     mediaVm.AddToQueueCommand.Execute(t);
+                mediaVm.SetQueuePositionCommand.Execute(startIndex);
             }
             else if (CurrentView is MediaView)
             {
-                // Enqueue from MediaItems list in current view
                 var tracks = mediaVm.MediaItems;
                 int startIndex = tracks.IndexOf(track);
                 if (startIndex < 0) startIndex = 0;
-                foreach (var t in tracks.Skip(startIndex))
+                foreach (var t in tracks)
                     mediaVm.AddToQueueCommand.Execute(t);
+                mediaVm.SetQueuePositionCommand.Execute(startIndex);
             }
             else
             {
                 mediaVm.AddToQueueCommand.Execute(track);
+                mediaVm.SetQueuePositionCommand.Execute(0);
             }
 
             // Start playback of the first enqueued track

@@ -78,6 +78,7 @@ public partial class MediaViewModel : ObservableObject, IDisposable
     public IRelayCommand StopCommand { get; }
 
     private bool _disposed;
+    private int _currentQueueIndex = -1;
 
     // Сохраняем отсортированный кэш для ускорения последующих операций сортировки
     private List<MediaItem> _sortedCache = new List<MediaItem>();
@@ -95,6 +96,8 @@ public partial class MediaViewModel : ObservableObject, IDisposable
     public IAsyncRelayCommand<AlbumInfo> PlayAlbumCommand { get; }
     public IAsyncRelayCommand PlayAllTracksCommand { get; }
     public IAsyncRelayCommand<MediaItem> PlayTrackCommand { get; }
+    public IAsyncRelayCommand PlayPreviousInQueueCommand { get; }
+    public IRelayCommand<int> SetQueuePositionCommand { get; }
 
     public MediaViewModel(
         IMemoryCache cache, 
@@ -115,7 +118,7 @@ public partial class MediaViewModel : ObservableObject, IDisposable
 
         // Initialize playback queue commands
         AddToQueueCommand = new RelayCommand<MediaItem>(item => { if (item != null) PlaybackQueue.Add(item); });
-        ClearQueueCommand = new RelayCommand(() => PlaybackQueue.Clear());
+        ClearQueueCommand = new RelayCommand(() => { PlaybackQueue.Clear(); _currentQueueIndex = -1; });
         PlayNextInQueueCommand = new AsyncRelayCommand(PlayNextInQueue);
         PlayAlbumCommand = new AsyncRelayCommand<AlbumInfo>(PlayAlbum);
         PlayAllTracksCommand = new AsyncRelayCommand(PlayAllTracks);
@@ -135,6 +138,8 @@ public partial class MediaViewModel : ObservableObject, IDisposable
             // Start playback
             await PlayNextInQueueCommand.ExecuteAsync(null);
         });
+        PlayPreviousInQueueCommand = new AsyncRelayCommand(PlayPreviousInQueue);
+        SetQueuePositionCommand = new RelayCommand<int>(index => { _currentQueueIndex = index - 1; });
 
         _mediaPlayerService.PlaybackEnded += OnPlaybackEnded;
         
@@ -852,17 +857,18 @@ public partial class MediaViewModel : ObservableObject, IDisposable
     // New method: play next item from the queue
     private async Task PlayNextInQueue()
     {
-        if (PlaybackQueue.Count > 0)
-        {
-            var next = PlaybackQueue[0];
-            PlaybackQueue.RemoveAt(0);
-            await PlayMediaItem(next);
-        }
+        if (PlaybackQueue.Count == 0) return;
+        if (_currentQueueIndex < PlaybackQueue.Count - 1)
+            _currentQueueIndex++;
+        else
+            _currentQueueIndex = 0;
+        await PlayMediaItem(PlaybackQueue[_currentQueueIndex]);
     }
 
     // New method: enqueue all tracks and play
     private async Task PlayAllTracks()
     {
+        _currentQueueIndex = -1;
         PlaybackQueue.Clear();
         foreach (var item in MediaItems)
             PlaybackQueue.Add(item);
@@ -873,10 +879,22 @@ public partial class MediaViewModel : ObservableObject, IDisposable
     private async Task PlayAlbum(AlbumInfo album)
     {
         if (album == null) return;
+        _currentQueueIndex = -1;
         PlaybackQueue.Clear();
         foreach (var item in album.Tracks)
             PlaybackQueue.Add(item);
         await PlayNextInQueue();
+    }
+
+    // Add PlayPreviousInQueue implementation
+    private async Task PlayPreviousInQueue()
+    {
+        if (PlaybackQueue.Count == 0) return;
+        if (_currentQueueIndex > 0)
+            _currentQueueIndex--;
+        else
+            _currentQueueIndex = PlaybackQueue.Count - 1;
+        await PlayMediaItem(PlaybackQueue[_currentQueueIndex]);
     }
 
     public void Dispose()
