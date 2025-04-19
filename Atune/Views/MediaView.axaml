@@ -32,6 +32,8 @@
                         <ComboBox SelectedItem="{Binding SortOrderTracks, Mode=TwoWay}" Width="120">
                             <x:String>A-Z</x:String>
                             <x:String>Z-A</x:String>
+                            <x:String>Сначала старые</x:String>
+                            <x:String>Сначала новые</x:String>
                         </ComboBox>
                     </StackPanel>
                     <ListBox ItemsSource="{Binding MediaItems}" 
@@ -88,6 +90,8 @@
                         <ComboBox SelectedItem="{Binding SortOrderAlbums, Mode=TwoWay}" Width="120">
                             <x:String>A-Z</x:String>
                             <x:String>Z-A</x:String>
+                            <x:String>Сначала старые</x:String>
+                            <x:String>Сначала новые</x:String>
                         </ComboBox>
                     </StackPanel>
                     <ScrollViewer>

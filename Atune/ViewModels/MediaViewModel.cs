@@ -802,8 +802,25 @@ public partial class MediaViewModel : ObservableObject, IDisposable
         // Выполняем обновление коллекции в UI-потоке
         Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
         {
-            var titleComparer = new CustomTitleComparer(SortOrderTracks == "A-Z");
-            var sortedList = MediaItems.OrderBy(item => item.Title, titleComparer).ToList();
+            List<MediaItem> sortedList;
+            switch (SortOrderTracks)
+            {
+                case "A-Z":
+                    sortedList = MediaItems.OrderBy(item => item.Title, new CustomTitleComparer(true)).ToList();
+                    break;
+                case "Z-A":
+                    sortedList = MediaItems.OrderBy(item => item.Title, new CustomTitleComparer(false)).ToList();
+                    break;
+                case "Сначала старые":
+                    sortedList = MediaItems.OrderBy(item => item.Year).ToList();
+                    break;
+                case "Сначала новые":
+                    sortedList = MediaItems.OrderByDescending(item => item.Year).ToList();
+                    break;
+                default:
+                    sortedList = MediaItems.OrderBy(item => item.Title, new CustomTitleComparer(true)).ToList();
+                    break;
+            }
             MediaItems.Clear();
             foreach (var item in sortedList)
             {
@@ -1011,8 +1028,25 @@ public partial class MediaViewModel : ObservableObject, IDisposable
     private void SortTracks() => SortMediaItems();
     private void SortAlbums()
     {
-        var comparer = new CustomTitleComparer(SortOrderAlbums == "A-Z");
-        var sorted = Albums.OrderBy(a => a.AlbumName, comparer).ToList();
+        List<AlbumInfo> sorted;
+        switch (SortOrderAlbums)
+        {
+            case "A-Z":
+                sorted = Albums.OrderBy(a => a.AlbumName, new CustomTitleComparer(true)).ToList();
+                break;
+            case "Z-A":
+                sorted = Albums.OrderBy(a => a.AlbumName, new CustomTitleComparer(false)).ToList();
+                break;
+            case "Сначала старые":
+                sorted = Albums.OrderBy(a => a.Year).ToList();
+                break;
+            case "Сначала новые":
+                sorted = Albums.OrderByDescending(a => a.Year).ToList();
+                break;
+            default:
+                sorted = Albums.OrderBy(a => a.AlbumName, new CustomTitleComparer(true)).ToList();
+                break;
+        }
         Albums.Clear();
         foreach (var album in sorted) Albums.Add(album);
     }
