@@ -151,13 +151,10 @@
                     </StackPanel>
                     <ListBox ItemsSource="{Binding PlaybackQueue}" SelectedItem="{Binding SelectedMediaItem}" Margin="5">
                         <ListBox.ItemTemplate>
-                            <DataTemplate>
-                                <StackPanel Orientation="Horizontal" Spacing="5">
-                                    <TextBlock Text="{Binding Title}"/>
-                                    <Button Content="▶"
-                                            Command="{Binding PlayTrackCommand, RelativeSource={RelativeSource AncestorType=views:MediaView}}"
-                                            CommandParameter="{Binding}"/>
-                                </StackPanel>
+                            <DataTemplate DataType="models:MediaItem">
+                                <views:TrackItemView
+                                    PlayCommand="{Binding PlayMediaItemCommand, RelativeSource={RelativeSource AncestorType=views:MediaView}}"
+                                    AddToPlaylistCommand="{Binding AddToPlaylistCommand, RelativeSource={RelativeSource AncestorType=views:MediaView}}"/>
                             </DataTemplate>
                         </ListBox.ItemTemplate>
                     </ListBox>
