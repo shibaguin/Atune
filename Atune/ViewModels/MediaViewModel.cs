@@ -25,6 +25,7 @@ using Serilog;
 using System.ComponentModel;
 using Atune.ViewModels;
 using Atune.Helpers;
+using TagLib;
 
 namespace Atune.ViewModels;
 
@@ -521,22 +522,51 @@ public partial class MediaViewModel : ObservableObject, IDisposable
     // Обновлённый метод для создания MediaItem с учётом метаданных и списка артистов
     private MediaItem CreateMediaItemFromPath(string path)
     {
-        var tagInfo = GetDesktopTagInfo(path); // Метод для получения метаданных из файла
-        var artists = ParseArtists(tagInfo.Artist); // Разбираем строку артистов
+        var tagInfo = GetDesktopTagInfo(path); // Existing metadata parsing
+
+        // Extract embedded cover art via TagLibSharp
+        string coverArtPath = string.Empty;
+        try
+        {
+            var tfile = TagLib.File.Create(path);
+            var pictures = tfile.Tag.Pictures;
+            if (pictures != null && pictures.Length > 0)
+            {
+                var pic = pictures[0];
+                var data = pic.Data.Data;
+                var mimeType = pic.MimeType ?? "image/jpeg";
+                var ext = mimeType.Contains("png", StringComparison.OrdinalIgnoreCase) ? ".png" : ".jpg";
+                var coversDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Atune", "Covers");
+                Directory.CreateDirectory(coversDir);
+                var fileName = Guid.NewGuid().ToString() + ext;
+                var fullPath = Path.Combine(coversDir, fileName);
+                System.IO.File.WriteAllBytes(fullPath, data);
+                coverArtPath = fullPath;
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogError($"Error extracting embedded cover art for file {path}", ex);
+        }
+
+        var artists = ParseArtists(tagInfo.Artist);
         var trackArtists = artists.Select(artistName => new TrackArtist
         {
             Artist = new Artist { Name = artistName }
         }).ToList();
 
-        return new MediaItem(
+        var mediaItem = new MediaItem(
             title: Path.GetFileNameWithoutExtension(path),
-            album: new Album { Title = tagInfo.Album ?? "Unknown Album" },
+            album: new Album { Title = tagInfo.Album ?? "Unknown Album", CoverArtPath = coverArtPath },
             year: tagInfo.Year,
             genre: tagInfo.Genre ?? "Unknown Genre",
             path: path,
             duration: tagInfo.Duration,
             trackArtists: trackArtists
         );
+
+        mediaItem.CoverArt = coverArtPath;
+        return mediaItem;
     }
 
     #endregion

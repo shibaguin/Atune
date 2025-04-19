@@ -41,6 +41,7 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" />
     <PackageReference Include="System.Composition" />
     <PackageReference Include="System.Composition.AttributedModel" />
+    <PackageReference Include="TagLibSharp" />
     <PackageReference Include="Z440.ATL.Core" />
   </ItemGroup>
 

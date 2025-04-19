@@ -57,6 +57,16 @@ namespace Atune.Services
                     item.Album = existingAlbum;
                     item.AlbumId = existingAlbum.Id;
                 }
+
+                // Если есть путь обложки, сохраняем его в сущности Album
+                if (!string.IsNullOrEmpty(item.Album.CoverArtPath))
+                {
+                    if (existingAlbum != null)
+                    {
+                        existingAlbum.CoverArtPath = item.Album.CoverArtPath;
+                    }
+                    // Для новой сущности Album путь уже установлен в item.Album
+                }
                 
                 // Проверка для каждого артиста в списке TrackArtists
                 foreach (var trackArtist in item.TrackArtists)
