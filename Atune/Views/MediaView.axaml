@@ -68,6 +68,7 @@
                                         <!-- Playlist menu -->
                                         <Button Grid.Column="2"
                                                 Name="PlaylistMenuButton"
+                                                Click="PlaylistMenuButton_Click"
                                                 Content="⋮"
                                                 Background="Transparent" BorderThickness="0" Focusable="False">
                                             <Button.ContextMenu>

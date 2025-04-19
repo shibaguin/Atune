@@ -375,13 +375,35 @@ public partial class MediaView : UserControl
         {
             if (DataContext is MediaViewModel vm)
             {
-                // Populate menu items
-                menu.ItemsSource = vm.Playlists.Select(pl => new MenuItem
+                menu.Items.Clear();
+                foreach (var pl in vm.Playlists)
                 {
-                    Header = pl.Name,
-                    Command = vm.AddToPlaylistCommand,
-                    CommandParameter = pl
-                });
+                    var item = new MenuItem
+                    {
+                        Header = pl.Name,
+                        Command = vm.AddToPlaylistCommand,
+                        CommandParameter = pl
+                    };
+                    menu.Items.Add(item);
+                }
+            }
+        }
+    }
+
+    // Handle click on the ⋮ button to open the context menu
+    private void PlaylistMenuButton_Click(object? sender, RoutedEventArgs e)
+    {
+        if (sender is Button btn)
+        {
+            // Select this track so AddToPlaylistAsync uses the correct MediaItem
+            if (DataContext is MediaViewModel vm && btn.DataContext is MediaItem track)
+            {
+                vm.SelectedMediaItem = track;
+            }
+            if (btn.ContextMenu is ContextMenu contextMenu)
+            {
+                contextMenu.PlacementTarget = btn;
+                contextMenu.Open();
             }
         }
     }

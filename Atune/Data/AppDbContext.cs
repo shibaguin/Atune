@@ -187,6 +187,7 @@ public class AppDbContext : DbContext
 
         modelBuilder.Entity<PlaylistMediaItem>(entity =>
         {
+            entity.ToTable("PlaylistMediaItem");
             entity.HasKey(pmi => new { pmi.PlaylistId, pmi.MediaItemId });
             
             entity.HasOne(pmi => pmi.Playlist)

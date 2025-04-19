@@ -7,6 +7,7 @@ using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Atune.Models;
 using Atune.Services;
+using System.Linq;
 
 namespace Atune.ViewModels
 {
@@ -61,6 +62,16 @@ namespace Atune.ViewModels
         {
             await _playlistService.DeletePlaylistAsync(Playlist.Id);
             GoBack();
+            if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime lifetime)
+            {
+                var mainVm = lifetime.MainWindow?.DataContext as MainViewModel;
+                if (mainVm?.CurrentView is Avalonia.Controls.UserControl view && view.DataContext is MediaViewModel mediaVm)
+                {
+                    var toRemove = mediaVm.Playlists.FirstOrDefault(p => p.Id == Playlist.Id);
+                    if (toRemove != null)
+                        mediaVm.Playlists.Remove(toRemove);
+                }
+            }
         }
 
         [RelayCommand]

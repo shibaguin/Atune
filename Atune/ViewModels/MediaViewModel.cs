@@ -1071,7 +1071,23 @@ public partial class MediaViewModel : ObservableObject, IDisposable
     }
     private void SortPlaylists()
     {
-        // TODO: implement playlist sorting when collection is available
+        // Sort playlists according to SortOrderPlaylists
+        List<Playlist> sorted;
+        switch (SortOrderPlaylists)
+        {
+            case "A-Z":
+                sorted = Playlists.OrderBy(p => p.Name, new CustomTitleComparer(true)).ToList();
+                break;
+            case "Z-A":
+                sorted = Playlists.OrderBy(p => p.Name, new CustomTitleComparer(false)).ToList();
+                break;
+            default:
+                sorted = Playlists.OrderBy(p => p.Name, new CustomTitleComparer(true)).ToList();
+                break;
+        }
+        Playlists.Clear();
+        foreach (var p in sorted)
+            Playlists.Add(p);
     }
     private void SortArtists()
     {
@@ -1089,13 +1105,31 @@ public partial class MediaViewModel : ObservableObject, IDisposable
 
     private async Task CreatePlaylistAsync()
     {
-        var id = await _playlistService.CreatePlaylistAsync("New Playlist");
-        if (id > 0)
+        // Load current playlists to check for name conflicts
+        await LoadPlaylistsAsync();
+        const string baseName = "New Playlist";
+        string newName = baseName;
+        int counter = 1;
+        // Increment suffix until name is unique
+        while (Playlists.Any(pl => pl.Name == newName))
         {
-            await LoadPlaylistsAsync();
-            var newPl = Playlists.FirstOrDefault(pl => pl.Id == id);
-            if (newPl != null)
-                await OpenPlaylistAsync(newPl);
+            newName = $"{baseName} ({counter})";
+            counter++;
+        }
+        try
+        {
+            var id = await _playlistService.CreatePlaylistAsync(newName);
+            if (id > 0)
+            {
+                await LoadPlaylistsAsync();
+                var newPl = Playlists.FirstOrDefault(pl => pl.Id == id);
+                if (newPl != null)
+                    await OpenPlaylistAsync(newPl);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogError($"Error creating playlist '{newName}'", ex);
         }
     }
 
@@ -1110,9 +1144,29 @@ public partial class MediaViewModel : ObservableObject, IDisposable
 
     private async Task AddToPlaylistAsync(Playlist playlist)
     {
-        if (playlist == null || SelectedMediaItem == null)
+        if (playlist == null)
+        {
+            _logger?.LogWarning("AddToPlaylistAsync called with null playlist");
             return;
-        await _playlistService.AddToPlaylistAsync(playlist.Id, SelectedMediaItem.Id);
+        }
+        if (SelectedMediaItem == null)
+        {
+            _logger?.LogWarning("AddToPlaylistAsync: SelectedMediaItem is null");
+            return;
+        }
+        try
+        {
+            _logger?.LogInformation($"Adding track '{SelectedMediaItem.Title}' to playlist '{playlist.Name}' (Id={playlist.Id})");
+            var count = await _playlistService.AddToPlaylistAsync(playlist.Id, SelectedMediaItem.Id);
+            _logger?.LogInformation($"Added {count} item(s) into playlist '{playlist.Name}'");
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogError($"Error adding track '{SelectedMediaItem.Title}' to playlist '{playlist.Name}'", ex);
+            return;
+        }
+        // Navigate to the playlist view to display updated track list
+        await OpenPlaylistAsync(playlist);
     }
 }
 
