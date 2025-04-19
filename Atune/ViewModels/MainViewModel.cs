@@ -876,7 +876,6 @@ public partial class MainViewModel : ViewModelBase
     [RelayCommand]
     private async Task PlayAlbum(AlbumInfo album)
     {
-        GoMedia();
         if (_views.TryGetValue(SectionType.Media, out var view) && view.DataContext is MediaViewModel mediaVm)
         {
             // clear existing queue
@@ -894,9 +893,6 @@ public partial class MainViewModel : ViewModelBase
         AlbumViewModel? albumVm = null;
         if (CurrentView is AlbumView av && av.DataContext is AlbumViewModel aVm)
             albumVm = aVm;
-
-        // Navigate to Media view
-        GoMedia();
 
         if (_views.TryGetValue(SectionType.Media, out var view) && view.DataContext is MediaViewModel mediaVm)
         {

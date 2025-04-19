@@ -38,12 +38,8 @@ namespace Atune.Views
             {
                 var mainVm = (Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)
                     ?.MainWindow?.DataContext as MainViewModel;
-                mainVm?.GoMediaCommand.Execute(null);
-                if (mainVm?.CurrentView is MediaView mediaView && mediaView.DataContext is MediaViewModel mediaVm)
-                {
-                    mediaVm.ClearQueueCommand.Execute(null);
-                    mediaVm.PlayAlbumCommand.Execute(albumVm.Album);
-                }
+                // Enqueue and start playing album without leaving this view
+                mainVm?.PlayAlbumCommand.Execute(albumVm.Album);
             }
         }
 
