@@ -804,7 +804,10 @@ public partial class MainViewModel : ViewModelBase
         try 
         {
             var mediaView = _views[SectionType.Media].DataContext as MediaViewModel;
-            mediaView?.NextMediaItemCommand.Execute(null);
+            if (mediaView != null)
+            {
+                await mediaView.PlayNextInQueueCommand.ExecuteAsync(null);
+            }
             await UpdateMetadataAsync(true);
             _logger.LogInformation("Next track played");
         }
@@ -906,10 +909,20 @@ public partial class MainViewModel : ViewModelBase
                 foreach (var t in tracks.Skip(startIndex))
                     mediaVm.AddToQueueCommand.Execute(t);
             }
+            else if (CurrentView is MediaView)
+            {
+                // Enqueue from MediaItems list in current view
+                var tracks = mediaVm.MediaItems;
+                int startIndex = tracks.IndexOf(track);
+                if (startIndex < 0) startIndex = 0;
+                foreach (var t in tracks.Skip(startIndex))
+                    mediaVm.AddToQueueCommand.Execute(t);
+            }
             else
             {
                 mediaVm.AddToQueueCommand.Execute(track);
             }
+
             // Start playback of the first enqueued track
             await mediaVm.PlayNextInQueueCommand.ExecuteAsync(null);
         }
