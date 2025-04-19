@@ -82,38 +82,65 @@
                 </StackPanel>
             </TabItem>
             <TabItem Header="{DynamicResource Media_Albums}">
-                <ScrollViewer>
-                    <ItemsControl x:Name="AlbumsList" ItemsSource="{Binding Albums}">
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate x:DataType="models:AlbumInfo">
-                                <Button Command="{Binding OpenAlbumCommand, RelativeSource={RelativeSource AncestorType=views:MediaView}}"
-                                        CommandParameter="{Binding}"
-                                        Background="Transparent"
-                                        BorderThickness="0"
-                                        Margin="5"
-                                        HorizontalAlignment="Stretch">
-                                    <StackPanel Orientation="Vertical" HorizontalAlignment="Stretch">
-                                        <TextBlock Text="{Binding AlbumName}" 
-                                                   FontWeight="Bold" 
-                                                   FontSize="14"/>
-                                        <TextBlock Text="{Binding ArtistName}" 
-                                                   FontSize="12"/>
-                                        <TextBlock Text="{Binding Year}" 
-                                                   FontSize="12"/>
-                                        <TextBlock Text="{Binding TrackCount, StringFormat='Треков: {0}'}" 
-                                                   FontSize="12"/>
-                                    </StackPanel>
-                                </Button>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                </ScrollViewer>
+                <StackPanel Margin="10">
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
+                        <TextBlock Text="Sort by:" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                        <ComboBox SelectedItem="{Binding SortOrder, Mode=TwoWay}" Width="120">
+                            <x:String>A-Z</x:String>
+                            <x:String>Z-A</x:String>
+                        </ComboBox>
+                    </StackPanel>
+                    <ScrollViewer>
+                        <ItemsControl x:Name="AlbumsList" ItemsSource="{Binding Albums}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="models:AlbumInfo">
+                                    <Button Command="{Binding OpenAlbumCommand, RelativeSource={RelativeSource AncestorType=views:MediaView}}"
+                                            CommandParameter="{Binding}"
+                                            Background="Transparent"
+                                            BorderThickness="0"
+                                            Margin="5"
+                                            HorizontalAlignment="Stretch">
+                                        <StackPanel Orientation="Vertical" HorizontalAlignment="Stretch">
+                                            <TextBlock Text="{Binding AlbumName}" 
+                                                       FontWeight="Bold" 
+                                                       FontSize="14"/>
+                                            <TextBlock Text="{Binding ArtistName}" 
+                                                       FontSize="12"/>
+                                            <TextBlock Text="{Binding Year}" 
+                                                       FontSize="12"/>
+                                            <TextBlock Text="{Binding TrackCount, StringFormat='Треков: {0}'}" 
+                                                       FontSize="12"/>
+                                        </StackPanel>
+                                    </Button>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </StackPanel>
             </TabItem>
             <TabItem Header="{DynamicResource Media_Playlists}">
-                <!-- Содержимое для вкладки Плейлисты -->
+                <StackPanel Margin="10">
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
+                        <TextBlock Text="Sort by:" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                        <ComboBox SelectedItem="{Binding SortOrder, Mode=TwoWay}" Width="120">
+                            <x:String>A-Z</x:String>
+                            <x:String>Z-A</x:String>
+                        </ComboBox>
+                    </StackPanel>
+                    <!-- Содержимое для вкладки Плейлисты -->
+                </StackPanel>
             </TabItem>
             <TabItem Header="{DynamicResource Media_Artists}">
-                <!-- Содержимое для вкладки Исполнители -->
+                <StackPanel Margin="10">
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
+                        <TextBlock Text="Sort by:" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                        <ComboBox SelectedItem="{Binding SortOrder, Mode=TwoWay}" Width="120">
+                            <x:String>A-Z</x:String>
+                            <x:String>Z-A</x:String>
+                        </ComboBox>
+                    </StackPanel>
+                    <!-- Содержимое для вкладки Исполнители -->
+                </StackPanel>
             </TabItem>
             <TabItem Header="Queue">
                 <DockPanel>
