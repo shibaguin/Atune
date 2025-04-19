@@ -6,7 +6,10 @@
              xmlns:helpers="clr-namespace:Atune.Helpers"
              xmlns:converters="clr-namespace:Atune.Converters"
              x:DataType="models:MediaItem">
-  <Grid ColumnDefinitions="Auto,*,Auto,Auto" VerticalAlignment="Center" Spacing="10">
+  <UserControl.Resources>
+    <converters:AllArtistsConverter x:Key="AllArtistsConverter"/>
+  </UserControl.Resources>
+  <Grid ColumnDefinitions="Auto,*,Auto,Auto" VerticalAlignment="Center">
     <!-- Play button -->
     <Button x:Name="PlayButton" Grid.Column="0" Background="Transparent" BorderThickness="0" Focusable="False">
       <TextBlock Text="▶" FontSize="16"/>

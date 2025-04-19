@@ -6,6 +6,7 @@ using Avalonia.Interactivity;
 using Avalonia.Controls.ApplicationLifetimes;
 using Atune.ViewModels;
 using Atune.Models;
+using CommunityToolkit.Mvvm.Input;
 
 namespace Atune.Views
 {
@@ -17,6 +18,17 @@ namespace Atune.Views
             // Subscribe to mouse and key navigation for Back/Forward
             AddHandler(PointerPressedEvent, OnPointerPressed, handledEventsToo: true);
             AddHandler(KeyDownEvent, OnKeyDown, handledEventsToo: true);
+        }
+
+        // Expose MainViewModel's PlayAlbumFromTrackCommand for TrackItemView
+        public IAsyncRelayCommand<MediaItem>? PlayTrackCommand
+        {
+            get
+            {
+                var mainVm = (Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)
+                               ?.MainWindow?.DataContext as MainViewModel;
+                return mainVm?.PlayAlbumFromTrackCommand;
+            }
         }
 
         private void InitializeComponent()

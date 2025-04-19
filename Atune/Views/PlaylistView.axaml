@@ -29,8 +29,7 @@
     <ListBox Grid.Row="1" ItemsSource="{Binding Tracks}" Margin="0,20,0,0">
       <ListBox.ItemTemplate>
         <DataTemplate DataType="models:MediaItem">
-          <views:TrackItemView
-            RemoveCommand="{Binding DataContext.RemoveTrackCommand, RelativeSource={RelativeSource AncestorType=views:PlaylistView}}"/>
+          <views:TrackItemView/>
         </DataTemplate>
       </ListBox.ItemTemplate>
     </ListBox>

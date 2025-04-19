@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
+using Avalonia.VisualTree;
 using System;
 using System.Linq;
 using System.Windows.Input;
@@ -30,22 +31,12 @@ namespace Atune.Views
             set => SetValue(AddToPlaylistCommandProperty, value);
         }
 
-        // Command to remove this track; parameter is MediaItem
-        public static readonly StyledProperty<ICommand?> RemoveCommandProperty =
-            AvaloniaProperty.Register<TrackItemView, ICommand?>(nameof(RemoveCommand));
-        public ICommand? RemoveCommand
-        {
-            get => GetValue(RemoveCommandProperty);
-            set => SetValue(RemoveCommandProperty, value);
-        }
-
         public TrackItemView()
         {
             InitializeComponent();
 
             // Find named controls
             var playBtn = this.FindControl<Button>("PlayButton");
-            var menuButton = this.FindControl<Button>("PlaylistMenuButton");
             var playlistMenu = this.FindControl<ContextMenu>("PlaylistContextMenu");
             var removeBtn = this.FindControl<Button>("RemoveButton");
 
@@ -62,15 +53,27 @@ namespace Atune.Views
                 playlistMenu.Opened += PlaylistContextMenu_Opened;
             }
 
-            // Wire up remove button and visibility
+            // Show and wire up remove button only in PlaylistView context
             if (removeBtn != null)
             {
+                // Show only when inside a PlaylistView
+                var isInPlaylist = this.GetVisualAncestors()
+                                   .OfType<Atune.Views.PlaylistView>()
+                                   .Any();
+                removeBtn.IsVisible = isInPlaylist;
                 removeBtn.Click += (_, __) =>
-                    RemoveCommand?.Execute(DataContext);
-                this.GetObservable(RemoveCommandProperty).Subscribe(cmd =>
                 {
-                    removeBtn.IsVisible = cmd != null;
-                });
+                    if (this.DataContext is Atune.Models.MediaItem item)
+                    {
+                        var playlistView = this.GetVisualAncestors()
+                                               .OfType<Atune.Views.PlaylistView>()
+                                               .FirstOrDefault();
+                        if (playlistView?.DataContext is Atune.ViewModels.PlaylistViewModel pvm)
+                        {
+                            pvm.RemoveTrackCommand.Execute(item);
+                        }
+                    }
+                };
             }
         }
 
@@ -84,7 +87,7 @@ namespace Atune.Views
             var playlists = await service.GetPlaylistsAsync();
 
             // Build menu items
-            menu.Items = playlists.Select(pl => new MenuItem
+            menu.ItemsSource = playlists.Select(pl => new MenuItem
             {
                 Header = pl.Name,
                 Command = AddToPlaylistCommand,

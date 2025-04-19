@@ -50,8 +50,8 @@
                         <ListBox.ItemTemplate>
                             <DataTemplate DataType="models:MediaItem">
                                 <views:TrackItemView
-                                    PlayCommand="{Binding DataContext.PlayTrackCommand, ElementName=Root}"
-                                    AddToPlaylistCommand="{Binding DataContext.AddToPlaylistCommand, ElementName=Root}"/>
+                                    PlayCommand="{Binding PlayTrackCommand, RelativeSource={RelativeSource AncestorType=views:MediaView}}"
+                                    AddToPlaylistCommand="{Binding AddToPlaylistCommand, RelativeSource={RelativeSource AncestorType=views:MediaView}}"/>
                             </DataTemplate>
                         </ListBox.ItemTemplate>
                     </ListBox>
@@ -154,7 +154,9 @@
                             <DataTemplate>
                                 <StackPanel Orientation="Horizontal" Spacing="5">
                                     <TextBlock Text="{Binding Title}"/>
-                                    <Button Content="▶" Command="{Binding PlayMediaItemCommand, ElementName=Root}" CommandParameter="{Binding}"/>
+                                    <Button Content="▶"
+                                            Command="{Binding PlayTrackCommand, RelativeSource={RelativeSource AncestorType=views:MediaView}}"
+                                            CommandParameter="{Binding}"/>
                                 </StackPanel>
                             </DataTemplate>
                         </ListBox.ItemTemplate>
