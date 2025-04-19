@@ -32,6 +32,21 @@ namespace Atune.Views
             mainVm?.GoMediaCommand.Execute(null);
         }
 
+        private void PlayAlbumButton_Click(object? sender, RoutedEventArgs e)
+        {
+            if (DataContext is AlbumViewModel albumVm)
+            {
+                var mainVm = (Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)
+                    ?.MainWindow?.DataContext as MainViewModel;
+                mainVm?.GoMediaCommand.Execute(null);
+                if (mainVm?.CurrentView is MediaView mediaView && mediaView.DataContext is MediaViewModel mediaVm)
+                {
+                    mediaVm.ClearQueueCommand.Execute(null);
+                    mediaVm.PlayAlbumCommand.Execute(albumVm.Album);
+                }
+            }
+        }
+
         private void OnPointerPressed(object sender, PointerPressedEventArgs e)
         {
             var kind = e.GetCurrentPoint(this).Properties.PointerUpdateKind;
@@ -71,7 +86,7 @@ namespace Atune.Views
             {
                 var mainVm = (Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)
                     ?.MainWindow?.DataContext as MainViewModel;
-                mainVm?.PlayCommand.Execute(track.Path);
+                mainVm?.PlayAlbumFromTrackCommand.Execute(track);
             }
         }
     }

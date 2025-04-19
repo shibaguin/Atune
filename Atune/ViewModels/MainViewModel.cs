@@ -18,6 +18,7 @@ using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 using System.IO;
 using LibVLCSharp.Shared;
+using Atune.Models;
 namespace Atune.ViewModels;
 public partial class MainViewModel : ViewModelBase
 {
@@ -495,12 +496,13 @@ public partial class MainViewModel : ViewModelBase
         OnPropertyChanged(nameof(PlayIconData));
     }
 
+    [RelayCommand]
     private void ExecuteNextCommand()
     {
         if (CurrentView is MediaView mediaView && 
             mediaView.DataContext is MediaViewModel mediaVM)
         {
-            mediaVM.NextMediaItemCommand.Execute(null);
+            mediaVM.PlayNextInQueueCommand.Execute(null);
         }
     }
 
@@ -509,7 +511,8 @@ public partial class MainViewModel : ViewModelBase
         if (CurrentView is MediaView mediaView && 
             mediaView.DataContext is MediaViewModel mediaVM)
         {
-            mediaVM.PreviousMediaItemCommand.Execute(null);
+            // Use playback queue for previous track
+            mediaVM.PlayNextInQueueCommand.Execute(null);
         }
     }
 
@@ -866,6 +869,53 @@ public partial class MainViewModel : ViewModelBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Play/pause error");
+        }
+    }
+
+    // Command to play entire album via queue
+    [RelayCommand]
+    private async Task PlayAlbum(AlbumInfo album)
+    {
+        GoMedia();
+        if (_views.TryGetValue(SectionType.Media, out var view) && view.DataContext is MediaViewModel mediaVm)
+        {
+            // clear existing queue
+            mediaVm.ClearQueueCommand.Execute(null);
+            // enqueue and play album
+            await mediaVm.PlayAlbumCommand.ExecuteAsync(album);
+        }
+    }
+
+    // Command to play from specific track within album
+    [RelayCommand]
+    private async Task PlayAlbumFromTrack(MediaItem track)
+    {
+        // Capture album context before switching to Media view
+        AlbumViewModel? albumVm = null;
+        if (CurrentView is AlbumView av && av.DataContext is AlbumViewModel aVm)
+            albumVm = aVm;
+
+        // Navigate to Media view
+        GoMedia();
+
+        if (_views.TryGetValue(SectionType.Media, out var view) && view.DataContext is MediaViewModel mediaVm)
+        {
+            // Clear existing queue
+            mediaVm.ClearQueueCommand.Execute(null);
+            // Enqueue tracks starting from selected track
+            if (albumVm != null)
+            {
+                var tracks = albumVm.Album.Tracks;
+                int startIndex = tracks.IndexOf(track);
+                foreach (var t in tracks.Skip(startIndex))
+                    mediaVm.AddToQueueCommand.Execute(t);
+            }
+            else
+            {
+                mediaVm.AddToQueueCommand.Execute(track);
+            }
+            // Start playback of the first enqueued track
+            await mediaVm.PlayNextInQueueCommand.ExecuteAsync(null);
         }
     }
 }

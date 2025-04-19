@@ -25,6 +25,7 @@ public partial class MainView : UserControl
         }
     }
 
+
     private void SearchSuggestions_SelectionChanged(object? sender, SelectionChangedEventArgs e)
     {
         if (sender is ListBox listBox && listBox.SelectedItem is string selectedSuggestion &&

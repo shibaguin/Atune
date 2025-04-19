@@ -18,6 +18,7 @@ public class AppDbContext : DbContext
     public DbSet<Artist> Artists { get; set; }
     public DbSet<Playlist> Playlists { get; set; }
     public DbSet<PlaylistMediaItem> PlaylistMediaItems { get; set; }
+    public DbSet<PlaybackQueueItem> PlaybackQueueItems { get; set; }
 
     public AppDbContext(DbContextOptions<AppDbContext> options) 
         : base(options) 
@@ -214,6 +215,19 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<MediaItem>()
             .HasIndex(m => m.Path)
             .IsUnique();
+
+        modelBuilder.Entity<PlaybackQueueItem>(entity =>
+        {
+            entity.ToTable("PlaybackQueueItems");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.MediaItemId).IsRequired();
+            entity.Property(e => e.Position).IsRequired();
+            entity.Property(e => e.AddedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.HasOne(e => e.MediaItem)
+                  .WithMany()
+                  .HasForeignKey(e => e.MediaItemId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
     }
 
     public IQueryable<MediaItem> SafeMedia => MediaItems?.AsQueryable() ?? throw new InvalidOperationException("MediaItems DbSet not initialized");
