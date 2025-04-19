@@ -124,4 +124,35 @@
   <data name="Media_Artists" xml:space="preserve">
     <value>Исполнители</value>
   </data>
+  <!-- localization keys for sorting and UI elements -->
+  <data name="Media_SortBy" xml:space="preserve">
+    <value>Сортировать по:</value>
+  </data>
+  <data name="Sort_AZ" xml:space="preserve">
+    <value>A-Z</value>
+  </data>
+  <data name="Sort_ZA" xml:space="preserve">
+    <value>Z-A</value>
+  </data>
+  <data name="Sort_OldFirst" xml:space="preserve">
+    <value>Сначала старые</value>
+  </data>
+  <data name="Sort_NewFirst" xml:space="preserve">
+    <value>Сначала новые</value>
+  </data>
+  <data name="Media_Queue" xml:space="preserve">
+    <value>Очередь</value>
+  </data>
+  <data name="Media_PrintDatabase" xml:space="preserve">
+    <value>Вывод</value>
+  </data>
+  <data name="Album_Back" xml:space="preserve">
+    <value>Назад</value>
+  </data>
+  <data name="Album_PlayAlbum" xml:space="preserve">
+    <value>Воспроизвести альбом</value>
+  </data>
+  <data name="Album_TrackCountLabel" xml:space="preserve">
+    <value>Количество треков: </value>
+  </data>
 </root> 

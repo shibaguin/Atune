@@ -16,6 +16,7 @@
              d:DataContext="{d:DesignInstance Type=vm:MediaViewModel, IsDesignTimeCreatable=True}">
     <UserControl.Resources>
          <converters:AllArtistsConverter x:Key="AllArtistsConverter"/>
+         <converters:SortOrderToIndexConverter x:Key="SortOrderConverter"/>
     </UserControl.Resources>
     <Grid>
         <Grid.RowDefinitions>
@@ -28,12 +29,12 @@
             <TabItem Header="{DynamicResource Media_Tracks}">
                 <StackPanel Margin="10">
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
-                        <TextBlock Text="Sort by:" VerticalAlignment="Center" Margin="0,0,5,0"/>
-                        <ComboBox SelectedItem="{Binding SortOrderTracks, Mode=TwoWay}" Width="120">
-                            <x:String>A-Z</x:String>
-                            <x:String>Z-A</x:String>
-                            <x:String>Сначала старые</x:String>
-                            <x:String>Сначала новые</x:String>
+                        <TextBlock Text="{DynamicResource Media_SortBy}" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                        <ComboBox SelectedIndex="{Binding SortOrderTracks, Mode=TwoWay, Converter={StaticResource SortOrderConverter}}" Width="120">
+                            <ComboBoxItem Content="{DynamicResource Sort_AZ}"/>
+                            <ComboBoxItem Content="{DynamicResource Sort_ZA}"/>
+                            <ComboBoxItem Content="{DynamicResource Sort_OldFirst}"/>
+                            <ComboBoxItem Content="{DynamicResource Sort_NewFirst}"/>
                         </ComboBox>
                     </StackPanel>
                     <ListBox ItemsSource="{Binding MediaItems}" 
@@ -86,12 +87,12 @@
             <TabItem Header="{DynamicResource Media_Albums}">
                 <StackPanel Margin="10">
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
-                        <TextBlock Text="Sort by:" VerticalAlignment="Center" Margin="0,0,5,0"/>
-                        <ComboBox SelectedItem="{Binding SortOrderAlbums, Mode=TwoWay}" Width="120">
-                            <x:String>A-Z</x:String>
-                            <x:String>Z-A</x:String>
-                            <x:String>Сначала старые</x:String>
-                            <x:String>Сначала новые</x:String>
+                        <TextBlock Text="{DynamicResource Media_SortBy}" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                        <ComboBox SelectedIndex="{Binding SortOrderAlbums, Mode=TwoWay, Converter={StaticResource SortOrderConverter}}" Width="120">
+                            <ComboBoxItem Content="{DynamicResource Sort_AZ}"/>
+                            <ComboBoxItem Content="{DynamicResource Sort_ZA}"/>
+                            <ComboBoxItem Content="{DynamicResource Sort_OldFirst}"/>
+                            <ComboBoxItem Content="{DynamicResource Sort_NewFirst}"/>
                         </ComboBox>
                     </StackPanel>
                     <ScrollViewer>
@@ -125,10 +126,10 @@
             <TabItem Header="{DynamicResource Media_Playlists}">
                 <StackPanel Margin="10">
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
-                        <TextBlock Text="Sort by:" VerticalAlignment="Center" Margin="0,0,5,0"/>
-                        <ComboBox SelectedItem="{Binding SortOrderPlaylists, Mode=TwoWay}" Width="120">
-                            <x:String>A-Z</x:String>
-                            <x:String>Z-A</x:String>
+                        <TextBlock Text="{DynamicResource Media_SortBy}" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                        <ComboBox SelectedIndex="{Binding SortOrderPlaylists, Mode=TwoWay, Converter={StaticResource SortOrderConverter}}" Width="120">
+                            <ComboBoxItem Content="{DynamicResource Sort_AZ}"/>
+                            <ComboBoxItem Content="{DynamicResource Sort_ZA}"/>
                         </ComboBox>
                     </StackPanel>
                     <!-- Содержимое для вкладки Плейлисты -->
@@ -137,16 +138,16 @@
             <TabItem Header="{DynamicResource Media_Artists}">
                 <StackPanel Margin="10">
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
-                        <TextBlock Text="Sort by:" VerticalAlignment="Center" Margin="0,0,5,0"/>
-                        <ComboBox SelectedItem="{Binding SortOrderArtists, Mode=TwoWay}" Width="120">
-                            <x:String>A-Z</x:String>
-                            <x:String>Z-A</x:String>
+                        <TextBlock Text="{DynamicResource Media_SortBy}" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                        <ComboBox SelectedIndex="{Binding SortOrderArtists, Mode=TwoWay, Converter={StaticResource SortOrderConverter}}" Width="120">
+                            <ComboBoxItem Content="{DynamicResource Sort_AZ}"/>
+                            <ComboBoxItem Content="{DynamicResource Sort_ZA}"/>
                         </ComboBox>
                     </StackPanel>
                     <!-- Содержимое для вкладки Исполнители -->
                 </StackPanel>
             </TabItem>
-            <TabItem Header="Queue">
+            <TabItem Header="{DynamicResource Media_Queue}">
                 <DockPanel>
                     <StackPanel Orientation="Horizontal" DockPanel.Dock="Top" Margin="5">
                         <Button Content="Play Next" Command="{Binding PlayNextInQueueCommand}" Margin="0,0,5,0"/>
@@ -200,7 +201,7 @@
                     Width="100"
                     HorizontalAlignment="Left"
                     VerticalAlignment="Bottom"/>
-            <Button Content="Вывод" 
+            <Button Content="{DynamicResource Media_PrintDatabase}" 
                     Command="{Binding PrintDatabaseCommand}"
                     Margin="10,0,0,0"
                     Padding="5 5"

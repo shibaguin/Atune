@@ -13,8 +13,8 @@
               KeyDown="OnKeyDown"
               Focusable="True">
   <StackPanel Margin="10" Spacing="10">
-    <Button Content="Назад" Click="BackButton_Click" HorizontalAlignment="Left"/>
-    <Button Content="Воспроизвести альбом" Click="PlayAlbumButton_Click" HorizontalAlignment="Left"/>
+    <Button Content="{DynamicResource Album_Back}" Click="BackButton_Click" HorizontalAlignment="Left"/>
+    <Button Content="{DynamicResource Album_PlayAlbum}" Click="PlayAlbumButton_Click" HorizontalAlignment="Left"/>
     <TextBlock Text="{Binding Album.AlbumName}" 
                FontSize="24" 
                FontWeight="Bold" 
@@ -25,9 +25,12 @@
     <TextBlock Text="{Binding Album.Year}" 
                FontSize="16" 
                HorizontalAlignment="Center"/>
-    <TextBlock Text="{Binding Album.TrackCount, StringFormat='Количество треков: {0}'}" 
-               FontSize="16" 
-               HorizontalAlignment="Center"/>
+    <TextBlock FontSize="16" HorizontalAlignment="Center">
+      <TextBlock.Inlines>
+        <Run Text="{DynamicResource Album_TrackCountLabel}"/>
+        <Run Text="{Binding Album.TrackCount}"/>
+      </TextBlock.Inlines>
+    </TextBlock>
     <ListBox ItemsSource="{Binding Album.Tracks}" Margin="0,20,0,0">
       <ListBox.ItemTemplate>
         <DataTemplate x:DataType="models:MediaItem">

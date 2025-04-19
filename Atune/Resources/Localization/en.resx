@@ -124,4 +124,35 @@
   <data name="Media_Artists" xml:space="preserve">
     <value>Artists</value>
   </data>
+  <!-- localization keys for sorting and UI elements -->
+  <data name="Media_SortBy" xml:space="preserve">
+    <value>Sort by:</value>
+  </data>
+  <data name="Sort_AZ" xml:space="preserve">
+    <value>A-Z</value>
+  </data>
+  <data name="Sort_ZA" xml:space="preserve">
+    <value>Z-A</value>
+  </data>
+  <data name="Sort_OldFirst" xml:space="preserve">
+    <value>Oldest First</value>
+  </data>
+  <data name="Sort_NewFirst" xml:space="preserve">
+    <value>Newest First</value>
+  </data>
+  <data name="Media_Queue" xml:space="preserve">
+    <value>Queue</value>
+  </data>
+  <data name="Media_PrintDatabase" xml:space="preserve">
+    <value>Print Database</value>
+  </data>
+  <data name="Album_Back" xml:space="preserve">
+    <value>Back</value>
+  </data>
+  <data name="Album_PlayAlbum" xml:space="preserve">
+    <value>Play Album</value>
+  </data>
+  <data name="Album_TrackCountLabel" xml:space="preserve">
+    <value>Track count: </value>
+  </data>
 </root> 
