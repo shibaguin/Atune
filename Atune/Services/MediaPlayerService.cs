@@ -22,6 +22,9 @@ namespace Atune.Services
         private const string NetworkCaching = ":network-caching=300";
         private const string RtspTcp = ":rtsp-tcp";
 
+        private MediaPlayer? _preloadPlayer;
+        private Media? _preloadMedia;
+
         public event EventHandler? PlaybackEnded;
         public event EventHandler? PlaybackStarted;
         public event EventHandler? PlaybackPaused;
@@ -50,6 +53,9 @@ namespace Atune.Services
                 _logger.LogDebug("LibVLC instance created");
 
                 _player = new MediaPlayer(_libVlc);
+                
+                _preloadPlayer = new MediaPlayer(_libVlc) { Mute = true };
+                
                 _logger.LogInformation("MediaPlayer initialized successfully");
 
                 _volume = settingsService.Volume;
@@ -226,6 +232,32 @@ namespace Atune.Services
                     _logger.LogError(ex, "Stop error");
                 }
             });
+        }
+
+        public async Task Preload(string path, int bufferMilliseconds = 1500)
+        {
+            if (_libVlc == null || _preloadPlayer == null)
+                return;
+            try
+            {
+                _preloadMedia?.Dispose();
+                _preloadMedia = new Media(_libVlc, new Uri(path));
+                await Task.Run(() => _preloadMedia.Parse(MediaParseOptions.ParseLocal));
+                await Dispatcher.UIThread.InvokeAsync(() =>
+                {
+                    _preloadPlayer.Media = _preloadMedia;
+                    _preloadPlayer.Play(_preloadMedia);
+                });
+                await Task.Delay(bufferMilliseconds);
+                await Dispatcher.UIThread.InvokeAsync(() =>
+                {
+                    _preloadPlayer.Pause();
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error preloading media");
+            }
         }
     }
 
