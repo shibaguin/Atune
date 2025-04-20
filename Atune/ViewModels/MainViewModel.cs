@@ -477,17 +477,23 @@ public partial class MainViewModel : ViewModelBase
     }
 
     // Обновлённый метод для переключения воспроизведения (play/pause)
+    [RelayCommand]
     private void ExecuteTogglePlayPauseCommand()
     {
-        if (_mediaPlayerService.IsPlaying)
+        try
         {
-            _mediaPlayerService.Pause();
-            IsPlaying = false;
+            if (_mediaPlayerService.IsPlaying)
+            {
+                _mediaPlayerService.Pause();
+            }
+            else
+            {
+                _mediaPlayerService.Resume();
+            }
         }
-        else
+        catch (Exception ex)
         {
-            _mediaPlayerService.Resume();
-            IsPlaying = true;
+            _logger.LogError(ex, "Play/pause error");
         }
     }
 
@@ -789,21 +795,21 @@ public partial class MainViewModel : ViewModelBase
     {
         try 
         {
-            if (IsPlaying)
+            if (_mediaPlayerService.IsPlaying)
             {
-                _mediaPlayerService?.Pause();
-                // Не меняем IsPlaying здесь - дождемся события PlaybackPaused
+                _mediaPlayerService.Pause();
             }
             else
             {
                 if (!string.IsNullOrEmpty(CurrentMediaPath))
                 {
-                    await (_mediaPlayerService?.Play(CurrentMediaPath) ?? Task.CompletedTask);
-                    // Не устанавливаем IsPlaying вручную - дождемся события PlaybackStarted
+                    // resume playback from paused position
+                    _mediaPlayerService.Resume();
                 }
                 else
                 {
-                    _mediaPlayerService?.Resume();
+                    // start playback if nothing is loaded yet
+                    await (_mediaPlayerService?.Play(CurrentMediaPath) ?? Task.CompletedTask);
                 }
             }
         }
