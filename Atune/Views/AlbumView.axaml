@@ -5,6 +5,7 @@
               xmlns:vm="clr-namespace:Atune.ViewModels"
               xmlns:models="clr-namespace:Atune.Models"
               xmlns:views="clr-namespace:Atune.Views"
+              xmlns:conv="clr-namespace:Atune.Converters"
               mc:Ignorable="d"
               d:DesignWidth="400"
               d:DesignHeight="600"
@@ -13,12 +14,19 @@
               PointerPressed="OnPointerPressed"
               KeyDown="OnKeyDown"
               Focusable="True">
+  <UserControl.Resources>
+    <conv:CoverArtConverter x:Key="CoverArtConverter"/>
+  </UserControl.Resources>
   <Grid Margin="10">
     <Grid.RowDefinitions>
       <RowDefinition Height="Auto"/>
       <RowDefinition Height="*"/>
     </Grid.RowDefinitions>
     <StackPanel Grid.Row="0" Spacing="10">
+      <Image Source="{Binding Album.CoverArt, Converter={StaticResource CoverArtConverter}}"
+             Width="200" Height="200"
+             Stretch="Uniform"
+             HorizontalAlignment="Center"/>
       <Button Content="{DynamicResource Album_Back}" Click="BackButton_Click" HorizontalAlignment="Left"/>
       <Button Content="{DynamicResource Album_PlayAlbum}" Click="PlayAlbumButton_Click" HorizontalAlignment="Left"/>
       <TextBlock Text="{Binding Album.AlbumName}" 
