@@ -51,15 +51,36 @@ namespace Atune.Views
             {
                 playBtn.Click += async (_, __) =>
                 {
-                    if (PlayCommand != null)
+                    if (DataContext is MediaItem item)
                     {
-                        PlayCommand.Execute(DataContext);
-                    }
-                    else if (DataContext is MediaItem item)
-                    {
-                        var player = App.Current!.Services!.GetRequiredService<MediaPlayerService>();
-                        await player.StopAsync();
-                        await player.Play(item.Path);
+                        var player = App.Current.Services.GetRequiredService<MediaPlayerService>();
+                        // If this track was paused, resume
+                        if (player.CurrentPath != null && !player.IsPlaying)
+                        {
+                            try
+                            {
+                                var uri = new Uri(player.CurrentPath);
+                                if (uri.IsFile && uri.LocalPath == item.Path)
+                                {
+                                    player.Resume();
+                                    return;
+                                }
+                            }
+                            catch
+                            {
+                                // ignore URI parsing errors
+                            }
+                        }
+                        // Otherwise start fresh play
+                        if (PlayCommand != null)
+                        {
+                            PlayCommand.Execute(item);
+                        }
+                        else
+                        {
+                            await player.StopAsync();
+                            await player.Play(item.Path);
+                        }
                     }
                 };
             }
