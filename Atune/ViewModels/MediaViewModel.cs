@@ -774,18 +774,22 @@ public partial class MediaViewModel : ObservableObject, IDisposable
         {
             try 
             {
-                await _mediaPlayerService.StopAsync(); // Добавляем асинхронную остановку
+                // Ensure current volume applied before any playback
+                _mediaPlayerService.Volume = _settingsService.LoadSettings().Volume;
+                await _mediaPlayerService.StopAsync();
                 SelectedMediaItem = mediaItem;
                 
-                await Dispatcher.UIThread.InvokeAsync(() => 
+                await Dispatcher.UIThread.InvokeAsync(() =>
                 {
                     OnPropertyChanged(nameof(SelectedMediaItem));
                 });
                 
                 await _mediaPlayerService.Play(mediaItem.Path);
+                // Re-apply volume in case Play resets it
+                _mediaPlayerService.Volume = _settingsService.LoadSettings().Volume;
                 
-                // Обновление интерфейса через главный поток
-                Dispatcher.UIThread.Post(() => 
+                // Update UI
+                Dispatcher.UIThread.Post(() =>
                 {
                     OnPropertyChanged(nameof(MediaItems));
                 }, DispatcherPriority.Background);

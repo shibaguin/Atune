@@ -120,6 +120,8 @@ public partial class MainViewModel : ViewModelBase
         try
         {
             _mediaPlayerService = mediaPlayerService;
+            // Apply initial settings now that media player service is available
+            LoadInitialSettings();
         }
         catch (MediaPlayerInitializationException ex)
         {
@@ -200,8 +202,10 @@ public partial class MainViewModel : ViewModelBase
     private void LoadInitialSettings()
     {
         var settings = _settingsService.LoadSettings();
-        // Apply settings
-        // Применяем настройки
+        // Apply saved volume so slider reflects it and playback uses it
+        Volume = settings.Volume;
+        // Notify UI even if value didn't change
+        OnPropertyChanged(nameof(Volume));
     }
 
     [RelayCommand]
@@ -462,12 +466,15 @@ public partial class MainViewModel : ViewModelBase
     }
 
     // Метод, исполняемый командой PlayCommand
+    [RelayCommand]
     private async void ExecutePlayCommand()
     {
         if (CurrentView is MediaView mediaView && 
             mediaView.DataContext is MediaViewModel mvm &&
             mvm.SelectedMediaItem != null)
         {
+            // Apply the current UI volume setting before playback
+            _mediaPlayerService.Volume = Volume;
             await _mediaPlayerService.Play(mvm.SelectedMediaItem.Path);
             IsPlaying = true;
         }
@@ -569,6 +576,8 @@ public partial class MainViewModel : ViewModelBase
             CurrentMediaPath = localPath;
             IsPlaying = true;
             _positionTimer.Start();
+            // Apply main volume setting when playback actually starts
+            _mediaPlayerService.Volume = Volume;
 
             // Update current media item in Now Playing
             var mediaVm = _views[SectionType.Media].DataContext as MediaViewModel;

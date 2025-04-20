@@ -18,6 +18,7 @@ namespace Atune.Services
         private Media? _currentMedia;
         private int _volume = 50;
         private readonly ILogger<MediaPlayerService> _logger;
+        private readonly ISettingsService _settingsService;
         
         private const string NetworkCaching = ":network-caching=300";
         private const string RtspTcp = ":rtsp-tcp";
@@ -33,6 +34,7 @@ namespace Atune.Services
             ISettingsService settingsService, 
             ILogger<MediaPlayerService> logger)
         {
+            _settingsService = settingsService;
             _logger = logger;
             
             try
@@ -58,8 +60,6 @@ namespace Atune.Services
                 
                 _logger.LogInformation("MediaPlayer initialized successfully");
 
-                _volume = settingsService.Volume;
-                
                 _player.EndReached += (s, e) => PlaybackEnded?.Invoke(this, EventArgs.Empty);
                 _player.Playing += (s, e) => PlaybackStarted?.Invoke(this, EventArgs.Empty);
                 _player.Paused += (s, e) => PlaybackPaused?.Invoke(this, EventArgs.Empty);
@@ -91,16 +91,13 @@ namespace Atune.Services
                 _currentMedia?.Dispose();
                 _currentMedia = new Media(_libVlc, new Uri(path));
                 
-                // Упрощаем подготовку медиа
-                await Task.Run(() => {
-                    _currentMedia.Parse(MediaParseOptions.ParseLocal); // Только базовый парсинг
-                });
+                // Parse metadata and buffer
+                await Task.Run(() => _currentMedia.Parse(MediaParseOptions.ParseLocal));
 
-                // Асинхронное воспроизведение
+                // Enqueue play on UI thread
                 await Dispatcher.UIThread.InvokeAsync(() => 
                 {
                     _player.Play(_currentMedia);
-                    Volume = _volume; // Применяем текущую громкость
                 });
             }
             catch (Exception ex)
