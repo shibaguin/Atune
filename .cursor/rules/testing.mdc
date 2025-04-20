@@ -1,8 +1,0 @@
----
-description: Написание тестов
-globs: 
----
-1. Тесты размещай в `Atune.Tests/`
-2. Используй xUnit + Moq для модульных тестов
-3. Для UI-тестов используй Avalonia.Headless
-4. Пример теста локализации: `LocalizationServiceTests.cs`

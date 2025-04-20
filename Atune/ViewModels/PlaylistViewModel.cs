@@ -20,7 +20,7 @@ namespace Atune.ViewModels
         public PlaylistViewModel(Playlist playlist)
         {
             Playlist = playlist;
-            _playlistService = App.Current.Services.GetRequiredService<IPlaylistService>();
+            _playlistService = App.Current!.Services!.GetRequiredService<IPlaylistService>();
             Name = playlist.Name;
             _ = LoadTracksAsync();
         }

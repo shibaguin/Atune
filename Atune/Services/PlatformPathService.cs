@@ -40,8 +40,8 @@ namespace Atune.Services
         public string GetSettingsPath(string fileName = "settings.ini")
         {
             string key = "settings_" + fileName;
-            if (_pathCache.TryGetValue(key, out string cachedPath))
-                return cachedPath;
+            if (_pathCache.TryGetValue(key, out string? cachedPath))
+                return cachedPath!;
         
             string path;
             if (OperatingSystem.IsAndroid())
@@ -61,8 +61,8 @@ namespace Atune.Services
         public string GetDatabasePath(string databaseFileName = "media_library.db")
         {
             string key = "database_" + databaseFileName;
-            if (_pathCache.TryGetValue(key, out string cachedPath))
-                return cachedPath;
+            if (_pathCache.TryGetValue(key, out string? cachedPath))
+                return cachedPath!;
         
             string path;
             if (OperatingSystem.IsAndroid())

@@ -297,9 +297,9 @@ namespace Atune.Services
                 });
 
             string cacheKey = "MusicPlaybackService_Metadata_" + (path ?? string.Empty);
-            if (_cache.TryGetValue(cacheKey, out MediaMetadata cachedMetadata) && cachedMetadata != null)
+            if (_cache.TryGetValue(cacheKey, out MediaMetadata? cachedMetadata) && cachedMetadata != null)
             {
-                return Task.FromResult(cachedMetadata);
+                return Task.FromResult(cachedMetadata!);
             }
 
             try
@@ -308,7 +308,7 @@ namespace Atune.Services
                 MediaMetadata metadata = new MediaMetadata
                 {
                     Title = string.IsNullOrWhiteSpace(track.Title)
-                                ? System.IO.Path.GetFileNameWithoutExtension(path)
+                                ? System.IO.Path.GetFileNameWithoutExtension(path)!
                                 : track.Title!,
                     Artist = track.Artist ?? "Unknown Artist",
                     Album = track.Album ?? "Unknown Album",
@@ -325,7 +325,7 @@ namespace Atune.Services
                 _logger.LogError(ex, "Error extracting metadata from file");
                 return Task.FromResult(new MediaMetadata
                 {
-                    Title = System.IO.Path.GetFileNameWithoutExtension(path),
+                    Title = System.IO.Path.GetFileNameWithoutExtension(path)!,
                     Artist = "Unknown Artist",
                     Album = "Unknown Album",
                     Genre = "Unknown Genre",
@@ -337,12 +337,12 @@ namespace Atune.Services
         public Task<MediaMetadata> GetMetadataFromPathAsync(string path)
         {
             if (string.IsNullOrEmpty(path))
-                return Task.FromResult(new MediaMetadata());
+                return ExtractMetadataAsync(path);
             
             string cacheKey = "MusicPlaybackService_Metadata_" + path;
             if (_cache.TryGetValue(cacheKey, out MediaMetadata? cachedMetadata) && cachedMetadata is not null)
             {
-                return Task.FromResult(cachedMetadata);
+                return Task.FromResult(cachedMetadata!);
             }
             
             try
@@ -351,7 +351,7 @@ namespace Atune.Services
                 MediaMetadata metadata = new MediaMetadata
                 {
                     Title = string.IsNullOrWhiteSpace(track.Title)
-                        ? System.IO.Path.GetFileNameWithoutExtension(path)
+                        ? System.IO.Path.GetFileNameWithoutExtension(path)!
                         : track.Title!,
                     Artist = track.Artist ?? "Unknown Artist",
                     Album = track.Album ?? "Unknown Album",
@@ -368,7 +368,7 @@ namespace Atune.Services
                 _logger.LogError(ex, "Error extracting metadata from file");
                 return Task.FromResult(new MediaMetadata
                 {
-                    Title = System.IO.Path.GetFileNameWithoutExtension(path),
+                    Title = System.IO.Path.GetFileNameWithoutExtension(path)!,
                     Artist = "Unknown Artist",
                     Album = "Unknown Album",
                     Genre = "Unknown Genre",
