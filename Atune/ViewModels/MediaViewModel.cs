@@ -378,9 +378,9 @@ public partial class MediaViewModel : ObservableObject, IDisposable
 
             if (newItems.Count > 0)
             {
-                await _unitOfWork.Media.BulkInsertAsync(newItems, batch => 
+                await _unitOfWork.Media.BulkInsertAsync(newItems, batch =>
                 {
-                    Dispatcher.UIThread.Post(() => 
+                    Dispatcher.UIThread.Post(() =>
                     {
                         foreach (var item in batch)
                         {
@@ -391,14 +391,11 @@ public partial class MediaViewModel : ObservableObject, IDisposable
                 
                 await _unitOfWork.CommitAsync();
 
-                var updatedItems = await _unitOfWork.Media.GetAllMediaItemsAsync();
+                // Sort items after insertion to maintain current order without full reload
                 Dispatcher.UIThread.Post(() =>
                 {
-                    MediaItems.Clear();
-                    foreach (var item in updatedItems)
-                    {
-                        MediaItems.Add(item);
-                    }
+                    SortMediaItems();
+                    OnPropertyChanged(nameof(MediaItems));
                 });
             }
         }
@@ -617,16 +614,32 @@ public partial class MediaViewModel : ObservableObject, IDisposable
 
             if (newPaths.Count > 0)
             {
-                foreach (var path in newPaths)
-                {
-                    // Создаем объект MediaItem с корректными метаданными, включая TrackArtists
-                    var mediaItem = CreateMediaItemFromPath(path);
-                    // Добавляем объект через сервис, который обрабатывает связь с альбомами и артистами
-                    await _mediaDatabaseService.AddMediaItemAsync(mediaItem);
-                }
+                // Build media items on a background thread to avoid UI blocking
+                var newItems = await Task.Run(() =>
+                    newPaths.Select(path => CreateMediaItemFromPath(path)).ToList()
+                );
 
-                // Обновляем UI после добавления новых медиа-элементов
-                await RefreshMedia();
+                // Batch insert media items and update UI incrementally
+                await _unitOfWork.Media.BulkInsertAsync(newItems, batch =>
+                {
+                    Dispatcher.UIThread.Post(() =>
+                    {
+                        foreach (var item in batch)
+                        {
+                            MediaItems.Insert(0, item);
+                        }
+                        OnPropertyChanged(nameof(MediaItems));
+                    });
+                });
+
+                await _unitOfWork.CommitAsync();
+
+                // Update albums and sort after insertion
+                Dispatcher.UIThread.Post(() =>
+                {
+                    UpdateAlbums();
+                    SortAlbums();
+                });
             }
         }
         finally
