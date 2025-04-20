@@ -378,28 +378,36 @@ public partial class MediaViewModel : ObservableObject, IDisposable
 
             if (newItems.Count > 0)
             {
-                // Run bulk insert and commit on a background thread to avoid UI blocking
                 await Task.Run(async () =>
                 {
+                    // Bulk-insert with incremental UI updates to avoid freezing
                     await _unitOfWork.Media.BulkInsertAsync(newItems, batch =>
                     {
-                        Dispatcher.UIThread.Post(() =>
+                        Dispatcher.UIThread.InvokeAsync(async () =>
                         {
+                            int count = 0;
+                            const int subBatch = 50;
                             foreach (var item in batch)
+                            {
                                 MediaItems.Insert(0, item);
+                                count++;
+                                if (count % subBatch == 0)
+                                    await Task.Delay(10);
+                            }
                             OnPropertyChanged(nameof(MediaItems));
-                        });
+                        }, Avalonia.Threading.DispatcherPriority.Background);
                     });
 
                     await _unitOfWork.CommitAsync();
 
-                    // After commit, sort UI items on UI thread
-                    Dispatcher.UIThread.Post(() =>
+                    Dispatcher.UIThread.InvokeAsync(() =>
                     {
                         SortMediaItems();
                         OnPropertyChanged(nameof(MediaItems));
-                    });
+                    }, Avalonia.Threading.DispatcherPriority.Background);
                 });
+                // Refresh all tracks and albums after insert
+                await RefreshMedia();
             }
         }
         finally
@@ -617,31 +625,37 @@ public partial class MediaViewModel : ObservableObject, IDisposable
 
             if (newPaths.Count > 0)
             {
-                // Offload full insertion process to background thread
                 await Task.Run(async () =>
                 {
-                    // Create MediaItems with metadata off UI thread
                     var newItems = newPaths.Select(path => CreateMediaItemFromPath(path)).ToList();
 
                     await _unitOfWork.Media.BulkInsertAsync(newItems, batch =>
                     {
-                        Dispatcher.UIThread.Post(() =>
+                        Dispatcher.UIThread.InvokeAsync(async () =>
                         {
+                            int count = 0;
+                            const int subBatch = 50;
                             foreach (var item in batch)
+                            {
                                 MediaItems.Insert(0, item);
+                                count++;
+                                if (count % subBatch == 0)
+                                    await Task.Delay(10);
+                            }
                             OnPropertyChanged(nameof(MediaItems));
-                        });
+                        }, Avalonia.Threading.DispatcherPriority.Background);
                     });
 
                     await _unitOfWork.CommitAsync();
 
-                    // Refresh albums and sorting on UI thread
-                    Dispatcher.UIThread.Post(() =>
+                    Dispatcher.UIThread.InvokeAsync(() =>
                     {
                         UpdateAlbums();
                         SortAlbums();
-                    });
+                    }, Avalonia.Threading.DispatcherPriority.Background);
                 });
+                // Refresh all tracks and albums after insert
+                await RefreshMedia();
             }
         }
         finally
