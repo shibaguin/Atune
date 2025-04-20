@@ -163,7 +163,7 @@ public partial class MediaViewModel : ObservableObject, IDisposable
     public IRelayCommand<MediaItem> AddToQueueCommand { get; }
     public IRelayCommand ClearQueueCommand { get; }
     public IAsyncRelayCommand PlayNextInQueueCommand { get; }
-    public IAsyncRelayCommand<AlbumInfo> PlayAlbumCommand { get; }
+    public IAsyncRelayCommand<AlbumInfo?> PlayAlbumCommand { get; }
     public IAsyncRelayCommand PlayAllTracksCommand { get; }
     public IAsyncRelayCommand<MediaItem> PlayTrackCommand { get; }
     public IAsyncRelayCommand PlayPreviousInQueueCommand { get; }
@@ -171,8 +171,8 @@ public partial class MediaViewModel : ObservableObject, IDisposable
 
     // Playlist commands
     public IAsyncRelayCommand CreatePlaylistCommand { get; }
-    public IAsyncRelayCommand<Playlist> OpenPlaylistCommand { get; }
-    public IAsyncRelayCommand<Playlist> AddToPlaylistCommand { get; }
+    public IAsyncRelayCommand<Playlist?> OpenPlaylistCommand { get; }
+    public IAsyncRelayCommand<Playlist?> AddToPlaylistCommand { get; }
 
     public MediaViewModel(
         IMemoryCache cache, 
@@ -211,7 +211,7 @@ public partial class MediaViewModel : ObservableObject, IDisposable
         AddToQueueCommand = new RelayCommand<MediaItem>(item => { if (item != null) PlaybackQueue.Add(item); });
         ClearQueueCommand = new RelayCommand(() => { PlaybackQueue.Clear(); _currentQueueIndex = -1; });
         PlayNextInQueueCommand = new AsyncRelayCommand(PlayNextInQueue);
-        PlayAlbumCommand = new AsyncRelayCommand<AlbumInfo>(PlayAlbum);
+        PlayAlbumCommand = new AsyncRelayCommand<AlbumInfo?>(PlayAlbum);
         PlayAllTracksCommand = new AsyncRelayCommand(PlayAllTracks);
         PlayTrackCommand = new AsyncRelayCommand<MediaItem>(async track =>
         {
@@ -248,8 +248,8 @@ public partial class MediaViewModel : ObservableObject, IDisposable
 
         // Initialize playlist commands
         CreatePlaylistCommand = new AsyncRelayCommand(CreatePlaylistAsync);
-        OpenPlaylistCommand = new AsyncRelayCommand<Playlist>(OpenPlaylistAsync);
-        AddToPlaylistCommand = new AsyncRelayCommand<Playlist>(AddToPlaylistAsync);
+        OpenPlaylistCommand = new AsyncRelayCommand<Playlist?>(OpenPlaylistAsync);
+        AddToPlaylistCommand = new AsyncRelayCommand<Playlist?>(AddToPlaylistAsync);
     }
 
     private async Task<List<MediaItem>> LoadFromDatabaseAsync()
@@ -1023,7 +1023,7 @@ public partial class MediaViewModel : ObservableObject, IDisposable
     }
 
     // New method: enqueue album tracks and play
-    private async Task PlayAlbum(AlbumInfo album)
+    private async Task PlayAlbum(AlbumInfo? album)
     {
         if (album == null) return;
         _currentQueueIndex = -1;
@@ -1163,16 +1163,17 @@ public partial class MediaViewModel : ObservableObject, IDisposable
         }
     }
 
-    private async Task OpenPlaylistAsync(Playlist playlist)
+    private Task OpenPlaylistAsync(Playlist? playlist)
     {
         if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             var mainVm = desktop.MainWindow?.DataContext as MainViewModel;
             mainVm?.GoPlaylistCommand.Execute(playlist);
         }
+        return Task.CompletedTask;
     }
 
-    private async Task AddToPlaylistAsync(Playlist playlist)
+    private async Task AddToPlaylistAsync(Playlist? playlist)
     {
         if (playlist == null)
         {
