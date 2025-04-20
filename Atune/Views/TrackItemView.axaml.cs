@@ -11,6 +11,8 @@ using Atune.Services;
 using System.Collections.Generic;
 using Avalonia.Controls.ApplicationLifetimes;
 using Atune.ViewModels;
+using Avalonia.Input;
+using Avalonia.Controls.Shapes;
 
 namespace Atune.Views
 {
@@ -59,6 +61,23 @@ namespace Atune.Views
                         await player.StopAsync();
                         await player.Play(item.Path);
                     }
+                };
+            }
+
+            // Wire up hover overlay and play icon visibility
+            var overlay = this.FindControl<Rectangle>("Overlay");
+            var playIcon = this.FindControl<TextBlock>("PlayIcon");
+            if (playBtn != null && overlay != null && playIcon != null)
+            {
+                playBtn.PointerEntered += (_, __) =>
+                {
+                    overlay.Opacity = 0.8;
+                    playIcon.Opacity = 1;
+                };
+                playBtn.PointerExited += (_, __) =>
+                {
+                    overlay.Opacity = 0;
+                    playIcon.Opacity = 0;
                 };
             }
 
