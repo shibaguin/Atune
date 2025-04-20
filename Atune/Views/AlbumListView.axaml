@@ -14,11 +14,14 @@
     <Button x:Name="CoverButton" Grid.Column="0"
             Width="50" Height="50"
             Margin="0,0,5,0"
+            Padding="0"
             Background="Transparent" BorderThickness="0"
             Focusable="False">
       <Grid>
         <Image Source="{Binding CoverArt, Converter={StaticResource CoverArtConverter}}"
-               Stretch="UniformToFill"/>
+               Stretch="Fill"
+               HorizontalAlignment="Stretch"
+               VerticalAlignment="Stretch"/>
         <Rectangle x:Name="Overlay"
                    Fill="Black"
                    Opacity="0"
@@ -29,7 +32,7 @@
                    Opacity="0"
                    HorizontalAlignment="Center"
                    VerticalAlignment="Center"
-                   FontSize="16"/>
+                   FontSize="24"/>
       </Grid>
     </Button>
     <!-- Album info / open details -->
