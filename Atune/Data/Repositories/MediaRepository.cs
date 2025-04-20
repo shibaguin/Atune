@@ -95,17 +95,18 @@ namespace Atune.Data.Repositories
             {
                 foreach (var batch in batches)
                 {
+                    // Bulk-insert this chunk
                     await _context.BulkInsertAsync(batch, options =>
                     {
                         options.InsertKeepIdentity = true;
                         options.BatchSize = batchSize;
                     });
+                    // Notify UI of this processed chunk for incremental update
+                    onBatchProcessed?.Invoke(batch);
+                    // Give UI time to process updates
+                    await Task.Delay(delayMs);
                 }
                 await transaction.CommitAsync();
-                onBatchProcessed?.Invoke(newItems);
-
-                if (OperatingSystem.IsAndroid())
-                    await Task.Delay(delayMs); // Для плавности UI
             }
             finally
             {

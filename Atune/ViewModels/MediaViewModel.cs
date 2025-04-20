@@ -378,24 +378,27 @@ public partial class MediaViewModel : ObservableObject, IDisposable
 
             if (newItems.Count > 0)
             {
-                await _unitOfWork.Media.BulkInsertAsync(newItems, batch =>
+                // Run bulk insert and commit on a background thread to avoid UI blocking
+                await Task.Run(async () =>
                 {
+                    await _unitOfWork.Media.BulkInsertAsync(newItems, batch =>
+                    {
+                        Dispatcher.UIThread.Post(() =>
+                        {
+                            foreach (var item in batch)
+                                MediaItems.Insert(0, item);
+                            OnPropertyChanged(nameof(MediaItems));
+                        });
+                    });
+
+                    await _unitOfWork.CommitAsync();
+
+                    // After commit, sort UI items on UI thread
                     Dispatcher.UIThread.Post(() =>
                     {
-                        foreach (var item in batch)
-                        {
-                            MediaItems.Insert(0, item);
-                        }
+                        SortMediaItems();
+                        OnPropertyChanged(nameof(MediaItems));
                     });
-                });
-                
-                await _unitOfWork.CommitAsync();
-
-                // Sort items after insertion to maintain current order without full reload
-                Dispatcher.UIThread.Post(() =>
-                {
-                    SortMediaItems();
-                    OnPropertyChanged(nameof(MediaItems));
                 });
             }
         }
@@ -614,31 +617,30 @@ public partial class MediaViewModel : ObservableObject, IDisposable
 
             if (newPaths.Count > 0)
             {
-                // Build media items on a background thread to avoid UI blocking
-                var newItems = await Task.Run(() =>
-                    newPaths.Select(path => CreateMediaItemFromPath(path)).ToList()
-                );
-
-                // Batch insert media items and update UI incrementally
-                await _unitOfWork.Media.BulkInsertAsync(newItems, batch =>
+                // Offload full insertion process to background thread
+                await Task.Run(async () =>
                 {
+                    // Create MediaItems with metadata off UI thread
+                    var newItems = newPaths.Select(path => CreateMediaItemFromPath(path)).ToList();
+
+                    await _unitOfWork.Media.BulkInsertAsync(newItems, batch =>
+                    {
+                        Dispatcher.UIThread.Post(() =>
+                        {
+                            foreach (var item in batch)
+                                MediaItems.Insert(0, item);
+                            OnPropertyChanged(nameof(MediaItems));
+                        });
+                    });
+
+                    await _unitOfWork.CommitAsync();
+
+                    // Refresh albums and sorting on UI thread
                     Dispatcher.UIThread.Post(() =>
                     {
-                        foreach (var item in batch)
-                        {
-                            MediaItems.Insert(0, item);
-                        }
-                        OnPropertyChanged(nameof(MediaItems));
+                        UpdateAlbums();
+                        SortAlbums();
                     });
-                });
-
-                await _unitOfWork.CommitAsync();
-
-                // Update albums and sort after insertion
-                Dispatcher.UIThread.Post(() =>
-                {
-                    UpdateAlbums();
-                    SortAlbums();
                 });
             }
         }
