@@ -462,15 +462,15 @@ public partial class MediaViewModel : ObservableObject, IDisposable
                 SortMediaItems();
                 OnPropertyChanged(nameof(MediaItems));
 
+                // Сбрасываем кэш альбомов перед обновлением, чтобы группировка выполнялась единожды
+                _albumCache = null;
+
                 // Обновляем альбомы после загрузки треков
                 UpdateAlbums();
                 // Apply album sorting from settings
                 SortAlbums();
             });
             
-            // Сбрасываем кэш альбомов
-            _albumCache = null;
-
             _cache.Set("MediaContent", items, new MemoryCacheEntryOptions()
                 .SetSlidingExpiration(TimeSpan.FromMinutes(5))
                 .SetSize(items.Count * 500 + 1024));

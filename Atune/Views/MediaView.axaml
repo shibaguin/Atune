@@ -72,16 +72,19 @@
                             <ComboBoxItem Content="{DynamicResource Sort_NewFirst}"/>
                         </ComboBox>
                     </StackPanel>
-                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-                        <ItemsControl x:Name="AlbumsList" ItemsSource="{Binding Albums}">
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate x:DataType="models:AlbumInfo">
-                                    <views:AlbumListView
-                                        OpenCommand="{Binding OpenAlbumCommand, RelativeSource={RelativeSource AncestorType=views:MediaView}}"/>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                    </ScrollViewer>
+                    <ListBox Grid.Row="1" ItemsSource="{Binding Albums}" SelectionMode="Single">
+                        <ListBox.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <VirtualizingStackPanel/>
+                            </ItemsPanelTemplate>
+                        </ListBox.ItemsPanel>
+                        <ListBox.ItemTemplate>
+                            <DataTemplate x:DataType="models:AlbumInfo">
+                                <views:AlbumListView
+                                    OpenCommand="{Binding OpenAlbumCommand, RelativeSource={RelativeSource AncestorType=views:MediaView}}"/>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
                 </Grid>
             </TabItem>
             <TabItem Header="{DynamicResource Media_Playlists}">
