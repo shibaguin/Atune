@@ -6,27 +6,34 @@
              x:Class="Atune.Views.AlbumListView"
              x:DataType="models:AlbumInfo">
   <UserControl.Resources>
+    <!-- Converter for cover art images -->
     <conv:CoverArtConverter x:Key="CoverArtConverter"/>
   </UserControl.Resources>
-  <Grid ColumnDefinitions="Auto,Auto,*" VerticalAlignment="Center" Margin="5">
-    <Image Grid.Column="0"
-           Source="{Binding CoverArt, Converter={StaticResource CoverArtConverter}}"
-           Width="50"
-           Height="50"
-           Stretch="UniformToFill"
-           Margin="0,0,5,0"/>
-    <!-- Play album button -->
-    <Button x:Name="PlayButton"
-            Grid.Column="1"
-            Background="Transparent"
-            BorderThickness="0"
+  <Grid ColumnDefinitions="Auto,*" VerticalAlignment="Center" Margin="5">
+    <Button x:Name="CoverButton" Grid.Column="0"
+            Width="50" Height="50"
+            Margin="0,0,5,0"
+            Background="Transparent" BorderThickness="0"
             Focusable="False">
-      <TextBlock Text="▶" FontSize="16"/>
+      <Grid>
+        <Image Source="{Binding CoverArt, Converter={StaticResource CoverArtConverter}}"
+               Stretch="UniformToFill"/>
+        <Rectangle x:Name="Overlay"
+                   Fill="Black"
+                   Opacity="0"
+                   IsHitTestVisible="False"/>
+        <TextBlock x:Name="PlayIcon"
+                   Text="▶"
+                   Foreground="White"
+                   Opacity="0"
+                   HorizontalAlignment="Center"
+                   VerticalAlignment="Center"
+                   FontSize="16"/>
+      </Grid>
     </Button>
-
     <!-- Album info / open details -->
     <Button x:Name="OpenButton"
-            Grid.Column="2"
+            Grid.Column="1"
             Background="Transparent"
             BorderThickness="0"
             HorizontalAlignment="Stretch"

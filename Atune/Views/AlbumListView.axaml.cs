@@ -1,8 +1,11 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
-using System.Windows.Input;
+using System;
 using Atune.Models;
+using Avalonia.Input;
+using Avalonia.Controls.Shapes;
+using System.Windows.Input;
 
 namespace Atune.Views
 {
@@ -37,10 +40,28 @@ namespace Atune.Views
             {
                 openBtn.Click += OpenBtn_Click;
             }
-            var playBtn = this.FindControl<Button>("PlayButton");
-            if (playBtn != null)
+            // Hook CoverButton click to PlayCommand
+            var coverButton = this.FindControl<Button>("CoverButton");
+            if (coverButton != null)
             {
-                playBtn.Click += PlayBtn_Click;
+                coverButton.Click += PlayBtn_Click;
+            }
+
+            // Attach pointer-entered/exited to dim overlay and show play icon
+            var overlay = this.FindControl<Rectangle>("Overlay");
+            var playIcon = this.FindControl<TextBlock>("PlayIcon");
+            if (coverButton != null && overlay != null && playIcon != null)
+            {
+                coverButton.PointerEntered += (_, __) =>
+                {
+                    overlay.Opacity = 0.8;
+                    playIcon.Opacity = 1;
+                };
+                coverButton.PointerExited += (_, __) =>
+                {
+                    overlay.Opacity = 0;
+                    playIcon.Opacity = 0;
+                };
             }
         }
 
