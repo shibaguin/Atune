@@ -43,6 +43,7 @@ public partial class MediaView : UserControl
     public IAsyncRelayCommand<MediaItem> PlayTrackCommand => DataContext.PlayTrackCommand;
     public IAsyncRelayCommand<Playlist> OpenPlaylistCommand => DataContext.OpenPlaylistCommand;
     public IAsyncRelayCommand<Playlist> AddToPlaylistCommand => DataContext.AddToPlaylistCommand;
+    public IAsyncRelayCommand<AlbumInfo?> PlayAlbumCommand => DataContext.PlayAlbumCommand;
 
     private readonly IDbContextFactory<AppDbContext>? _dbContextFactory;
     private readonly ILoggerService? _logger;

@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:models="clr-namespace:Atune.Models"
              xmlns:conv="clr-namespace:Atune.Converters"
+             xmlns:views="clr-namespace:Atune.Views"
              x:Class="Atune.Views.AlbumListView"
              x:DataType="models:AlbumInfo">
   <UserControl.Resources>
@@ -14,7 +15,9 @@
             Width="50" Height="50"
             Margin="0,0,5,0"
             Background="Transparent" BorderThickness="0"
-            Focusable="False">
+            Focusable="False"
+            Command="{Binding PlayCommand, RelativeSource={RelativeSource AncestorType=views:AlbumListView}}"
+            CommandParameter="{Binding}">
       <Grid>
         <Image Source="{Binding CoverArt, Converter={StaticResource CoverArtConverter}}"
                Stretch="UniformToFill"/>
