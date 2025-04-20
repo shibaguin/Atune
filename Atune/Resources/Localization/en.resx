@@ -152,6 +152,9 @@
   <data name="Album_PlayAlbum" xml:space="preserve">
     <value>Play Album</value>
   </data>
+  <data name="Album_PlayAll" xml:space="preserve">
+    <value>Play All</value>
+  </data>
   <data name="Album_TrackCountLabel" xml:space="preserve">
     <value>Track count: </value>
   </data>

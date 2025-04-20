@@ -152,6 +152,9 @@
   <data name="Album_PlayAlbum" xml:space="preserve">
     <value>Воспроизвести альбом</value>
   </data>
+  <data name="Album_PlayAll" xml:space="preserve">
+    <value>Воспроизвести все</value>
+  </data>
   <data name="Album_TrackCountLabel" xml:space="preserve">
     <value>Количество треков: </value>
   </data>
