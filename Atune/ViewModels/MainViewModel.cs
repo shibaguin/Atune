@@ -96,6 +96,9 @@ public partial class MainViewModel : ViewModelBase
     // Вычисляемое свойство для передачи в XAML
     public string PlayIconData => IsPlaying ? PauseIconPath : PlayIconPath;
 
+    // Add at class level
+    private DateTime _lastToggleTime = DateTime.MinValue;
+
     public MainViewModel(
         ISettingsService settingsService,
         Func<Type, ViewModelBase> viewModelFactory,
@@ -478,22 +481,25 @@ public partial class MainViewModel : ViewModelBase
 
     // Обновлённый метод для переключения воспроизведения (play/pause)
     [RelayCommand]
-    private void ExecuteTogglePlayPauseCommand()
+    private void TogglePlayPause()
     {
-        try
+        // In TogglePlayPause method, debounce rapid toggles
+        if ((DateTime.UtcNow - _lastToggleTime).TotalMilliseconds < 250)
         {
-            if (_mediaPlayerService.IsPlaying)
-            {
-                _mediaPlayerService.Pause();
-            }
-            else
-            {
-                _mediaPlayerService.Resume();
-            }
+            return; // ignore toggles within 250ms
         }
-        catch (Exception ex)
+        _lastToggleTime = DateTime.UtcNow;
+
+        // Immediately reflect state in UI
+        if (_mediaPlayerService.IsPlaying)
         {
-            _logger.LogError(ex, "Play/pause error");
+            _mediaPlayerService.Pause();
+            IsPlaying = false;
+        }
+        else
+        {
+            _mediaPlayerService.Resume();
+            IsPlaying = true;
         }
     }
 
@@ -787,35 +793,6 @@ public partial class MainViewModel : ViewModelBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Previous track error");
-        }
-    }
-
-    [RelayCommand]
-    private async Task TogglePlayPause()
-    {
-        try 
-        {
-            if (_mediaPlayerService.IsPlaying)
-            {
-                _mediaPlayerService.Pause();
-            }
-            else
-            {
-                if (!string.IsNullOrEmpty(CurrentMediaPath))
-                {
-                    // resume playback from paused position
-                    _mediaPlayerService.Resume();
-                }
-                else
-                {
-                    // start playback if nothing is loaded yet
-                    await (_mediaPlayerService?.Play(CurrentMediaPath) ?? Task.CompletedTask);
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Play/pause error");
         }
     }
 

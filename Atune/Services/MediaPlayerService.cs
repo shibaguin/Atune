@@ -43,8 +43,8 @@ namespace Atune.Services
                     "--no-xlib",
                     "--ignore-config",
                     "--no-sub-autodetect-file",
-                    "--network-caching=5000",
-                    "--file-caching=3000",
+                    "--network-caching=300",
+                    "--file-caching=300",
                     "--no-audio-time-stretch"
                 );
                 _logger.LogDebug("LibVLC instance created");
