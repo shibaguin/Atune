@@ -26,7 +26,7 @@ namespace Atune.Views
             mainVm?.GoMediaCommand.Execute(null);
         }
 
-        private void OnPointerPressed(object sender, PointerPressedEventArgs e)
+        private void OnPointerPressed(object? sender, PointerPressedEventArgs e)
         {
             var kind = e.GetCurrentPoint(this).Properties.PointerUpdateKind;
             var mainVm = (Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)
@@ -38,7 +38,7 @@ namespace Atune.Views
             }
         }
 
-        private void OnKeyDown(object sender, KeyEventArgs e)
+        private void OnKeyDown(object? sender, KeyEventArgs e)
         {
             var mainVm = (Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)
                 ?.MainWindow?.DataContext as MainViewModel;
