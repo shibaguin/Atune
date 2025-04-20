@@ -55,7 +55,7 @@ namespace Atune.Views
                     }
                     else if (DataContext is MediaItem item)
                     {
-                        var player = App.Current.Services.GetRequiredService<MediaPlayerService>();
+                        var player = App.Current!.Services!.GetRequiredService<MediaPlayerService>();
                         await player.StopAsync();
                         await player.Play(item.Path);
                     }
@@ -100,7 +100,7 @@ namespace Atune.Views
                 return;
 
             // Retrieve all playlists from the service
-            var service = App.Current.Services.GetRequiredService<IPlaylistService>();
+            var service = App.Current!.Services!.GetRequiredService<IPlaylistService>();
             var playlists = await service.GetPlaylistsAsync();
 
             // Build menu items with click handlers to add current track
