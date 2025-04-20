@@ -62,13 +62,16 @@ public partial class MainViewModel : ViewModelBase
     private TimeSpan _duration;
 
     [ObservableProperty]
-    private Bitmap? _coverArt;
+    private MediaItem? _currentMediaItem;
 
-    [ObservableProperty]
-    private string _trackTitle = string.Empty;
+    public string NowPlayingTitle => CurrentMediaItem?.Title ?? string.Empty;
+    public string NowPlayingArtist => CurrentMediaItem?.TrackArtists.FirstOrDefault()?.Artist?.Name ?? string.Empty;
 
-    [ObservableProperty]
-    private string _artistName = string.Empty;
+    partial void OnCurrentMediaItemChanged(MediaItem? value)
+    {
+        OnPropertyChanged(nameof(NowPlayingTitle));
+        OnPropertyChanged(nameof(NowPlayingArtist));
+    }
 
     private DispatcherTimer _positionTimer;
     private DispatcherTimer? _metadataTimer;
@@ -533,99 +536,36 @@ public partial class MainViewModel : ViewModelBase
         ExecuteNextCommand();
     }
 
-    private async void OnPlaybackStarted(object? sender, EventArgs e)
+    private void OnPlaybackStarted(object? sender, EventArgs e)
     {
-        try
+        Dispatcher.UIThread.InvokeAsync(() =>
         {
-            if (_mediaPlayerService == null || _positionTimer == null) return;
+            if (_mediaPlayerService == null || _positionTimer == null)
+                return;
 
+            // Determine local file path from CurrentPath (could be file URI)
+            var mrl = _mediaPlayerService.CurrentPath;
+            var localPath = string.Empty;
+            if (!string.IsNullOrEmpty(mrl))
+            {
+                localPath = mrl.StartsWith("file://", StringComparison.OrdinalIgnoreCase)
+                    ? new Uri(mrl).LocalPath
+                    : mrl;
+            }
+
+            // Update playback state
+            CurrentMediaPath = localPath;
             IsPlaying = true;
             _positionTimer.Start();
-            
-            // Убираем принудительный парсинг
-            await Task.Delay(100); // Увеличиваем задержку для стабилизации
-            await UpdateMetadataAsync();
 
-            if (_coverArtLoading) return;
-            _coverArtLoading = true;
-            
-            try 
-            {
-                // Убираем повторный парсинг
-                var embeddedCover = await Task.Run(() => 
-                    _coverArtService.GetEmbeddedCoverArt());
-                
-                if (embeddedCover != null)
-                {
-                    using (embeddedCover)
-                    {
-                        CoverArt = new Bitmap(embeddedCover);
-                        return;
-                    }
-                }
-
-                var coverPath = await Task.Run(() => 
-                    _coverArtService.GetCoverArtPath());
-                
-                if (_coverArtService.LoadCoverFromPath(coverPath) is { } cover)
-                {
-                    CoverArt = cover;
-                    return;
-                }
-
-                // Если ничего не найдено - используем дефолтную
-                CoverArt = LoadDefaultCover();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error loading cover art");
-                CoverArt = LoadDefaultCover();
-            }
-            finally 
-            {
-                _coverArtLoading = false;
-            }
-
-            // Немедленное обновление с асинхронным вызовом
-            await UpdateMetadataAsync();
-            
-            // Запускаем таймер с увеличенной частотой
-            _metadataTimer?.Stop();
-            _metadataTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(250) };
-            _metadataTimer.Tick += async (s, e) => await UpdateMetadataAsync();
-            _metadataTimer.Start();
-
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Playback start error");
-        }
+            // Update current media item in Now Playing
+            var mediaVm = _views[SectionType.Media].DataContext as MediaViewModel;
+            CurrentMediaItem = mediaVm?.PlaybackQueue.FirstOrDefault(mi => string.Equals(mi.Path, localPath, StringComparison.OrdinalIgnoreCase));
+        });
     }
 
-    private async Task UpdateMetadataAsync(bool force = false)
-    {
-        try
-        {
-            if (_mediaPlayerService == null) return;
-
-            // Убираем принудительный повторный парсинг
-            var metadata = await _mediaPlayerService.GetCurrentMetadataAsync();
-            
-            await Dispatcher.UIThread.InvokeAsync(() =>
-            {
-                TrackTitle = metadata.Title;
-                ArtistName = metadata.Artist;
-                OnPropertyChanged(nameof(TrackTitle));
-                OnPropertyChanged(nameof(ArtistName));
-                
-                _logger.LogInformation($"Metadata updated: {TrackTitle} - {ArtistName}");
-            });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Metadata update failed");
-        }
-    }
+    // Stubbed: no VLC metadata parsing, using DB-backed metadata instead
+    private Task UpdateMetadataAsync(bool force = false) => Task.CompletedTask;
 
     private Bitmap? LoadCoverSafely(string path)
     {

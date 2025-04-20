@@ -46,6 +46,7 @@
             </ResourceDictionary.ThemeDictionaries>
 
             <converters:TimeSpanToSecondsConverter x:Key="TimeSpanToSecondsConverter"/>
+            <converters:CoverArtConverter x:Key="CoverArtConverter"/>
         </ResourceDictionary>
     </UserControl.Resources>
 
@@ -271,7 +272,7 @@
                 <Image MaxWidth="64" 
                        MaxHeight="64"
                        Margin="5"     
-                       Source="{Binding CoverArt}"
+                       Source="{Binding CurrentMediaItem.CoverArt, Converter={StaticResource CoverArtConverter}}"
                        Stretch="Uniform">
                     <Image.Styles>
                         <Style Selector="Image:empty">
@@ -286,15 +287,9 @@
                                      VerticalAlignment="Center"
                                      Margin="5,0"
                                      Spacing="2">
-                    <TextBlock Text="{Binding TrackTitle, Mode=OneWay}" 
-                               Foreground="{DynamicResource ForegroundBrush}"
-                               FontSize="16"
-                               FontWeight="SemiBold"
-                               Margin="0,0,10,0"/>
-                    <TextBlock Text="{Binding ArtistName, Mode=OneWay}" 
-                               Foreground="{DynamicResource ForegroundBrush}"
-                               FontSize="14"
-                               Opacity="0.8"/>
+                    <TextBlock Text="{Binding NowPlayingTitle}" FontSize="14" FontWeight="Bold" TextTrimming="CharacterEllipsis"/>
+                    <TextBlock Text="{Binding CurrentMediaItem.Album.Title}" FontSize="12" TextTrimming="CharacterEllipsis"/>
+                    <TextBlock Text="{Binding NowPlayingArtist}" FontSize="12" Foreground="Gray" TextTrimming="CharacterEllipsis"/>
                 </avalonia:StackPanel>
             </StackPanel>
 
