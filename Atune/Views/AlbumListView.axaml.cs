@@ -6,6 +6,9 @@ using Atune.Models;
 using Avalonia.Input;
 using Avalonia.Controls.Shapes;
 using System.Windows.Input;
+using Atune.Services;
+using Microsoft.Extensions.DependencyInjection;
+using System.Threading.Tasks;
 
 namespace Atune.Views
 {
@@ -21,16 +24,6 @@ namespace Atune.Views
             set => SetValue(OpenCommandProperty, value);
         }
 
-        // PlayCommand for playing entire album
-        public static readonly StyledProperty<ICommand?> PlayCommandProperty =
-            AvaloniaProperty.Register<AlbumListView, ICommand?>(nameof(PlayCommand));
-
-        public ICommand? PlayCommand
-        {
-            get => GetValue(PlayCommandProperty);
-            set => SetValue(PlayCommandProperty, value);
-        }
-
         public AlbumListView()
         {
             InitializeComponent();
@@ -40,7 +33,7 @@ namespace Atune.Views
             {
                 openBtn.Click += OpenBtn_Click;
             }
-            // Hook CoverButton click to PlayCommand
+            // Hook CoverButton click to PlayAlbumService
             var coverButton = this.FindControl<Button>("CoverButton");
             if (coverButton != null)
             {
@@ -73,12 +66,12 @@ namespace Atune.Views
             }
         }
 
-        private void PlayBtn_Click(object? sender, RoutedEventArgs e)
+        private async void PlayBtn_Click(object? sender, RoutedEventArgs e)
         {
-            if (PlayCommand != null)
-            {
-                PlayCommand.Execute(DataContext as AlbumInfo);
-            }
+            var album = DataContext as AlbumInfo;
+            if (album == null) return;
+            var service = App.Current.Services.GetRequiredService<IPlayAlbumService>();
+            await service.PlayAlbumAsync(album);
         }
     }
 } 

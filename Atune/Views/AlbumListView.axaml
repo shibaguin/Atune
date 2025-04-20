@@ -15,9 +15,7 @@
             Width="50" Height="50"
             Margin="0,0,5,0"
             Background="Transparent" BorderThickness="0"
-            Focusable="False"
-            Command="{Binding PlayCommand, RelativeSource={RelativeSource AncestorType=views:AlbumListView}}"
-            CommandParameter="{Binding}">
+            Focusable="False">
       <Grid>
         <Image Source="{Binding CoverArt, Converter={StaticResource CoverArtConverter}}"
                Stretch="UniformToFill"/>

@@ -7,6 +7,8 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Atune.ViewModels;
 using Atune.Models;
 using CommunityToolkit.Mvvm.Input;
+using Atune.Services;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Atune.Views
 {
@@ -44,14 +46,13 @@ namespace Atune.Views
             mainVm?.GoMediaCommand.Execute(null);
         }
 
-        private void PlayAlbumButton_Click(object? sender, RoutedEventArgs e)
+        private async void PlayAlbumButton_Click(object? sender, RoutedEventArgs e)
         {
             if (DataContext is AlbumViewModel albumVm)
             {
-                var mainVm = (Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)
-                    ?.MainWindow?.DataContext as MainViewModel;
-                // Enqueue and start playing album without leaving this view
-                mainVm?.PlayAlbumCommand.Execute(albumVm.Album);
+                // Delegate album-play logic to PlayAlbumService
+                var service = App.Current.Services.GetRequiredService<IPlayAlbumService>();
+                await service.PlayAlbumAsync(albumVm.Album);
             }
         }
 
