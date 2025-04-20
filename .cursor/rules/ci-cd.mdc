@@ -1,9 +1,0 @@
----
-description: Настройка CI/CD
-globs: 
----
-1. Конфигурация сборки в `.github/workflows/dotnet.yml`
-2. Поддерживай:
-   - Сборку для Windows/Linux/Android
-   - Покрытие кода тестами
-   - Автоматическое развертывание
