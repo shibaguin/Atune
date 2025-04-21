@@ -54,10 +54,15 @@ public partial class MainView : UserControl
     {
         if (_progressBarBackground == null || _progressBarFill == null)
             return;
+
         if (DataContext is MainViewModel vm && vm.Duration.TotalSeconds > 0)
         {
+            var backgroundWidth = _progressBarBackground.Bounds.Width;
+            if (backgroundWidth <= 0)
+                return;
             double ratio = vm.CurrentPosition.TotalSeconds / vm.Duration.TotalSeconds;
-            _progressBarFill.Width = ratio * _progressBarBackground.Bounds.Width;
+            ratio = Math.Clamp(ratio, 0, 1);
+            _progressBarFill.Width = ratio * backgroundWidth;
         }
     }
 
