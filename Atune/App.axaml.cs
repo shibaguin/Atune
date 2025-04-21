@@ -32,6 +32,8 @@ using System.Collections.Generic;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
+using Avalonia.Input;
+using Avalonia.Interactivity;
 
 namespace Atune;
 
@@ -138,6 +140,15 @@ public partial class App : Application
             {
                 DisableAvaloniaDataAnnotationValidation();
                 var mainWindow = serviceProvider.GetRequiredService<MainWindow>();
+                // Toggle play/pause on Spacebar for desktop
+                mainWindow.AddHandler(InputElement.KeyDownEvent,
+                    new EventHandler<KeyEventArgs>((sender, args) =>
+                    {
+                        if (args.Key == Key.Space && mainWindow.DataContext is MainViewModel vm)
+                            vm.TogglePlayPauseCommand.Execute(null);
+                    }),
+                    RoutingStrategies.Tunnel,
+                    handledEventsToo: true);
                 desktop.MainWindow = mainWindow;
                 // Save playback state when window is closed
                 mainWindow.Closing += (s, e) => SavePlaybackState();

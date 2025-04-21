@@ -19,6 +19,8 @@
     <AvaloniaBuildTasksLocation>$(NuGetPackageRoot)avalonia.build.tasks\11.2.3\build\</AvaloniaBuildTasksLocation>
 
     <AvaloniaVersion>11.2.3</AvaloniaVersion>
+    <!-- Define DESKTOP for desktop-specific code -->
+    <DefineConstants>DESKTOP</DefineConstants>
   </PropertyGroup>
 
   <PropertyGroup>
