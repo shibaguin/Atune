@@ -20,6 +20,7 @@ using System.IO;
 using LibVLCSharp.Shared;
 using Atune.Models;
 using Atune.ViewModels;
+using System.Threading;
 namespace Atune.ViewModels;
 public partial class MainViewModel : ViewModelBase
 {
@@ -75,7 +76,8 @@ public partial class MainViewModel : ViewModelBase
 
     private DispatcherTimer _positionTimer;
     private DispatcherTimer? _metadataTimer;
-    private DispatcherTimer? _saveSettingsTimer;
+    private CancellationTokenSource? _volumeSaveCts;
+    private bool _isInitializing = true; // skip saves during initial load
 
     private bool _coverArtLoading;
 
@@ -118,10 +120,6 @@ public partial class MainViewModel : ViewModelBase
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _coverArtService = coverArtService ?? throw new ArgumentNullException(nameof(coverArtService));
         
-        // Initialize throttle timer for volume settings saves
-        _saveSettingsTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(500) };
-        _saveSettingsTimer.Tick += SaveSettingsTimer_Tick;
-        
         try
         {
             _mediaPlayerService = mediaPlayerService;
@@ -133,6 +131,10 @@ public partial class MainViewModel : ViewModelBase
             _logger.LogCritical(ex, "Media player initialization failed");
             throw new CriticalStartupException(
                 "Media components failed to initialize", ex);
+        }
+        finally
+        {
+            _isInitializing = false;
         }
         
         _views = new Dictionary<SectionType, Control>
@@ -547,9 +549,30 @@ public partial class MainViewModel : ViewModelBase
         _mediaPlayerService.Volume = value;
         _ = UpdateMetadataAsync();
 
-        // Schedule throttled settings save
-        _saveSettingsTimer?.Stop();
-        _saveSettingsTimer?.Start();
+        // Debounce final save after user finishes adjusting
+        if (!_isInitializing)
+        {
+            _volumeSaveCts?.Cancel();
+            _volumeSaveCts = new CancellationTokenSource();
+            var token = _volumeSaveCts.Token;
+            var volume = Volume;
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await Task.Delay(500, token);
+                    var settings = _settingsService.LoadSettings();
+                    settings.Volume = volume;
+                    _settingsService.SaveSettings(settings);
+                    _logger.LogInformation("Settings saved (debounced)");
+                }
+                catch (TaskCanceledException) { }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error saving settings");
+                }
+            });
+        }
     }
 
     private void OnPlaybackEnded(object? sender, EventArgs e)
@@ -860,22 +883,5 @@ public partial class MainViewModel : ViewModelBase
         SelectedSection = SectionType.Media;
         CurrentView = playlistControl;
         HeaderText = playlist.Name;
-    }
-
-    // Throttled save of settings when timer elapses
-    private void SaveSettingsTimer_Tick(object? sender, EventArgs e)
-    {
-        _saveSettingsTimer?.Stop();
-        try
-        {
-            var settings = _settingsService.LoadSettings();
-            settings.Volume = Volume;
-            _settingsService.SaveSettings(settings);
-            _logger.LogInformation("Settings saved (throttled)");
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error saving settings");
-        }
     }
 }
