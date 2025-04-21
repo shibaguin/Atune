@@ -3,15 +3,76 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using Atune.Models;
 using Atune.ViewModels;
+using Avalonia.Controls.Primitives;
+using Avalonia.Controls.Shapes;
+using Avalonia;
+using System.ComponentModel;
+using System;
+using Avalonia.Threading;
 
 namespace Atune.Views;
 
 
 public partial class MainView : UserControl
 {
+    // Custom progress bar elements
+    private Border? _progressBarBackground;
+    private Rectangle? _progressBarFill;
     public MainView()
     {
         InitializeComponent();
+        // Find custom progress bar elements
+        _progressBarBackground = this.FindControl<Border>("ProgressBarBackground");
+        _progressBarFill = this.FindControl<Rectangle>("ProgressBarFill");
+        if (_progressBarBackground != null)
+        {
+            _progressBarBackground.PointerPressed += OnProgressBarPointer;
+            _progressBarBackground.PointerMoved += OnProgressBarPointer;
+        }
+        // Subscribe to ViewModel changes
+        DataContextChanged += (s, e) =>
+        {
+            if (DataContext is INotifyPropertyChanged vm)
+            {
+                vm.PropertyChanged += OnViewModelPropertyChanged;
+                // Initial update
+                UpdateCustomProgressBar();
+            }
+        };
+    }
+
+    private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(MainViewModel.CurrentPosition) ||
+            e.PropertyName == nameof(MainViewModel.Duration))
+        {
+            Dispatcher.UIThread.Post(UpdateCustomProgressBar);
+        }
+    }
+
+    private void UpdateCustomProgressBar()
+    {
+        if (_progressBarBackground == null || _progressBarFill == null)
+            return;
+        if (DataContext is MainViewModel vm && vm.Duration.TotalSeconds > 0)
+        {
+            double ratio = vm.CurrentPosition.TotalSeconds / vm.Duration.TotalSeconds;
+            _progressBarFill.Width = ratio * _progressBarBackground.Bounds.Width;
+        }
+    }
+
+    private void OnProgressBarPointer(object? sender, PointerEventArgs e)
+    {
+        if (_progressBarBackground == null || DataContext is not MainViewModel vm)
+            return;
+        var props = e.GetCurrentPoint(_progressBarBackground).Properties;
+        if (props.IsLeftButtonPressed || e is PointerPressedEventArgs)
+        {
+            var pos = e.GetPosition(_progressBarBackground);
+            double ratio = pos.X / _progressBarBackground.Bounds.Width;
+            var newTime = TimeSpan.FromSeconds(Math.Clamp(ratio, 0, 1) * vm.Duration.TotalSeconds);
+            vm.CurrentPosition = newTime;
+        }
     }
 
     private void SearchTextBox_KeyDown(object? sender, KeyEventArgs e)
@@ -52,4 +113,10 @@ public partial class MainView : UserControl
             viewModel.StopCommand.Execute(null);
         }
     }
+
+    // XAML event handlers for pointer events
+    public void ProgressBarBackground_PointerPressed(object? sender, Avalonia.Input.PointerPressedEventArgs e)
+        => OnProgressBarPointer(sender, e);
+    public void ProgressBarBackground_PointerMoved(object? sender, Avalonia.Input.PointerEventArgs e)
+        => OnProgressBarPointer(sender, e);
 }
