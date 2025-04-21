@@ -29,6 +29,9 @@ using Atune.Data.Repositories;
 using Atune.Data;
 using Microsoft.Extensions.Logging;
 using System.Collections.Generic;
+using System.Text.Json;
+using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
 
 namespace Atune;
 
@@ -134,7 +137,10 @@ public partial class App : Application
             if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
             {
                 DisableAvaloniaDataAnnotationValidation();
-                desktop.MainWindow = serviceProvider.GetRequiredService<MainWindow>();
+                var mainWindow = serviceProvider.GetRequiredService<MainWindow>();
+                desktop.MainWindow = mainWindow;
+                // Save playback state when window is closed
+                mainWindow.Closing += (s, e) => SavePlaybackState();
                 desktop.Exit += OnAppExit;
                 desktop.Startup += (s, e) =>
                 {
@@ -150,7 +156,9 @@ public partial class App : Application
             }
 
             base.OnFrameworkInitializationCompleted();
-            
+
+            // Restore playback state is moved to MediaViewModel after loading media
+
             var settingsService = Services?.GetRequiredService<ISettingsService>();
             if (settingsService != null)
             {
@@ -174,6 +182,163 @@ public partial class App : Application
             Log.Fatal(ex, "Fatal error during full application initialization");
             File.WriteAllText("crash.log", $"CRITICAL ERROR: {ex}");
             Environment.Exit(1);
+        }
+    }
+
+    private void OnAppExit(object? sender, ControlledApplicationLifetimeExitEventArgs e)
+    {
+        // Save playback state before shutdown
+        Log.Information("Calling SavePlaybackState");
+        SavePlaybackState();
+        Log.Information("Application shutdown");
+        Log.CloseAndFlush();
+    }
+
+    private void SavePlaybackState()
+    {
+        try
+        {
+            var platformPathService = Services?.GetService<IPlatformPathService>();
+            var playbackService = Services?.GetService<MediaPlayerService>();
+            if (platformPathService == null) return;
+
+            // Use .txt format: each queue path on its own line, then index and position
+            var filePath = platformPathService.GetSettingsPath("playbackstate.txt");
+            Log.Information("Saving playback state to {Path}", filePath);
+            var directory = Path.GetDirectoryName(filePath);
+            if (!string.IsNullOrWhiteSpace(directory))
+                Directory.CreateDirectory(directory);
+
+            if (ApplicationLifetime is not IClassicDesktopStyleApplicationLifetime desktop) return;
+            if (desktop.MainWindow?.DataContext is not MainViewModel mainVm) return;
+            var mediaVm = mainVm.MediaViewModelInstance;
+            if (mediaVm == null) return;
+
+            // Determine current queue index based on SelectedMediaItem
+            int currentIndex = -1;
+            if (mediaVm.SelectedMediaItem != null)
+                currentIndex = mediaVm.PlaybackQueue.IndexOf(mediaVm.SelectedMediaItem);
+            // Fallback to CurrentQueueIndex if SelectedMediaItem not set
+            if (currentIndex < 0 && mediaVm.CurrentQueueIndex >= 0)
+                currentIndex = mediaVm.CurrentQueueIndex;
+            double position = playbackService?.Position.TotalSeconds ?? 0;
+
+            using var writer = new StreamWriter(filePath, false);
+            // Write queue paths
+            foreach (var item in mediaVm.PlaybackQueue)
+            {
+                var path = item.Path?.Replace("\r", string.Empty).Replace("\n", string.Empty) ?? string.Empty;
+                // Escape '|' if present
+                writer.WriteLine(path.Replace("|", "\\|"));
+            }
+            // Marker lines: index and position
+            writer.WriteLine($"__INDEX__:{currentIndex}");
+            writer.WriteLine($"__POSITION__:{position.ToString(System.Globalization.CultureInfo.InvariantCulture)}");
+
+            Log.Information("Playback state saved, exists={Exists}", File.Exists(filePath));
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Failed to save playback state");
+        }
+    }
+
+    public async Task RestorePlaybackStateAsync()
+    {
+        var platformPathService = Services?.GetService<IPlatformPathService>();
+        if (platformPathService == null) return;
+
+        var filePath = platformPathService.GetSettingsPath("playbackstate.txt");
+        Log.Information("Restoring playback state from {Path}", filePath);
+        var directory = Path.GetDirectoryName(filePath);
+        try
+        {
+            if (!string.IsNullOrWhiteSpace(directory))
+            {
+                var files = Directory.GetFiles(directory);
+                Log.Information("Restore directory '{Dir}' contains: {Files}", directory, files);
+            }
+        }
+        catch (Exception dirEx)
+        {
+            Log.Error(dirEx, "Failed to list directory contents for {Dir}", directory);
+        }
+
+        if (!File.Exists(filePath))
+        {
+            Log.Warning("Playback state file not found: {Path}", filePath);
+            return;
+        }
+
+        try
+        {
+            var lines = await File.ReadAllLinesAsync(filePath);
+            var queuePaths = new List<string>();
+            int stateIndex = -1;
+            double statePos = 0;
+
+            foreach (var raw in lines)
+            {
+                if (raw.StartsWith("__INDEX__:"))
+                {
+                    // Parse index after marker
+                    int.TryParse(raw.Substring("__INDEX__:".Length), out stateIndex);
+                }
+                else if (raw.StartsWith("__POSITION__:"))
+                {
+                    // Parse position after marker
+                    double.TryParse(raw.Substring("__POSITION__:".Length), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out statePos);
+                }
+                else
+                {
+                    // Unescape '|'
+                    queuePaths.Add(raw.Replace("\\|", "|"));
+                }
+            }
+
+            if (queuePaths.Count == 0) return;
+
+            if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop
+                && desktop.MainWindow?.DataContext is MainViewModel mainVm)
+            {
+                mainVm.GoMediaCommand.Execute(null);
+                var mediaVm = mainVm.MediaViewModelInstance;
+                if (mediaVm == null) return;
+
+                mediaVm.ClearQueueCommand.Execute(null);
+                foreach (var path in queuePaths)
+                {
+                    var item = mediaVm.MediaItems.FirstOrDefault(mi => mi.Path == path);
+                    if (item != null)
+                        mediaVm.AddToQueueCommand.Execute(item);
+                }
+
+                if (stateIndex >= 0 && stateIndex < mediaVm.PlaybackQueue.Count)
+                    mediaVm.SetQueuePositionCommand.Execute(stateIndex + 1);
+
+                var playbackService = Services.GetService<MediaPlayerService>();
+                if (playbackService != null && stateIndex >= 0 && stateIndex < mediaVm.PlaybackQueue.Count)
+                {
+                    var currentItem = mediaVm.PlaybackQueue[stateIndex];
+                    // Stop any running media and load the saved track without playing
+                    await playbackService.StopAsync();
+                    await playbackService.Load(currentItem.Path);
+                    // Seek to last known position on UI thread
+                    await Dispatcher.UIThread.InvokeAsync(() =>
+                    {
+                        playbackService.Position = TimeSpan.FromSeconds(statePos);
+                    });
+
+                    mainVm.CurrentMediaItem = currentItem;
+                    mainVm.CurrentPosition = TimeSpan.FromSeconds(statePos);
+                    mainVm.Duration = playbackService.Duration;
+                    mainVm.IsPlaying = false;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error in RestorePlaybackStateAsync");
         }
     }
 
@@ -354,12 +519,6 @@ public partial class App : Application
         }
     }
     
-    private void OnAppExit(object? sender, ControlledApplicationLifetimeExitEventArgs e)
-    {
-        Log.Information("Application shutdown");
-        Log.CloseAndFlush();
-    }
-
     private async Task InitializeDatabaseAsync()
     {
         using var scope = Services!.CreateScope();

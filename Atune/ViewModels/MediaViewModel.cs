@@ -146,6 +146,8 @@ public partial class MediaViewModel : ObservableObject, IDisposable
 
     private bool _disposed;
     private int _currentQueueIndex = -1;
+    // Expose current queue index for persistence
+    public int CurrentQueueIndex => _currentQueueIndex;
 
     // Сохраняем отсортированный кэш для ускорения последующих операций сортировки
     private List<MediaItem> _sortedCache = new List<MediaItem>();
@@ -474,6 +476,12 @@ public partial class MediaViewModel : ObservableObject, IDisposable
             _cache.Set("MediaContent", items, new MemoryCacheEntryOptions()
                 .SetSlidingExpiration(TimeSpan.FromMinutes(5))
                 .SetSize(items.Count * 500 + 1024));
+            // Restore playback state now that media content is loaded
+            var app = Atune.App.Current as Atune.App;
+            if (app != null)
+            {
+                await app.RestorePlaybackStateAsync();
+            }
         }
         catch (Exception ex)
         {

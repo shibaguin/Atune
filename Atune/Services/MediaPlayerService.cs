@@ -256,6 +256,28 @@ namespace Atune.Services
                 _logger.LogError(ex, "Error preloading media");
             }
         }
+
+        public async Task Load(string path)
+        {
+            if (_libVlc == null || _player == null)
+                throw new InvalidOperationException("Media player is not initialized");
+
+            try
+            {
+                _currentMedia?.Dispose();
+                _currentMedia = new Media(_libVlc, new Uri(path));
+                await Task.Run(() => _currentMedia.Parse(MediaParseOptions.ParseLocal));
+                await Dispatcher.UIThread.InvokeAsync(() =>
+                {
+                    _player.Media = _currentMedia;
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Media load error");
+                throw new MediaPlaybackException("Failed to load media", ex);
+            }
+        }
     }
 
     public class MediaPlaybackException : Exception
