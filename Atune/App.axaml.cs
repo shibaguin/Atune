@@ -329,6 +329,8 @@ public partial class App : Application
                         playbackService.Position = TimeSpan.FromSeconds(statePos);
                     });
 
+                    // Record the restored media path for resume logic
+                    mainVm.CurrentMediaPath = currentItem.Path;
                     mainVm.CurrentMediaItem = currentItem;
                     mainVm.CurrentPosition = TimeSpan.FromSeconds(statePos);
                     mainVm.Duration = playbackService.Duration;

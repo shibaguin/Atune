@@ -479,11 +479,29 @@ public partial class MainViewModel : ViewModelBase
     [RelayCommand]
     private async void ExecutePlayCommand()
     {
+        // First try to resume the last-loaded track
+        if (!string.IsNullOrEmpty(CurrentMediaPath))
+        {
+            _mediaPlayerService.Volume = Volume;
+            // Normalize loaded path
+            string? mrl = _mediaPlayerService.CurrentPath;
+            string? loadedPath = null;
+            if (!string.IsNullOrEmpty(mrl) && Uri.TryCreate(mrl, UriKind.Absolute, out var uri) && uri.IsFile)
+                loadedPath = uri.LocalPath;
+            else
+                loadedPath = mrl;
+            if (string.Equals(loadedPath, CurrentMediaPath, StringComparison.OrdinalIgnoreCase))
+                _mediaPlayerService.Resume();
+            else
+                await _mediaPlayerService.Play(CurrentMediaPath);
+            IsPlaying = true;
+            return;
+        }
+        // Fallback: play selected item in MediaView if no media was previously loaded
         if (CurrentView is MediaView mediaView && 
             mediaView.DataContext is MediaViewModel mvm &&
             mvm.SelectedMediaItem != null)
         {
-            // Apply the current UI volume setting before playback
             _mediaPlayerService.Volume = Volume;
             await _mediaPlayerService.Play(mvm.SelectedMediaItem.Path);
             IsPlaying = true;
@@ -516,6 +534,8 @@ public partial class MainViewModel : ViewModelBase
         else
         {
             _mediaPlayerService.Resume();
+            // Seek to saved position after resuming
+            _mediaPlayerService.Position = CurrentPosition;
             IsPlaying = true;
         }
     }
