@@ -482,7 +482,7 @@ public partial class MainViewModel : ViewModelBase
 
     private void ExecuteStopCommand()
     {
-        _mediaPlayerService.Stop();
+        _mediaPlayerService.Pause();
         IsPlaying = false;
     }
 
@@ -728,33 +728,21 @@ public partial class MainViewModel : ViewModelBase
     [RelayCommand]
     private void Stop()
     {
-        try
-        {
-            if (_mediaPlayerService == null) return;
+        if (_mediaPlayerService == null)
+            return;
 
-            if (CurrentPosition.TotalSeconds >= 5)
-            {
-                // Перемотка в начало с паузой
-                _mediaPlayerService.Position = TimeSpan.Zero;
-                _mediaPlayerService.Pause();
-                CurrentPosition = TimeSpan.Zero;
-                IsPlaying = false;
-                _logger.LogInformation("Playback reset to start");
-            }
-            else
-            {
-                // Полная остановка
-                _mediaPlayerService.Stop();
-                IsPlaying = false;
-                CurrentPosition = TimeSpan.Zero;
-                Duration = TimeSpan.Zero;
-                _logger.LogInformation("Playback stopped");
-            }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Stop playback error");
-        }
+        // Stop playback if it's currently playing
+        if (_mediaPlayerService.IsPlaying)
+            _mediaPlayerService.Pause();
+
+        // Rewind to track start
+        _mediaPlayerService.Position = TimeSpan.Zero;
+
+        // Update UI playback state
+        CurrentPosition = TimeSpan.Zero;
+        IsPlaying = false;
+
+        _logger.LogInformation("Playback stopped and rewound to start");
     }
 
     [RelayCommand]
