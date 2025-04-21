@@ -75,6 +75,7 @@ public partial class MainViewModel : ViewModelBase
 
     private DispatcherTimer _positionTimer;
     private DispatcherTimer? _metadataTimer;
+    private DispatcherTimer? _saveSettingsTimer;
 
     private bool _coverArtLoading;
 
@@ -116,6 +117,10 @@ public partial class MainViewModel : ViewModelBase
         _localizationService = localizationService ?? throw new ArgumentNullException(nameof(localizationService));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _coverArtService = coverArtService ?? throw new ArgumentNullException(nameof(coverArtService));
+        
+        // Initialize throttle timer for volume settings saves
+        _saveSettingsTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(500) };
+        _saveSettingsTimer.Tick += SaveSettingsTimer_Tick;
         
         try
         {
@@ -541,11 +546,10 @@ public partial class MainViewModel : ViewModelBase
     {
         _mediaPlayerService.Volume = value;
         _ = UpdateMetadataAsync();
-        
-        // Сохраняем через обновление полных настроек
-        var settings = _settingsService.LoadSettings();
-        settings.Volume = value;
-        _settingsService.SaveSettings(settings);
+
+        // Schedule throttled settings save
+        _saveSettingsTimer?.Stop();
+        _saveSettingsTimer?.Start();
     }
 
     private void OnPlaybackEnded(object? sender, EventArgs e)
@@ -856,5 +860,22 @@ public partial class MainViewModel : ViewModelBase
         SelectedSection = SectionType.Media;
         CurrentView = playlistControl;
         HeaderText = playlist.Name;
+    }
+
+    // Throttled save of settings when timer elapses
+    private void SaveSettingsTimer_Tick(object? sender, EventArgs e)
+    {
+        _saveSettingsTimer?.Stop();
+        try
+        {
+            var settings = _settingsService.LoadSettings();
+            settings.Volume = Volume;
+            _settingsService.SaveSettings(settings);
+            _logger.LogInformation("Settings saved (throttled)");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error saving settings");
+        }
     }
 }
