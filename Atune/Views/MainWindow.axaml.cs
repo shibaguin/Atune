@@ -24,7 +24,7 @@ public partial class MainWindow : Window
     // Handler for Spacebar key up to toggle play/pause
     private void OnKeyUp(object sender, KeyEventArgs e)
     {
-        if (e.Key == Key.Space && DataContext is MainViewModel vm)
+        if (e.Key == Key.Space && !(e.Source is TextBox) && DataContext is MainViewModel vm)
         {
             vm.TogglePlayPauseCommand.Execute(null);
             e.Handled = true;
