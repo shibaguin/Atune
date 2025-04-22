@@ -9,6 +9,9 @@ using Atune.Models;
 using CommunityToolkit.Mvvm.Input;
 using Atune.Services;
 using Microsoft.Extensions.DependencyInjection;
+using System.ComponentModel;
+using Avalonia.Threading;
+using System;
 
 namespace Atune.Views
 {
@@ -17,9 +20,34 @@ namespace Atune.Views
         public AlbumView()
         {
             InitializeComponent();
+            // Subscribe to MainViewModel changes to update track selection
+            var desktop = Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime;
+            // Find the track list control
+            var trackList = this.FindControl<ListBox>("TrackList");
+            var mainVm = desktop?.MainWindow?.DataContext as MainViewModel;
+            if (mainVm != null && trackList != null)
+            {
+                // Subscribe to updates
+                mainVm.PropertyChanged += OnMainVmPropertyChanged;
+                // Highlight the current item after the ListBox lays out its items
+                trackList.LayoutUpdated += OnTrackListLayoutUpdated;
+            }
             // Subscribe to mouse and key navigation for Back/Forward
             AddHandler(PointerPressedEvent, OnPointerPressed, handledEventsToo: true);
             AddHandler(KeyDownEvent, OnKeyDown, handledEventsToo: true);
+        }
+
+        private void OnMainVmPropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(MainViewModel.CurrentMediaItem) && sender is MainViewModel vm)
+            {
+                var trackList = this.FindControl<ListBox>("TrackList");
+                Dispatcher.UIThread.Post(() =>
+                {
+                    if (trackList != null)
+                        trackList.SelectedItem = vm.CurrentMediaItem;
+                });
+            }
         }
 
         // Expose MainViewModel's PlayAlbumFromTrackCommand for TrackItemView
@@ -97,6 +125,19 @@ namespace Atune.Views
                     ?.MainWindow?.DataContext as MainViewModel;
                 mainVm?.PlayAlbumFromTrackCommand.Execute(track);
             }
+        }
+
+        private void OnTrackListLayoutUpdated(object? sender, EventArgs e)
+        {
+            if (sender is ListBox list &&
+                Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop &&
+                desktop.MainWindow?.DataContext is MainViewModel mainVm)
+            {
+                list.SelectedItem = mainVm.CurrentMediaItem;
+            }
+            // Unsubscribe so it only runs once
+            if (sender is ListBox lb)
+                lb.LayoutUpdated -= OnTrackListLayoutUpdated;
         }
     }
 } 

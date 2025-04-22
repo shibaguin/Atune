@@ -73,7 +73,9 @@
       </StackPanel>
     </Button>
     <!-- Track list -->
-    <ListBox Grid.Row="2" ItemsSource="{Binding Album.Tracks}">
+    <ListBox x:Name="TrackList"
+             Grid.Row="2"
+             ItemsSource="{Binding Album.Tracks}">
       <ListBox.ItemTemplate>
         <DataTemplate x:DataType="models:MediaItem">
           <views:TrackItemView
