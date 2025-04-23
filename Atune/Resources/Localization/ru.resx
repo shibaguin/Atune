@@ -182,4 +182,13 @@
     <value>Воспроизвести всё</value>
   </data>
   <!-- end playlist view -->
+  <data name="Artist_TrackCountLabel" xml:space="preserve">
+    <value>Количество треков: </value>
+  </data>
+  <data name="Artist_AlbumCountLabel" xml:space="preserve">
+    <value>Количество альбомов: </value>
+  </data>
+  <data name="Artist_PlayAll" xml:space="preserve">
+    <value>Воспроизвести всё</value>
+  </data>
 </root> 

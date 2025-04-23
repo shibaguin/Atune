@@ -42,6 +42,9 @@ public partial class MediaViewModel : ObservableObject, IDisposable
     // Кэш для альбомов
     private List<AlbumInfo>? _albumCache;
 
+    // Cache for artists
+    private List<ArtistInfo>? _artistCache;
+
     [ObservableProperty]
     private List<MediaItem> _mediaContent = new List<MediaItem>();
 
@@ -175,6 +178,9 @@ public partial class MediaViewModel : ObservableObject, IDisposable
     public IAsyncRelayCommand CreatePlaylistCommand { get; }
     public IAsyncRelayCommand<Playlist?> OpenPlaylistCommand { get; }
     public IAsyncRelayCommand<Playlist?> AddToPlaylistCommand { get; }
+
+    // New collection for artists
+    public ObservableCollection<ArtistInfo> Artists { get; } = new ObservableCollection<ArtistInfo>();
 
     public MediaViewModel(
         IMemoryCache cache, 
@@ -460,17 +466,19 @@ public partial class MediaViewModel : ObservableObject, IDisposable
                 {
                     MediaItems.Add(item);
                 }
-                // Применяем сортировку после обновления коллекции
+                // Apply sorting after update
                 SortMediaItems();
                 OnPropertyChanged(nameof(MediaItems));
 
-                // Сбрасываем кэш альбомов перед обновлением, чтобы группировка выполнялась единожды
+                // Reset album cache for grouping
                 _albumCache = null;
 
-                // Обновляем альбомы после загрузки треков
+                // Update albums after loading tracks
                 UpdateAlbums();
-                // Apply album sorting from settings
                 SortAlbums();
+                // Update artists after loading tracks
+                UpdateArtists();
+                SortArtists();
             });
             
             _cache.Set("MediaContent", items, new MemoryCacheEntryOptions()
@@ -1162,7 +1170,22 @@ public partial class MediaViewModel : ObservableObject, IDisposable
     }
     private void SortArtists()
     {
-        // TODO: implement artist sorting when collection is available
+        List<ArtistInfo> sorted;
+        switch (SortOrderArtists)
+        {
+            case "A-Z":
+                sorted = Artists.OrderBy(a => a.ArtistName, new CustomTitleComparer(true)).ToList();
+                break;
+            case "Z-A":
+                sorted = Artists.OrderBy(a => a.ArtistName, new CustomTitleComparer(false)).ToList();
+                break;
+            default:
+                sorted = Artists.OrderBy(a => a.ArtistName, new CustomTitleComparer(true)).ToList();
+                break;
+        }
+        Artists.Clear();
+        foreach (var artist in sorted)
+            Artists.Add(artist);
     }
 
     // Playlists commands
@@ -1239,6 +1262,57 @@ public partial class MediaViewModel : ObservableObject, IDisposable
         }
         // Navigate to the playlist view to display updated track list
         await OpenPlaylistAsync(playlist);
+    }
+
+    // Method to update artists based on MediaItems
+    private void UpdateArtists()
+    {
+        if (_artistCache == null)
+        {
+            var artistGroups = MediaItems
+                .SelectMany(m => m.TrackArtists.Select(ta => new { Track = m, ArtistName = ta.Artist?.Name }))
+                .Where(x => !string.IsNullOrWhiteSpace(x.ArtistName))
+                .GroupBy(x => x.ArtistName)
+                .Select(g => new ArtistInfo(
+                    artistName: g.Key!,
+                    tracks: g.Select(x => x.Track).ToList()
+                ))
+                .OrderBy(a => a.ArtistName)
+                .ToList();
+
+            Artists.Clear();
+            foreach (var artist in artistGroups)
+                Artists.Add(artist);
+
+            _artistCache = artistGroups;
+        }
+        else
+        {
+            Artists.Clear();
+            foreach (var artist in _artistCache)
+                Artists.Add(artist);
+        }
+    }
+
+    // Новый асинхронный RelayCommand для открытия карточки артиста
+    [RelayCommand]
+    private Task OpenArtist(ArtistInfo artist)
+    {
+        if (artist == null)
+            return Task.CompletedTask;
+
+        var mainWindow = (Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)?.MainWindow;
+        if (mainWindow?.DataContext is MainViewModel mainVm)
+        {
+            var artistControl = new ArtistView { DataContext = new ArtistViewModel(artist) };
+            mainVm.CurrentView = artistControl;
+            mainVm.HeaderText = artist.ArtistName;
+        }
+        else
+        {
+            _logger?.LogWarning("MainViewModel not found, cannot open artist view.");
+        }
+        return Task.CompletedTask;
     }
 }
 

@@ -186,4 +186,14 @@
     <value>Play All</value>
   </data>
   <!-- end playlist view -->
+  <!-- localization keys for artist view -->
+  <data name="Artist_TrackCountLabel" xml:space="preserve">
+    <value>Track count: </value>
+  </data>
+  <data name="Artist_AlbumCountLabel" xml:space="preserve">
+    <value>Album count: </value>
+  </data>
+  <data name="Artist_PlayAll" xml:space="preserve">
+    <value>Play All</value>
+  </data>
 </root> 

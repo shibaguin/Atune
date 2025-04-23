@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:models="clr-namespace:Atune.Models"
+             xmlns:conv="clr-namespace:Atune.Converters"
+             xmlns:views="clr-namespace:Atune.Views"
+             x:Class="Atune.Views.ArtistListView"
+             x:DataType="models:ArtistInfo">
+  <UserControl.Resources>
+    <conv:CoverArtConverter x:Key="CoverArtConverter"/>
+  </UserControl.Resources>
+  <Grid ColumnDefinitions="Auto,*" VerticalAlignment="Center" Margin="5">
+    <Button x:Name="CoverButton" Grid.Column="0"
+            Width="50" Height="50"
+            Margin="0,0,5,0"
+            Padding="0"
+            Background="Transparent" BorderThickness="0"
+            Focusable="False">
+      <Grid>
+        <Image Source="{Binding CoverArt, Converter={StaticResource CoverArtConverter}}"
+               Stretch="Fill"
+               HorizontalAlignment="Stretch"
+               VerticalAlignment="Stretch"/>
+        <Rectangle x:Name="Overlay"
+                   Fill="Black"
+                   Opacity="0"
+                   IsHitTestVisible="False"/>
+        <TextBlock x:Name="PlayIcon"
+                   Text="▶"
+                   Foreground="White"
+                   Opacity="0"
+                   HorizontalAlignment="Center"
+                   VerticalAlignment="Center"
+                   FontSize="24"/>
+      </Grid>
+    </Button>
+    <!-- Artist info / open details -->
+    <Button x:Name="OpenButton"
+            Grid.Column="1"
+            Background="Transparent"
+            BorderThickness="0"
+            HorizontalAlignment="Stretch"
+            Focusable="False">
+      <StackPanel Spacing="2">
+        <TextBlock Text="{Binding ArtistName}" FontWeight="Bold" FontSize="14"/>
+        <TextBlock FontSize="12" Foreground="Gray">
+          <TextBlock.Inlines>
+            <Run Text="{DynamicResource Artist_TrackCountLabel}"/>
+            <Run Text="{Binding TrackCount}"/>
+          </TextBlock.Inlines>
+        </TextBlock>
+        <TextBlock FontSize="12" Foreground="Gray">
+          <TextBlock.Inlines>
+            <Run Text="{DynamicResource Artist_AlbumCountLabel}"/>
+            <Run Text="{Binding AlbumCount}"/>
+          </TextBlock.Inlines>
+        </TextBlock>
+      </StackPanel>
+    </Button>
+  </Grid>
+</UserControl> 

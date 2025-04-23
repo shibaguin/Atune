@@ -467,6 +467,7 @@ public partial class App : Application
         services.AddSingleton<ICoverArtService, CoverArtService>();
         services.AddSingleton<IPlayAlbumService, PlayAlbumService>();
         services.AddSingleton<IPlayPlaylistService, PlayPlaylistService>();
+        services.AddSingleton<IPlayArtistService, PlayArtistService>();
 
         // Добавляем загрузчик плагинов
         var pluginLoader = new PluginLoader(services.BuildServiceProvider().GetRequiredService<IPlatformPathService>(), services.BuildServiceProvider().GetRequiredService<ILoggerService>());
@@ -485,7 +486,12 @@ public partial class App : Application
         services.AddSingleton<ISearchProvider, SettingsSearchProvider>();
         services.AddSingleton<ISearchProvider, AlbumSearchProvider>();
         services.AddSingleton<ISearchProvider, TrackSearchProvider>();
+        services.AddSingleton<ISearchProvider, PlaylistSearchProvider>();
+        services.AddSingleton<ISearchProvider, ArtistSearchProvider>();
         // TODO: add more providers: PlaylistSearchProvider, ArtistSearchProvider, etc.
+
+        services.AddTransient<ArtistView>(sp => new ArtistView());
+        services.AddTransient<ArtistListView>(sp => new ArtistListView());
     }
 
     [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "Disabled for Avalonia compatibility")]
