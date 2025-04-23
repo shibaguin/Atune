@@ -70,7 +70,7 @@ namespace Atune.Views
         {
             var album = DataContext as AlbumInfo;
             if (album == null) return;
-            var service = App.Current.Services.GetRequiredService<IPlayAlbumService>();
+            var service = App.Current!.Services!.GetRequiredService<IPlayAlbumService>();
             await service.PlayAlbumAsync(album);
         }
     }
