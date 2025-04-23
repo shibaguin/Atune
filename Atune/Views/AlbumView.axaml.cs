@@ -79,7 +79,7 @@ namespace Atune.Views
             if (DataContext is AlbumViewModel albumVm)
             {
                 // Delegate album-play logic to PlayAlbumService
-                var service = App.Current.Services.GetRequiredService<IPlayAlbumService>();
+                var service = App.Current!.Services!.GetRequiredService<IPlayAlbumService>();
                 await service.PlayAlbumAsync(albumVm.Album);
             }
         }
