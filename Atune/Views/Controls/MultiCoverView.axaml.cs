@@ -22,13 +22,13 @@ namespace Atune.Views.Controls
             set => SetValue(CoverUrisProperty, value);
         }
 
-        private Canvas _coverCanvas;
+        private Canvas _coverCanvas = null!;
         private readonly CoverArtConverter _converter = new CoverArtConverter();
 
         public MultiCoverView()
         {
             InitializeComponent();
-            _coverCanvas = this.FindControl<Canvas>("CoverCanvas");
+            _coverCanvas = this.FindControl<Canvas>("CoverCanvas")!;
             _coverCanvas.SizeChanged += (s, e) => RenderCovers();
         }
 
