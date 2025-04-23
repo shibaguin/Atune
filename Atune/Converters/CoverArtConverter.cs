@@ -17,11 +17,11 @@ namespace Atune.Converters
         // Cache for loaded bitmaps
         private static readonly Dictionary<string, Bitmap> _bitmapCache = new Dictionary<string, Bitmap>();
 
-        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
         {
             var input = value as string;
             // Get the path to the default cover file in user data
-            var pathService = App.Current.Services.GetRequiredService<IPlatformPathService>();
+            var pathService = App.Current!.Services!.GetRequiredService<IPlatformPathService>();
             var defaultCover = pathService.GetDefaultCoverPath();
             // Decide which path to load: input file if it exists, else the default file path if it exists, else embedded resource URI
             string key;
@@ -54,7 +54,7 @@ namespace Atune.Converters
             return bmp;
         }
 
-        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
             => throw new NotSupportedException();
     }
 } 
