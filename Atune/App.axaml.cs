@@ -480,14 +480,14 @@ public partial class App : Application
         }
 
         // Register search engine and UI
-        services.AddSingleton<ISearchService, SearchService>();
-        services.AddSingleton<SearchViewModel>();
-        services.AddSingleton<ISearchProvider, SectionSearchProvider>();
-        services.AddSingleton<ISearchProvider, SettingsSearchProvider>();
-        services.AddSingleton<ISearchProvider, AlbumSearchProvider>();
-        services.AddSingleton<ISearchProvider, TrackSearchProvider>();
-        services.AddSingleton<ISearchProvider, PlaylistSearchProvider>();
-        services.AddSingleton<ISearchProvider, ArtistSearchProvider>();
+        services.AddScoped<ISearchService, SearchService>();
+        services.AddScoped<SearchViewModel>();
+        services.AddScoped<ISearchProvider, SectionSearchProvider>();
+        services.AddScoped<ISearchProvider, SettingsSearchProvider>();
+        services.AddScoped<ISearchProvider, AlbumSearchProvider>();
+        services.AddScoped<ISearchProvider, TrackSearchProvider>();
+        services.AddScoped<ISearchProvider, PlaylistSearchProvider>();
+        services.AddScoped<ISearchProvider, ArtistSearchProvider>();
         // TODO: add more providers: PlaylistSearchProvider, ArtistSearchProvider, etc.
 
         services.AddTransient<ArtistView>(sp => new ArtistView());

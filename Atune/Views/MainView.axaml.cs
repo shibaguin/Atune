@@ -128,7 +128,7 @@ public partial class MainView : UserControl
     public void ProgressBarBackground_PointerMoved(object? sender, Avalonia.Input.PointerEventArgs e)
         => OnProgressBarPointer(sender, e);
 
-    private void SearchResultsList_SelectionChanged(object? sender, SelectionChangedEventArgs e)
+    private async void SearchResultsList_SelectionChanged(object? sender, SelectionChangedEventArgs e)
     {
         if (sender is ListBox listBox && listBox.SelectedItem is Atune.Services.SearchResult result
             && DataContext is MainViewModel vm)
@@ -176,12 +176,32 @@ public partial class MainView : UserControl
                     vm.GoSettingsCommand.Execute(null);
                     // Additional settings selection logic can go here
                     break;
+
+                case "Artists":
+                    if (result.Data is ArtistInfo artistInfo)
+                    {
+                        // Switch to Media section, refresh data and open the artist (ensures full metadata)
+                        vm.GoMediaCommand.Execute(null);
+                        var artistMediaVm = vm.MediaViewModelInstance;
+                        if (artistMediaVm != null)
+                        {
+                            // Reload all media (tracks, albums, artists)
+                            await artistMediaVm.RefreshMediaCommand.ExecuteAsync(null);
+                            // Find the matching cached ArtistInfo
+                            var existing = artistMediaVm.Artists.FirstOrDefault(a => string.Equals(a.ArtistName, artistInfo.ArtistName, StringComparison.OrdinalIgnoreCase))
+                                ?? artistMediaVm.Artists.FirstOrDefault(a => string.Equals(a.ArtistName.Replace('-', '/'), artistInfo.ArtistName, StringComparison.OrdinalIgnoreCase))
+                                ?? artistMediaVm.Artists.FirstOrDefault(a => string.Equals(a.ArtistName, artistInfo.ArtistName.Replace('/', '-'), StringComparison.OrdinalIgnoreCase));
+                            // Execute open using the cached or fallback object
+                            artistMediaVm.OpenArtistCommand.Execute(existing ?? artistInfo);
+                        }
+                    }
+                    break;
             }
         }
     }
 
     // Handle clicks on search result buttons to navigate
-    private void SearchResultButton_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    private async void SearchResultButton_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
     {
         if (sender is Button btn && btn.DataContext is Atune.Services.SearchResult result
             && DataContext is MainViewModel vm)
@@ -225,13 +245,32 @@ public partial class MainView : UserControl
 
                 case "Tracks":
                     vm.GoMediaCommand.Execute(null);
-                    if (vm.MediaViewModelInstance is var mediaVm && result.Data is MediaItem mi)
-                        mediaVm?.PlayTrackCommand.Execute(mi);
+                    if (vm.MediaViewModelInstance is var mediaVmBtn && result.Data is MediaItem mi)
+                        mediaVmBtn?.PlayTrackCommand.Execute(mi);
                     break;
 
                 case "Playlists":
                     if (result.Data is Playlist pl)
                         vm.GoPlaylistCommand.Execute(pl);
+                    break;
+
+                case "Artists":
+                    if (result.Data is ArtistInfo artistInfoBtn)
+                    {
+                        // Switch to Media section
+                        vm.GoMediaCommand.Execute(null);
+                        var artistBtnVm = vm.MediaViewModelInstance;
+                        if (artistBtnVm != null)
+                        {
+                            // Ensure latest media loaded
+                            await artistBtnVm.RefreshMediaCommand.ExecuteAsync(null);
+                            // Find in cached artists and open
+                            var cached = artistBtnVm.Artists.FirstOrDefault(a => string.Equals(a.ArtistName, artistInfoBtn.ArtistName, StringComparison.OrdinalIgnoreCase))
+                                ?? artistBtnVm.Artists.FirstOrDefault(a => string.Equals(a.ArtistName.Replace('-', '/'), artistInfoBtn.ArtistName, StringComparison.OrdinalIgnoreCase))
+                                ?? artistBtnVm.Artists.FirstOrDefault(a => string.Equals(a.ArtistName, artistInfoBtn.ArtistName.Replace('/', '-'), StringComparison.OrdinalIgnoreCase));
+                            artistBtnVm.OpenArtistCommand.Execute(cached ?? artistInfoBtn);
+                        }
+                    }
                     break;
             }
         }

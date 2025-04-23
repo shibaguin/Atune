@@ -4,7 +4,7 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Controls.ApplicationLifetimes;
 using Atune.ViewModels;
-using Avalonia;
+using Avalonia; 
 
 namespace Atune.Views
 {

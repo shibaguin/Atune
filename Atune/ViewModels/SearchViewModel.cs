@@ -52,23 +52,13 @@ namespace Atune.ViewModels
 
         private async Task OnSearchAsync(string q)
         {
-            var key = q.ToLowerInvariant();
             Results.Clear();
             // Respect minimum length
-            if (key.Length < MinSearchLength)
+            if (q.Length < MinSearchLength)
                 return;
-            // Return cached results if available
-            if (_searchCache.TryGetValue(key, out var cached))
-            {
-                foreach (var r in cached)
-                    Results.Add(r);
-                return;
-            }
-            // Perform search and cache results
+            // Always perform fresh search to get up-to-date results
             var hits = await _searchService.SearchAllAsync(q);
-            var list = hits.ToList();
-            _searchCache[key] = list;
-            foreach (var r in list)
+            foreach (var r in hits)
                 Results.Add(r);
         }
 
