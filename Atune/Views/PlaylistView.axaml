@@ -1,9 +1,11 @@
-<UserControl xmlns="https://github.com/avaloniaui"
+<UserControl x:Name="Root"
+             xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:Atune.ViewModels"
              xmlns:models="clr-namespace:Atune.Models"
+             xmlns:conv="clr-namespace:Atune.Converters"
              xmlns:views="clr-namespace:Atune.Views"
              mc:Ignorable="d"
              d:DesignWidth="400" d:DesignHeight="600"
@@ -12,23 +14,63 @@
              PointerPressed="OnPointerPressed"
              KeyDown="OnKeyDown"
              Focusable="True">
+  <UserControl.Resources>
+    <conv:CoverArtConverter x:Key="CoverArtConverter"/>
+  </UserControl.Resources>
   <Grid Margin="10">
     <Grid.RowDefinitions>
       <RowDefinition Height="Auto"/>
+      <RowDefinition Height="Auto"/>
       <RowDefinition Height="*"/>
     </Grid.RowDefinitions>
-    <StackPanel Grid.Row="0" Spacing="10">
-      <Button Content="{DynamicResource Playlist_Back}" Click="GoBack_Click" HorizontalAlignment="Left"/>
-      <StackPanel Orientation="Horizontal" Spacing="5">
-        <TextBlock Text="{DynamicResource Playlist_Name}" VerticalAlignment="Center"/>
-        <TextBox Text="{Binding Name, Mode=TwoWay}" MinWidth="200"/>
-        <Button Content="{DynamicResource Playlist_Rename}" Command="{Binding RenameCommand}" VerticalAlignment="Center"/>
-        <Button Content="{DynamicResource Playlist_Delete}" Command="{Binding DeleteCommand}" VerticalAlignment="Center"/>
+
+    <!-- Header: Back, Cover Mosaic, Details -->
+    <Grid Grid.Row="0" ColumnDefinitions="Auto,Auto,*" Margin="0,0,0,10">
+      <!-- Back button -->
+      <Button Grid.Column="0" Click="GoBack_Click" Background="Transparent" BorderThickness="0" HorizontalAlignment="Left" VerticalAlignment="Center">
+        <PathIcon Data="M15.707 4.293a1 1 0 0 1 0 1.414L9.414 12l6.293 6.293a1 1 0 0 1-1.414 1.414l-7-7a1 1 0 0 1 0-1.414l7-7a1 1 0 0 1 1.414 0Z" Width="24" Height="24"/>
+      </Button>
+
+      <!-- Cover mosaic -->
+      <Grid Grid.Column="1" Width="200" Height="200" Margin="10,0,10,0">
+        <Grid.RowDefinitions><RowDefinition/><RowDefinition/></Grid.RowDefinitions>
+        <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition/></Grid.ColumnDefinitions>
+        <Image Grid.Row="0" Grid.Column="0" Source="{Binding Tracks[0].CoverArt, Converter={StaticResource CoverArtConverter}}" Stretch="UniformToFill"/>
+        <Image Grid.Row="0" Grid.Column="1" Source="{Binding Tracks[1].CoverArt, Converter={StaticResource CoverArtConverter}}" Stretch="UniformToFill"/>
+        <Image Grid.Row="1" Grid.Column="0" Source="{Binding Tracks[2].CoverArt, Converter={StaticResource CoverArtConverter}}" Stretch="UniformToFill"/>
+        <Image Grid.Row="1" Grid.Column="1" Source="{Binding Tracks[3].CoverArt, Converter={StaticResource CoverArtConverter}}" Stretch="UniformToFill"/>
+      </Grid>
+
+      <!-- Details -->
+      <StackPanel Grid.Column="2" Orientation="Vertical" VerticalAlignment="Center" Spacing="5">
+        <TextBlock Text="{Binding Name}" FontSize="24" FontWeight="Bold"/>
+        <TextBlock FontSize="14">
+          <TextBlock.Inlines>
+            <Run Text="{DynamicResource Playlist_TrackCountLabel}"/>
+            <Run Text="{Binding Tracks.Count}"/>
+          </TextBlock.Inlines>
+        </TextBlock>
+        <TextBlock FontSize="14">
+          <TextBlock.Inlines>
+            <Run Text="{DynamicResource Playlist_DurationLabel}"/>
+            <Run Text="{Binding TotalDuration}"/>
+          </TextBlock.Inlines>
+        </TextBlock>
       </StackPanel>
-    </StackPanel>
-    <ListBox Grid.Row="1" ItemsSource="{Binding Tracks}" Margin="0,20,0,0">
+    </Grid>
+
+    <!-- Play All button -->
+    <Button Grid.Row="1" Command="{Binding PlayAllCommand}" Background="Transparent" BorderThickness="0" HorizontalAlignment="Left" Margin="10,5,5,10">
+      <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Spacing="8">
+        <PathIcon Data="M2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10S2 17.523 2 12Zm8.856-3.845A1.25 1.25 0 0 0 9 9.248v5.504a1.25 1.25 0 0 0 1.856 1.093l5.757-3.189a.75.75 0 0 0 0-1.312l-5.757-3.189Z" Width="24" Height="24"/>
+        <TextBlock Text="{DynamicResource Playlist_PlayAll}" VerticalAlignment="Center"/>
+      </StackPanel>
+    </Button>
+
+    <!-- Track list -->
+    <ListBox Grid.Row="2" ItemsSource="{Binding Tracks}" Margin="0,20,0,0">
       <ListBox.ItemTemplate>
-        <DataTemplate DataType="models:MediaItem">
+        <DataTemplate x:DataType="models:MediaItem">
           <views:TrackItemView/>
         </DataTemplate>
       </ListBox.ItemTemplate>

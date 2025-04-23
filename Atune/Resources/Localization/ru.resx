@@ -172,5 +172,14 @@
   <data name="Playlist_Delete" xml:space="preserve">
     <value>Удалить</value>
   </data>
+  <data name="Playlist_TrackCountLabel" xml:space="preserve">
+    <value>Количество треков: </value>
+  </data>
+  <data name="Playlist_DurationLabel" xml:space="preserve">
+    <value>Общая длительность: </value>
+  </data>
+  <data name="Playlist_PlayAll" xml:space="preserve">
+    <value>Воспроизвести всё</value>
+  </data>
   <!-- end playlist view -->
 </root> 

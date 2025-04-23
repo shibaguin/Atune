@@ -176,5 +176,14 @@
   <data name="Playlist_Delete" xml:space="preserve">
     <value>Delete</value>
   </data>
+  <data name="Playlist_TrackCountLabel" xml:space="preserve">
+    <value>Track count: </value>
+  </data>
+  <data name="Playlist_DurationLabel" xml:space="preserve">
+    <value>Duration: </value>
+  </data>
+  <data name="Playlist_PlayAll" xml:space="preserve">
+    <value>Play All</value>
+  </data>
   <!-- end playlist view -->
 </root> 

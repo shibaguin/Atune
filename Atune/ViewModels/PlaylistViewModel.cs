@@ -8,6 +8,8 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Atune.Models;
 using Atune.Services;
 using System.Linq;
+using System;
+using System.Collections.Specialized;
 
 namespace Atune.ViewModels
 {
@@ -23,10 +25,13 @@ namespace Atune.ViewModels
             _playlistService = App.Current!.Services!.GetRequiredService<IPlaylistService>();
             Name = playlist.Name;
             _ = LoadTracksAsync();
+            Tracks.CollectionChanged += (_, __) => OnPropertyChanged(nameof(TotalDuration));
         }
 
         [ObservableProperty]
         private string name;
+
+        public string TotalDuration => TimeSpan.FromTicks(Tracks.Sum(t => t.Duration.Ticks)).ToString(@"hh\:mm\:ss");
 
         [RelayCommand]
         public async Task LoadTracksAsync()
@@ -80,6 +85,13 @@ namespace Atune.ViewModels
             if (track == null) return;
             await _playlistService.RemoveFromPlaylistAsync(Playlist.Id, track.Id);
             await LoadTracksAsync();
+        }
+
+        [RelayCommand]
+        public async Task PlayAllAsync()
+        {
+            var service = App.Current!.Services!.GetRequiredService<IPlayPlaylistService>();
+            await service.PlayPlaylistAsync(Playlist);
         }
     }
 } 
