@@ -22,7 +22,7 @@ namespace Atune.Views
         {
             if (DataContext is ArtistViewModel vm)
             {
-                var service = App.Current.Services.GetRequiredService<IPlayArtistService>();
+                var service = App.Current!.Services!.GetRequiredService<IPlayArtistService>();
                 await service.PlayArtistAsync(vm.Artist);
             }
         }
