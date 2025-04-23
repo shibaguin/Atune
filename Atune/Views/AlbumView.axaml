@@ -83,7 +83,7 @@
              Margin="5">
       <ListBox.ItemTemplate>
         <DataTemplate x:DataType="models:MediaItem">
-          <views:TrackItemView
+          <views:TrackListView
             PlayCommand="{Binding PlayTrackCommand, RelativeSource={RelativeSource AncestorType=views:AlbumView}}"/>
         </DataTemplate>
       </ListBox.ItemTemplate>

@@ -27,7 +27,7 @@ namespace Atune.Views
             }
         }
 
-        // Expose MediaViewModel's PlayTrackCommand for TrackItemView
+        // Expose MediaViewModel's PlayTrackCommand for TrackListView
         public IAsyncRelayCommand<MediaItem>? PlayTrackCommand
         {
             get

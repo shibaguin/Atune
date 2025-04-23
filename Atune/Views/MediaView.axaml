@@ -65,7 +65,7 @@
                         </ListBox.ItemsPanel>
                         <ListBox.ItemTemplate>
                             <DataTemplate DataType="models:MediaItem">
-                                <views:TrackItemView
+                                <views:TrackListView
                                     PlayCommand="{Binding PlayTrackCommand, RelativeSource={RelativeSource AncestorType=views:MediaView}}"
                                     AddToPlaylistCommand="{Binding AddToPlaylistCommand, RelativeSource={RelativeSource AncestorType=views:MediaView}}"/>
                             </DataTemplate>
@@ -177,7 +177,7 @@
                              Margin="5">
                         <ListBox.ItemTemplate>
                             <DataTemplate DataType="models:MediaItem">
-                                <views:TrackItemView
+                                <views:TrackListView
                                     PlayCommand="{Binding PlayMediaItemCommand, RelativeSource={RelativeSource AncestorType=views:MediaView}}"
                                     AddToPlaylistCommand="{Binding AddToPlaylistCommand, RelativeSource={RelativeSource AncestorType=views:MediaView}}"/>
                             </DataTemplate>

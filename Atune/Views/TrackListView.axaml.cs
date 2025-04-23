@@ -16,11 +16,11 @@ using Avalonia.Controls.Shapes;
 
 namespace Atune.Views
 {
-    public partial class TrackItemView : UserControl
+    public partial class TrackListView : UserControl
     {
         // Command to play this track
         public static readonly StyledProperty<ICommand?> PlayCommandProperty =
-            AvaloniaProperty.Register<TrackItemView, ICommand?>(nameof(PlayCommand));
+            AvaloniaProperty.Register<TrackListView, ICommand?>(nameof(PlayCommand));
         public ICommand? PlayCommand
         {
             get => GetValue(PlayCommandProperty);
@@ -29,14 +29,14 @@ namespace Atune.Views
 
         // Command to add this track to a playlist; parameter is Playlist
         public static readonly StyledProperty<ICommand?> AddToPlaylistCommandProperty =
-            AvaloniaProperty.Register<TrackItemView, ICommand?>(nameof(AddToPlaylistCommand));
+            AvaloniaProperty.Register<TrackListView, ICommand?>(nameof(AddToPlaylistCommand));
         public ICommand? AddToPlaylistCommand
         {
             get => GetValue(AddToPlaylistCommandProperty);
             set => SetValue(AddToPlaylistCommandProperty, value);
         }
 
-        public TrackItemView()
+        public TrackListView()
         {
             InitializeComponent();
 
