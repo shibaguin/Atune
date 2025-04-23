@@ -117,14 +117,7 @@
                         <ItemsControl ItemsSource="{Binding Playlists}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate x:DataType="models:Playlist">
-                                    <Button Command="{Binding OpenPlaylistCommand, ElementName=Root}"
-                                            CommandParameter="{Binding}"
-                                            Background="Transparent"
-                                            BorderThickness="0"
-                                            Margin="5"
-                                            HorizontalAlignment="Stretch">
-                                        <TextBlock Text="{Binding Name}" FontSize="14"/>
-                                    </Button>
+                                    <views:PlaylistListView OpenCommand="{Binding OpenPlaylistCommand, ElementName=Root}" />
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>

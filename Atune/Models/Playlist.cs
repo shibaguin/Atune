@@ -13,6 +13,6 @@ namespace Atune.Models
         public bool IsSmart { get; set; } // Умный плейлист
 
         // Связь с треками через связывающую таблицу
-        public ICollection<PlaylistMediaItem> PlaylistMediaItems { get; set; } = new List<PlaylistMediaItem>();
+        public IList<PlaylistMediaItem> PlaylistMediaItems { get; set; } = new List<PlaylistMediaItem>();
     }
 } 

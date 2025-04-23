@@ -33,7 +33,10 @@ namespace Atune.Data.Repositories
 
         public async Task<IEnumerable<Playlist>> GetPlaylistsAsync()
         {
-            return await _context.Playlists.ToListAsync();
+            return await _context.Playlists
+                .Include(p => p.PlaylistMediaItems)
+                    .ThenInclude(pmi => pmi.MediaItem)
+                .ToListAsync();
         }
 
         public async Task<int> AddToPlaylistAsync(int playlistId, IEnumerable<int> mediaItemIds)

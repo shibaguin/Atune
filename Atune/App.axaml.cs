@@ -466,6 +466,7 @@ public partial class App : Application
         // Добавляем новый сервис для работы с обложками
         services.AddSingleton<ICoverArtService, CoverArtService>();
         services.AddSingleton<IPlayAlbumService, PlayAlbumService>();
+        services.AddSingleton<IPlayPlaylistService, PlayPlaylistService>();
 
         // Добавляем загрузчик плагинов
         var pluginLoader = new PluginLoader(services.BuildServiceProvider().GetRequiredService<IPlatformPathService>(), services.BuildServiceProvider().GetRequiredService<ILoggerService>());
