@@ -62,9 +62,14 @@ namespace Atune.Data.Repositories
 
         public async Task<IEnumerable<MediaItem>> GetSongsInPlaylistAsync(int playlistId)
         {
+            // Load media items with related Album and Artist navigation properties
             return await _context.PlaylistMediaItems
                 .Where(pmi => pmi.PlaylistId == playlistId)
                 .Include(pmi => pmi.MediaItem)
+                    .ThenInclude(mi => mi.Album)
+                .Include(pmi => pmi.MediaItem)
+                    .ThenInclude(mi => mi.TrackArtists)
+                        .ThenInclude(ta => ta.Artist)
                 .Select(pmi => pmi.MediaItem)
                 .ToListAsync();
         }
