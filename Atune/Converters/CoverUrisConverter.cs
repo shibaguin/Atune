@@ -10,7 +10,7 @@ namespace Atune.Converters
 {
     public class CoverUrisConverter : IValueConverter
     {
-        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
         {
             var uris = new List<string>();
             if (value is IEnumerable enumerable)
@@ -33,7 +33,7 @@ namespace Atune.Converters
             return uris.Distinct().Take(4).ToList();
         }
 
-        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
         {
             throw new NotSupportedException();
         }
