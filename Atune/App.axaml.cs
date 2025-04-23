@@ -232,7 +232,7 @@ public partial class App : Application
         try
         {
             var platformPathService = Services?.GetService<IPlatformPathService>();
-            var playbackService = Services?.GetService<MediaPlayerService>();
+            var playbackService = Services!.GetService<MediaPlayerService>();
             if (platformPathService == null) return;
 
             // Use .txt format: each queue path on its own line, then index and position
@@ -349,7 +349,7 @@ public partial class App : Application
                 if (stateIndex >= 0 && stateIndex < mediaVm.PlaybackQueue.Count)
                     mediaVm.SetQueuePositionCommand.Execute(stateIndex + 1);
 
-                var playbackService = Services.GetService<MediaPlayerService>();
+                var playbackService = Services!.GetService<MediaPlayerService>();
                 if (playbackService != null && stateIndex >= 0 && stateIndex < mediaVm.PlaybackQueue.Count)
                 {
                     var currentItem = mediaVm.PlaybackQueue[stateIndex];
