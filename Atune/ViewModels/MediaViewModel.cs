@@ -981,17 +981,17 @@ public partial class MediaViewModel : ObservableObject, IDisposable
         if (_albumCache == null)
         {
             var albumGroups = MediaItems
-                .GroupBy(m => new { 
-                    AlbumTitle = m.Album.Title,
-                    ArtistName = m.TrackArtists.FirstOrDefault()?.Artist?.Name ?? "Unknown Artist",
-                    m.Year
+                .GroupBy(m => m.Album.Title)
+                .Select(g =>
+                {
+                    var first = g.First();
+                    return new AlbumInfo(
+                        albumTitle: g.Key,
+                        artistName: first.TrackArtists.FirstOrDefault()?.Artist?.Name ?? "Unknown Artist",
+                        year: first.Year,
+                        tracks: g.ToList()
+                    );
                 })
-                .Select(g => new AlbumInfo(
-                    albumTitle: g.Key.AlbumTitle,
-                    artistName: g.Key.ArtistName,
-                    year: g.Key.Year,
-                    tracks: g.ToList()
-                ))
                 .Where(album => album.Tracks.Count >= 3) // Фильтруем альбомы с 3 или более треками
                 .OrderBy(a => a.AlbumName)
                 .ToList();
