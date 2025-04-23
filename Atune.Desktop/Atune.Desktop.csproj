@@ -36,7 +36,7 @@
       <PrivateAssets Condition="'$(Configuration)' != 'Debug'">All</PrivateAssets>
     </PackageReference>
     <PackageReference Include="TagLibSharp" />
-    <PackageReference Include="VideoLAN.LibVLC.Windows" />
+    <PackageReference Include="VideoLAN.LibVLC.Windows" Condition="'$(OS)' == 'Windows_NT'" />
   </ItemGroup>
 
   <ItemGroup>
