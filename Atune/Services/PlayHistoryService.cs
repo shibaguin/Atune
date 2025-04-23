@@ -4,29 +4,37 @@ using System;
 using System.Threading.Tasks;
 using Atune.Data.Interfaces;
 using Atune.Models;
+using Microsoft.Extensions.Logging;
+using System.Linq;
+using Serilog;
 
 public class PlayHistoryService : IDisposable
 {
     private readonly IPlayHistoryRepository _historyRepository;
     private readonly IUnitOfWork _unitOfWork;
-    private readonly MusicPlaybackService _playbackService;
+    private readonly MediaPlayerService _playbackService;
     private readonly Guid _sessionId;
     private readonly string _deviceId;
     private readonly string _appVersion;
     private readonly string _os;
+    private readonly ILogger<PlayHistoryService> _logger;
 
     public PlayHistoryService(
         IPlayHistoryRepository historyRepository,
         IUnitOfWork unitOfWork,
-        MusicPlaybackService playbackService)
+        MediaPlayerService playbackService,
+        ILogger<PlayHistoryService> logger)
     {
+        Log.Information("[PlayHistoryService] Initialized with SessionId={SessionId}", _sessionId);
         _historyRepository = historyRepository;
         _unitOfWork = unitOfWork;
         _playbackService = playbackService;
+        _logger = logger;
 
         // Initialize session and device info
         _sessionId = Guid.NewGuid();
         _deviceId = Environment.MachineName;
+        _logger.LogInformation("PlayHistoryService initialized: SessionId={SessionId}, Device={Device}", _sessionId, _deviceId);
         _appVersion = System.Reflection.Assembly.GetEntryAssembly()?.GetName().Version?.ToString() ?? string.Empty;
         _os = System.Runtime.InteropServices.RuntimeInformation.OSDescription;
 
@@ -36,35 +44,61 @@ public class PlayHistoryService : IDisposable
 
     private async void OnPlaybackEnded(object? sender, EventArgs e)
     {
+        Log.Information("[PlayHistoryService] OnPlaybackEnded event received");
+        _logger.LogInformation("PlaybackEnded event received");
         try
         {
-            var track = _playbackService.CurrentTrack;
-            if (track != null)
+            // Get the raw playback path and normalize to local file path
+            var rawPath = _playbackService.CurrentPath ?? string.Empty;
+            var path = rawPath;
+            if (rawPath.StartsWith("file://", StringComparison.OrdinalIgnoreCase))
             {
-                var duration = _playbackService.CurrentTime;
-                var total = _playbackService.Duration;
-
-                var entry = new PlayHistory
-                {
-                    MediaItemId = track.Id,
-                    PlayedAt = DateTime.UtcNow,
-                    DurationSeconds = (int)duration.TotalSeconds,
-                    SessionId = _sessionId,
-                    DeviceId = _deviceId,
-                    PercentPlayed = total.TotalSeconds > 0
-                        ? 100.0
-                        : 0.0,
-                    AppVersion = _appVersion,
-                    OS = _os
-                };
-
-                await _historyRepository.AddAsync(entry);
-                await _unitOfWork.CommitAsync();
+                try { path = new Uri(rawPath).LocalPath; }
+                catch { /* leave rawPath if URI parsing fails */ }
             }
+            Log.Information("[PlayHistoryService] Playback finished for path={Path}", rawPath);
+            _logger.LogInformation("Playback finished for path: {Path}", path);
+            if (string.IsNullOrEmpty(path))
+                return;
+
+            // Lookup media item by path
+            var allMedia = await _unitOfWork.Media.GetAllAsync();
+            var mediaItem = allMedia.FirstOrDefault(m =>
+                string.Equals(m.Path, path, StringComparison.OrdinalIgnoreCase));
+            if (mediaItem == null)
+            {
+                Log.Warning("[PlayHistoryService] No MediaItem found for path={Path}", path);
+                _logger.LogWarning("No MediaItem found for path: {Path}", path);
+                return;
+            }
+            var durationSeconds = (int)_playbackService.Position.TotalSeconds;
+            var totalSeconds = _playbackService.Duration.TotalSeconds;
+
+            var entry = new PlayHistory
+            {
+                MediaItemId = mediaItem.Id,
+                PlayedAt = DateTime.UtcNow,
+                DurationSeconds = durationSeconds,
+                SessionId = _sessionId,
+                DeviceId = _deviceId,
+                PercentPlayed = totalSeconds > 0
+                    ? durationSeconds / totalSeconds * 100.0
+                    : 0.0,
+                AppVersion = _appVersion,
+                OS = _os
+            };
+
+            Log.Information("[PlayHistoryService] Saving entry: MediaItemId={MediaItemId}, Duration={Duration}", entry.MediaItemId, entry.DurationSeconds);
+            _logger.LogInformation("Saving history entry: MediaItemId={MediaItemId}, Duration={Duration}s, PercentPlayed={PercentPlayed}%", entry.MediaItemId, entry.DurationSeconds, entry.PercentPlayed);
+            await _historyRepository.AddAsync(entry);
+            await _unitOfWork.CommitAsync();
+            Log.Information("[PlayHistoryService] Entry committed to database");
+            _logger.LogInformation("Play history entry committed successfully");
         }
-        catch
+        catch (Exception ex)
         {
-            // Swallow exceptions to avoid interrupting playback
+            Log.Error(ex, "[PlayHistoryService] Error recording play history");
+            _logger.LogError(ex, "Failed to record play history");
         }
     }
 

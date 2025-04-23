@@ -477,7 +477,14 @@ public partial class App : Application
         services.AddScoped<IArtistRepository, ArtistRepository>();
         services.AddScoped<IPlaylistRepository, PlaylistRepository>();
         services.AddScoped<IPlayHistoryRepository, PlayHistoryRepository>();
-        services.AddScoped<PlayHistoryService>();
+        services.AddScoped<PlayHistoryService>(provider =>
+        {
+            var repo = provider.GetRequiredService<IPlayHistoryRepository>();
+            var uow = provider.GetRequiredService<IUnitOfWork>();
+            var playback = provider.GetRequiredService<MediaPlayerService>();
+            var logger = provider.GetRequiredService<ILogger<PlayHistoryService>>();
+            return new PlayHistoryService(repo, uow, playback, logger);
+        });
         services.AddSingleton<IFoldersRepository, FoldersRepository>();
 
         services.AddSingleton<INavigationKeywordProvider, NavigationKeywordProvider>();
