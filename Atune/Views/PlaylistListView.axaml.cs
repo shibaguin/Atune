@@ -24,9 +24,29 @@ namespace Atune.Views
             set => SetValue(OpenCommandProperty, value);
         }
 
+        // Compute total duration for display
+        public string FormattedDuration
+        {
+            get
+            {
+                if (DataContext is Playlist playlist && playlist.PlaylistMediaItems != null)
+                {
+                    var totalTicks = playlist.PlaylistMediaItems.Sum(pmi => pmi.MediaItem.Duration.Ticks);
+                    var dur = TimeSpan.FromTicks(totalTicks);
+                    if (dur.Days > 0)
+                        return string.Format("{0:00}:{1:00}:{2:00}:{3:00}", dur.Days, dur.Hours, dur.Minutes, dur.Seconds);
+                    return string.Format("{0:00}:{1:00}:{2:00}", dur.Hours, dur.Minutes, dur.Seconds);
+                }
+                return "00:00";
+            }
+        }
+
         public PlaylistListView()
         {
             InitializeComponent();
+
+            // Refresh duration when DataContext changes
+            this.DataContextChanged += (_, __) => ((Control)this).DataContext = this.DataContext;
 
             var openBtn = this.FindControl<Button>("OpenButton");
             if (openBtn != null)

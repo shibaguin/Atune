@@ -2,6 +2,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:models="clr-namespace:Atune.Models"
              xmlns:conv="clr-namespace:Atune.Converters"
+             xmlns:views="clr-namespace:Atune.Views"
              x:Class="Atune.Views.PlaylistListView"
              x:DataType="models:Playlist">
     <UserControl.Resources>
@@ -58,7 +59,20 @@
                 BorderThickness="0"
                 HorizontalAlignment="Stretch"
                 Focusable="False">
-            <TextBlock Text="{Binding Name}" FontSize="14"/>
+            <StackPanel Spacing="2">
+                <!-- Playlist name -->
+                <TextBlock Text="{Binding Name}" FontSize="14"/>
+                <!-- Track count and total duration (subtle color) -->
+                <TextBlock FontSize="12" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}">
+                    <TextBlock.Inlines>
+                        <Run Text="{DynamicResource Playlist_TrackCountLabel}"/>
+                        <Run Text="{Binding PlaylistMediaItems.Count}"/>
+                        <Run Text=" ("/>
+                        <Run Text="{Binding FormattedDuration, RelativeSource={RelativeSource AncestorType=views:PlaylistListView}}"/>
+                        <Run Text=")"/>
+                    </TextBlock.Inlines>
+                </TextBlock>
+            </StackPanel>
         </Button>
     </Grid>
 </UserControl> 
