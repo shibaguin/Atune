@@ -53,7 +53,7 @@ namespace Atune.Views
                 {
                     if (DataContext is MediaItem item)
                     {
-                        var player = App.Current.Services.GetRequiredService<MediaPlayerService>();
+                        var player = App.Current!.Services!.GetRequiredService<MediaPlayerService>();
                         // If this track was paused, resume
                         if (player.CurrentPath != null && !player.IsPlaying)
                         {
