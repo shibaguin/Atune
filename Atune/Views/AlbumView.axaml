@@ -55,6 +55,9 @@
           <TextBlock.Inlines>
             <Run Text="{DynamicResource Album_TrackCountLabel}"/>
             <Run Text="{Binding Album.TrackCount}"/>
+            <Run Text=" ("/>
+            <Run Text="{Binding Album.FormattedDuration}"/>
+            <Run Text=")"/>
           </TextBlock.Inlines>
         </TextBlock>
       </StackPanel>

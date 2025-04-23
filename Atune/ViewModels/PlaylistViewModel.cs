@@ -31,7 +31,16 @@ namespace Atune.ViewModels
         [ObservableProperty]
         private string name;
 
-        public string TotalDuration => TimeSpan.FromTicks(Tracks.Sum(t => t.Duration.Ticks)).ToString(@"hh\:mm\:ss");
+        public string TotalDuration
+        {
+            get
+            {
+                var dur = TimeSpan.FromTicks(Tracks.Sum(t => t.Duration.Ticks));
+                if (dur.Days > 0)
+                    return string.Format("{0:00}:{1:00}:{2:00}:{3:00}", dur.Days, dur.Hours, dur.Minutes, dur.Seconds);
+                return string.Format("{0:00}:{1:00}:{2:00}", dur.Hours, dur.Minutes, dur.Seconds);
+            }
+        }
 
         [RelayCommand]
         public async Task LoadTracksAsync()

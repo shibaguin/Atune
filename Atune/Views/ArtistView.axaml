@@ -45,6 +45,9 @@
           <TextBlock.Inlines>
             <Run Text="{DynamicResource Artist_TrackCountLabel}"/>
             <Run Text="{Binding Artist.TrackCount}"/>
+            <Run Text=" ("/>
+            <Run Text="{Binding Artist.FormattedDuration}"/>
+            <Run Text=")"/>
           </TextBlock.Inlines>
         </TextBlock>
         <TextBlock FontSize="16">

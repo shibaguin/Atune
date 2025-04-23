@@ -48,12 +48,9 @@
           <TextBlock.Inlines>
             <Run Text="{DynamicResource Playlist_TrackCountLabel}"/>
             <Run Text="{Binding Tracks.Count}"/>
-          </TextBlock.Inlines>
-        </TextBlock>
-        <TextBlock FontSize="14">
-          <TextBlock.Inlines>
-            <Run Text="{DynamicResource Playlist_DurationLabel}"/>
+            <Run Text=" ("/>
             <Run Text="{Binding TotalDuration}"/>
+            <Run Text=")"/>
           </TextBlock.Inlines>
         </TextBlock>
       </StackPanel>

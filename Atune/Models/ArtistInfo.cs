@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System;
 
 namespace Atune.Models
 {
@@ -11,6 +12,21 @@ namespace Atune.Models
         public int TrackCount { get; set; }
         public int AlbumCount { get; set; }
         public List<MediaItem> Tracks { get; set; }
+
+        // Total duration of all artist tracks
+        public TimeSpan TotalDuration => Tracks.Aggregate(TimeSpan.Zero, (sum, t) => sum + t.Duration);
+
+        // Formatted duration string, include days if >=24h
+        public string FormattedDuration
+        {
+            get
+            {
+                var dur = TotalDuration;
+                if (dur.Days > 0)
+                    return string.Format("{0:00}:{1:00}:{2:00}:{3:00}", dur.Days, dur.Hours, dur.Minutes, dur.Seconds);
+                return string.Format("{0:00}:{1:00}:{2:00}", dur.Hours, dur.Minutes, dur.Seconds);
+            }
+        }
 
         public ArtistInfo(string artistName, List<MediaItem> tracks)
         {
