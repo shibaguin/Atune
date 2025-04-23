@@ -10,14 +10,14 @@ namespace Atune.Views
 {
     public partial class PlaylistView : UserControl
     {
-        private TextBlock _titleText;
-        private TextBox _titleBox;
+        private TextBlock _titleText = null!;
+        private TextBox _titleBox = null!;
 
         public PlaylistView()
         {
             InitializeComponent();
-            _titleText = this.FindControl<TextBlock>("TitleText");
-            _titleBox = this.FindControl<TextBox>("TitleBox");
+            _titleText = this.FindControl<TextBlock>("TitleText")!;
+            _titleBox = this.FindControl<TextBox>("TitleBox")!;
             AddHandler(PointerPressedEvent, OnPointerPressed, handledEventsToo: true);
             AddHandler(KeyDownEvent, OnKeyDown, handledEventsToo: true);
         }
