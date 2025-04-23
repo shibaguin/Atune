@@ -81,8 +81,6 @@ public partial class MainViewModel : ViewModelBase
     private CancellationTokenSource? _volumeSaveCts;
     private bool _isInitializing = true; // skip saves during initial load
 
-    private bool _coverArtLoading;
-
     private readonly ISettingsService _settingsService;
     private readonly Dictionary<SectionType, Control> _views;
     private readonly Func<Type, ViewModelBase> _viewModelFactory;
@@ -483,7 +481,7 @@ public partial class MainViewModel : ViewModelBase
 
     // ?????, ??????????? ???????? PlayCommand
     [RelayCommand]
-    private async void ExecutePlayCommand()
+    private async Task ExecutePlayCommand()
     {
         // First try to resume the last-loaded track
         if (!string.IsNullOrEmpty(CurrentMediaPath))
