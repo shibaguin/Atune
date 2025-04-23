@@ -9,6 +9,9 @@ using Avalonia;
 using System.ComponentModel;
 using System;
 using Avalonia.Threading;
+using Atune.Services;
+using System.Linq;
+using System.Collections.Generic;
 
 namespace Atune.Views;
 
@@ -124,4 +127,113 @@ public partial class MainView : UserControl
         => OnProgressBarPointer(sender, e);
     public void ProgressBarBackground_PointerMoved(object? sender, Avalonia.Input.PointerEventArgs e)
         => OnProgressBarPointer(sender, e);
+
+    private void SearchResultsList_SelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (sender is ListBox listBox && listBox.SelectedItem is Atune.Services.SearchResult result
+            && DataContext is MainViewModel vm)
+        {
+            // Close the popup and clear selection
+            vm.Search.IsOpen = false;
+            listBox.SelectedItem = null;
+
+            switch (result.Category)
+            {
+                case "Navigation":
+                    switch (result.Title)
+                    {
+                        case "Home": vm.GoHomeCommand.Execute(null); break;
+                        case "Media": vm.GoMediaCommand.Execute(null); break;
+                        case "History": vm.GoHistoryCommand.Execute(null); break;
+                        case "Settings": vm.GoSettingsCommand.Execute(null); break;
+                    }
+                    break;
+
+                case "Albums":
+                    if (result.Data is AlbumInfo album)
+                    {
+                        var view = new AlbumView { DataContext = new AlbumViewModel(album) };
+                        vm.SelectedSection = MainViewModel.SectionType.Media;
+                        vm.CurrentView = view;
+                        vm.HeaderText = album.AlbumName;
+                    }
+                    break;
+
+                case "Tracks":
+                    vm.GoMediaCommand.Execute(null);
+                    if (vm.MediaViewModelInstance is var mediaVm && result.Data is MediaItem mi)
+                    {
+                        mediaVm?.PlayTrackCommand.Execute(mi);
+                    }
+                    break;
+
+                case "Playlists":
+                    if (result.Data is Playlist pl)
+                        vm.GoPlaylistCommand.Execute(pl);
+                    break;
+
+                case "Settings":
+                    vm.GoSettingsCommand.Execute(null);
+                    // Additional settings selection logic can go here
+                    break;
+            }
+        }
+    }
+
+    // Handle clicks on search result buttons to navigate
+    private void SearchResultButton_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        if (sender is Button btn && btn.DataContext is Atune.Services.SearchResult result
+            && DataContext is MainViewModel vm)
+        {
+            // Close the popup
+            vm.Search.IsOpen = false;
+
+            switch (result.Category)
+            {
+                case "Navigation":
+                    switch (result.Title)
+                    {
+                        case "Home": vm.GoHomeCommand.Execute(null); break;
+                        case "Media": vm.GoMediaCommand.Execute(null); break;
+                        case "History": vm.GoHistoryCommand.Execute(null); break;
+                        case "Settings": vm.GoSettingsCommand.Execute(null); break;
+                    }
+                    break;
+
+                case "Albums":
+                    AlbumInfo? albumToShow = null;
+                    if (result.Data is AlbumInfo ai)
+                    {
+                        albumToShow = ai;
+                    }
+                    else if (result.Data is Album dbAlbum)
+                    {
+                        // Convert DB Album to AlbumInfo
+                        var artistName = dbAlbum.AlbumArtists?.FirstOrDefault()?.Artist.Name ?? string.Empty;
+                        var tracks = dbAlbum.Tracks?.ToList() ?? new List<MediaItem>();
+                        albumToShow = new AlbumInfo(dbAlbum.Title, artistName, (uint)dbAlbum.Year, tracks);
+                    }
+                    if (albumToShow != null)
+                    {
+                        var view = new AlbumView { DataContext = new AlbumViewModel(albumToShow) };
+                        vm.SelectedSection = MainViewModel.SectionType.Media;
+                        vm.CurrentView = view;
+                        vm.HeaderText = albumToShow.AlbumName;
+                    }
+                    break;
+
+                case "Tracks":
+                    vm.GoMediaCommand.Execute(null);
+                    if (vm.MediaViewModelInstance is var mediaVm && result.Data is MediaItem mi)
+                        mediaVm?.PlayTrackCommand.Execute(mi);
+                    break;
+
+                case "Playlists":
+                    if (result.Data is Playlist pl)
+                        vm.GoPlaylistCommand.Execute(pl);
+                    break;
+            }
+        }
+    }
 }

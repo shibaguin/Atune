@@ -476,6 +476,15 @@ public partial class App : Application
             plugin.Value.Initialize();
             services.AddSingleton(plugin.Value);
         }
+
+        // Register search engine and UI
+        services.AddSingleton<ISearchService, SearchService>();
+        services.AddSingleton<SearchViewModel>();
+        services.AddSingleton<ISearchProvider, SectionSearchProvider>();
+        services.AddSingleton<ISearchProvider, SettingsSearchProvider>();
+        services.AddSingleton<ISearchProvider, AlbumSearchProvider>();
+        services.AddSingleton<ISearchProvider, TrackSearchProvider>();
+        // TODO: add more providers: PlaylistSearchProvider, ArtistSearchProvider, etc.
     }
 
     [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "Disabled for Avalonia compatibility")]

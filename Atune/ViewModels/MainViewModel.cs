@@ -90,6 +90,8 @@ public partial class MainViewModel : ViewModelBase
     private readonly MediaPlayerService _mediaPlayerService;
     private readonly ILogger<MainViewModel> _logger;
     private readonly ICoverArtService _coverArtService;
+    private readonly SearchViewModel _searchViewModel;
+    public SearchViewModel Search => _searchViewModel;
 
     // Expose the MediaViewModel instance for saving and restoring playback state
     public MediaViewModel? MediaViewModelInstance => _views.TryGetValue(SectionType.Media, out var view) ? view.DataContext as MediaViewModel : null;
@@ -113,8 +115,10 @@ public partial class MainViewModel : ViewModelBase
         LocalizationService localizationService,
         MediaPlayerService mediaPlayerService,
         ILogger<MainViewModel> logger,
-        ICoverArtService coverArtService)
+        ICoverArtService coverArtService,
+        SearchViewModel searchViewModel)
     {
+        _searchViewModel = searchViewModel;
         _settingsService = settingsService ?? throw new ArgumentNullException(nameof(settingsService));
         _viewModelFactory = viewModelFactory ?? throw new ArgumentNullException(nameof(viewModelFactory));
         _viewFactory = viewFactory ?? throw new ArgumentNullException(nameof(viewFactory));

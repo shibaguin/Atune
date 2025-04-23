@@ -39,14 +39,14 @@
                         </Grid.ColumnDefinitions>
                         <!-- Sort controls on the left -->
                         <StackPanel Grid.Column="0" Orientation="Horizontal">
-                            <TextBlock Text="{DynamicResource Media_SortBy}" VerticalAlignment="Center" Margin="0,0,5,0"/>
-                            <ComboBox SelectedIndex="{Binding SortOrderTracks, Mode=TwoWay, Converter={StaticResource SortOrderConverter}}" Width="120">
-                                <ComboBoxItem Content="{DynamicResource Sort_AZ}"/>
-                                <ComboBoxItem Content="{DynamicResource Sort_ZA}"/>
-                                <ComboBoxItem Content="{DynamicResource Sort_OldFirst}"/>
-                                <ComboBoxItem Content="{DynamicResource Sort_NewFirst}"/>
-                            </ComboBox>
-                        </StackPanel>
+                        <TextBlock Text="{DynamicResource Media_SortBy}" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                        <ComboBox SelectedIndex="{Binding SortOrderTracks, Mode=TwoWay, Converter={StaticResource SortOrderConverter}}" Width="120">
+                            <ComboBoxItem Content="{DynamicResource Sort_AZ}"/>
+                            <ComboBoxItem Content="{DynamicResource Sort_ZA}"/>
+                            <ComboBoxItem Content="{DynamicResource Sort_OldFirst}"/>
+                            <ComboBoxItem Content="{DynamicResource Sort_NewFirst}"/>
+                        </ComboBox>
+                    </StackPanel>
                         <!-- Action buttons on the right -->
                         <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="5">
                             <Button Content="{DynamicResource Media_AddMusic}" Command="{Binding AddMediaCommand}"/>

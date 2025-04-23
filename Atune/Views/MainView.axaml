@@ -7,6 +7,8 @@
              xmlns:views="clr-namespace:Atune.Views"
              xmlns:converters="clr-namespace:Atune.Converters;assembly=Atune"
              xmlns:avalonia="clr-namespace:Avalonia.Controls;assembly=Avalonia.Controls"
+             xmlns:models="clr-namespace:Atune.Models"
+             xmlns:services="clr-namespace:Atune.Services;assembly=Atune"
              mc:Ignorable="d" 
              d:DesignWidth="800" 
              d:DesignHeight="450"
@@ -176,41 +178,50 @@
                            FontWeight="Bold"
                            VerticalAlignment="Center"/>
 
-                <!-- Контейнер для строки поиска и кнопки (по центру) -->
-                <!-- Container for search bar and button (center) -->
-                <StackPanel Grid.Column="1"
+                <!-- Контейнер для строки поиска и кнопки (справа) -->
+                <!-- Container for search bar and button (right) -->
+                <StackPanel Grid.Column="2"
                             Orientation="Horizontal"
-                            VerticalAlignment="Center">
-                    <Grid>
-                        <TextBox x:Name="SearchTextBox"
-                                 Watermark="{DynamicResource Search_Watermark}"
-                                 Text="{Binding SearchQuery, UpdateSourceTrigger=PropertyChanged}"
-                                 Width="200"
-                                 KeyDown="SearchTextBox_KeyDown"/>
-                        <Popup IsOpen="{Binding IsSuggestionsOpen, Mode=TwoWay}"
-                               Placement="Bottom"
-                               PlacementTarget="{Binding ElementName=SearchTextBox}"
-                               IsLightDismissEnabled="True">
-                            <Border Background="White" Padding="5">
-                                <ListBox ItemsSource="{Binding SearchSuggestions}"
-                                         SelectionChanged="SearchSuggestions_SelectionChanged">
+                            VerticalAlignment="Center"
+                            HorizontalAlignment="Right">
+                    <Button x:Name="SearchButton"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            Command="{Binding Search.ToggleOpenCommand}">
+                        <PathIcon Data="M17.75 3A3.25 3.25 0 0 1 21 6.25v11.5A3.25 3.25 0 0 1 17.75 21H6.25A3.25 3.25 0 0 1 3 17.75V6.25A3.25 3.25 0 0 1 6.25 3h11.5ZM11 7a4 4 0 1 0 2.031 7.447l2.262 2.26.094.083a1 1 0 0 0 1.32-1.497l-2.26-2.262A4 4 0 0 0 11 7Zm0 2a2 2 0 1 1 0 4 2 2 0 0 1 0-4Z"/>
+                    </Button>
+                    <Popup x:Name="SearchPopup"
+                           IsOpen="{Binding Search.IsOpen, Mode=TwoWay}"
+                           PlacementTarget="{Binding ElementName=SearchButton}"
+                           Placement="Bottom">
+                        <Border Background="{DynamicResource BackgroundBrush}" Padding="8">
+                            <StackPanel Spacing="4">
+                                <TextBox Width="200"
+                                         Watermark="Type to search…"
+                                         Text="{Binding Search.Query, UpdateSourceTrigger=PropertyChanged}">
+                                    <TextBox.KeyBindings>
+                                        <KeyBinding Gesture="Enter" Command="{Binding Search.SearchCommand}" />
+                                    </TextBox.KeyBindings>
+                                </TextBox>
+                                <ListBox x:Name="SearchResultsList" ItemsSource="{Binding Search.Results}" MaxHeight="300"
+                                         SelectionChanged="SearchResultsList_SelectionChanged">
                                     <ListBox.ItemTemplate>
                                         <DataTemplate>
-                                            <TextBlock Text="{Binding}" />
+                                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                                <TextBlock Text="{Binding Title}" />
+                                                <TextBlock Text="{Binding Category, StringFormat=' ({0})'}" Foreground="Gray"/>
+                                            </StackPanel>
                                         </DataTemplate>
                                     </ListBox.ItemTemplate>
                                 </ListBox>
-                            </Border>
-                        </Popup>
-                    </Grid>
-                    <Button Content="🔍"
-                            Command="{Binding SearchCommand}"
-                            VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Border>
+                    </Popup>
                 </StackPanel>
 
-                <!-- Пустая колонка справа для центрирования -->
-                <!-- Empty column on the right for centering -->
-                <Grid Grid.Column="2"/>
+                <!-- Пустая колонка посередине для распределения пространства -->
+                <!-- Empty column in middle to distribute space -->
+                <Grid Grid.Column="1"/>
             </Grid>
         </Border>
 
