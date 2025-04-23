@@ -23,9 +23,11 @@ namespace Atune.Data
             _context = context;
             _logger = logger;
             Media = new MediaRepository(_context);
+            PlayHistory = new PlayHistoryRepository(_context);
         }
 
         public IMediaRepository Media { get; }
+        public IPlayHistoryRepository PlayHistory { get; }
 
         public async Task<int> CommitAsync(CancellationToken cancellationToken = default)
         {

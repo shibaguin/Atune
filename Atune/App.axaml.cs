@@ -476,6 +476,8 @@ public partial class App : Application
         services.AddScoped<IAlbumRepository, AlbumRepository>();
         services.AddScoped<IArtistRepository, ArtistRepository>();
         services.AddScoped<IPlaylistRepository, PlaylistRepository>();
+        services.AddScoped<IPlayHistoryRepository, PlayHistoryRepository>();
+        services.AddScoped<PlayHistoryService>();
         services.AddSingleton<IFoldersRepository, FoldersRepository>();
 
         services.AddSingleton<INavigationKeywordProvider, NavigationKeywordProvider>();

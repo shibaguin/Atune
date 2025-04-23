@@ -19,6 +19,7 @@ public class AppDbContext : DbContext
     public DbSet<Playlist> Playlists { get; set; }
     public DbSet<PlaylistMediaItem> PlaylistMediaItems { get; set; }
     public DbSet<PlaybackQueueItem> PlaybackQueueItems { get; set; }
+    public DbSet<PlayHistory> PlayHistories { get; set; }
 
     public AppDbContext(DbContextOptions<AppDbContext> options) 
         : base(options) 
@@ -228,6 +229,36 @@ public class AppDbContext : DbContext
                   .WithMany()
                   .HasForeignKey(e => e.MediaItemId)
                   .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Configure PlayHistory
+        modelBuilder.Entity<PlayHistory>(entity =>
+        {
+            entity.ToTable("PlayHistories");
+            entity.HasKey(e => e.Id);
+
+            entity.Property(e => e.PlayedAt)
+                  .IsRequired();
+            entity.Property(e => e.DurationSeconds)
+                  .IsRequired();
+            entity.Property(e => e.SessionId)
+                  .IsRequired();
+            entity.Property(e => e.DeviceId)
+                  .HasMaxLength(200);
+            entity.Property(e => e.PercentPlayed)
+                  .HasColumnType("REAL");
+            entity.Property(e => e.AppVersion)
+                  .HasMaxLength(100);
+            entity.Property(e => e.OS)
+                  .HasMaxLength(100);
+
+            entity.HasOne(e => e.MediaItem)
+                  .WithMany()
+                  .HasForeignKey(e => e.MediaItemId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasIndex(e => new { e.MediaItemId, e.PlayedAt })
+                  .HasDatabaseName("IX_PlayHistories_MediaItem_PlayedAt");
         });
     }
 
