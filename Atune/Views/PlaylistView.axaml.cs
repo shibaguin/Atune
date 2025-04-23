@@ -10,9 +10,14 @@ namespace Atune.Views
 {
     public partial class PlaylistView : UserControl
     {
+        private TextBlock _titleText;
+        private TextBox _titleBox;
+
         public PlaylistView()
         {
             InitializeComponent();
+            _titleText = this.FindControl<TextBlock>("TitleText");
+            _titleBox = this.FindControl<TextBox>("TitleBox");
             AddHandler(PointerPressedEvent, OnPointerPressed, handledEventsToo: true);
             AddHandler(KeyDownEvent, OnKeyDown, handledEventsToo: true);
         }
@@ -47,6 +52,37 @@ namespace Atune.Views
                 mainVm?.GoMediaCommand.Execute(null);
                 e.Handled = true;
             }
+        }
+
+        // Handler for title TextBlock click: switch to edit mode
+        private void OnTitleTextPressed(object? sender, PointerPressedEventArgs e)
+        {
+            _titleText.IsVisible = false;
+            _titleBox.IsVisible = true;
+            _titleBox.Focus();
+            _titleBox.CaretIndex = _titleBox.Text?.Length ?? 0;
+        }
+
+        // Commit rename on Enter key
+        private async void OnTitleBoxKeyDown(object? sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter && DataContext is PlaylistViewModel vm)
+            {
+                await vm.RenameCommand.ExecuteAsync(null);
+                _titleBox.IsVisible = false;
+                _titleText.IsVisible = true;
+            }
+        }
+
+        // Commit rename on losing focus
+        private async void OnTitleBoxLostFocus(object? sender, RoutedEventArgs e)
+        {
+            if (DataContext is PlaylistViewModel vm)
+            {
+                await vm.RenameCommand.ExecuteAsync(null);
+            }
+            _titleBox.IsVisible = false;
+            _titleText.IsVisible = true;
         }
     }
 } 

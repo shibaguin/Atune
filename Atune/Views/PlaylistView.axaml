@@ -43,7 +43,22 @@
 
       <!-- Details -->
       <StackPanel Grid.Column="2" Orientation="Vertical" VerticalAlignment="Center" Spacing="5">
-        <TextBlock Text="{Binding Name}" FontSize="24" FontWeight="Bold"/>
+        <!-- Editable playlist title -->
+        <Grid>
+          <TextBlock x:Name="TitleText"
+                     Text="{Binding Name}"
+                     FontSize="24"
+                     FontWeight="Bold"
+                     Cursor="Hand"
+                     PointerPressed="OnTitleTextPressed"/>
+          <TextBox x:Name="TitleBox"
+                   Text="{Binding Name, Mode=TwoWay}"
+                   FontSize="24"
+                   FontWeight="Bold"
+                   IsVisible="False"
+                   KeyDown="OnTitleBoxKeyDown"
+                   LostFocus="OnTitleBoxLostFocus"/>
+        </Grid>
         <TextBlock FontSize="14">
           <TextBlock.Inlines>
             <Run Text="{DynamicResource Playlist_TrackCountLabel}"/>
