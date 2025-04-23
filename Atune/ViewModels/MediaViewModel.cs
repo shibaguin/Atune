@@ -391,7 +391,7 @@ public partial class MediaViewModel : ObservableObject, IDisposable
                     // Bulk-insert with incremental UI updates to avoid freezing
                     await _unitOfWork.Media.BulkInsertAsync(newItems, batch =>
                     {
-                        Dispatcher.UIThread.InvokeAsync(async () =>
+                        _ = Dispatcher.UIThread.InvokeAsync(async () =>
                         {
                             int count = 0;
                             const int subBatch = 50;
@@ -408,7 +408,7 @@ public partial class MediaViewModel : ObservableObject, IDisposable
 
                     await _unitOfWork.CommitAsync();
 
-                    Dispatcher.UIThread.InvokeAsync(() =>
+                    _ = Dispatcher.UIThread.InvokeAsync(() =>
                     {
                         SortMediaItems();
                         OnPropertyChanged(nameof(MediaItems));
@@ -647,7 +647,7 @@ public partial class MediaViewModel : ObservableObject, IDisposable
 
                     await _unitOfWork.Media.BulkInsertAsync(newItems, batch =>
                     {
-                        Dispatcher.UIThread.InvokeAsync(async () =>
+                        _ = Dispatcher.UIThread.InvokeAsync(async () =>
                         {
                             int count = 0;
                             const int subBatch = 50;
@@ -664,7 +664,7 @@ public partial class MediaViewModel : ObservableObject, IDisposable
 
                     await _unitOfWork.CommitAsync();
 
-                    Dispatcher.UIThread.InvokeAsync(() =>
+                    _ = Dispatcher.UIThread.InvokeAsync(() =>
                     {
                         UpdateAlbums();
                         SortAlbums();
