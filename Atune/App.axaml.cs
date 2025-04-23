@@ -484,6 +484,8 @@ public partial class App : Application
 
         // Регистрируем новый сервис воспроизведения
         services.AddSingleton<MediaPlayerService>();
+        // Register MusicPlaybackService for play history tracking
+        services.AddSingleton<MusicPlaybackService>();
 
         // Добавляем новый сервис для работы с обложками
         services.AddSingleton<ICoverArtService, CoverArtService>();

@@ -38,6 +38,7 @@ public partial class MediaViewModel : ObservableObject, IDisposable
     private readonly MediaPlayerService _mediaPlayerService;
     private readonly MediaDatabaseService _mediaDatabaseService;
     private readonly ISettingsService _settingsService;
+    private readonly PlayHistoryService _playHistoryService;
     
     // Кэш для альбомов
     private List<AlbumInfo>? _albumCache;
@@ -189,7 +190,8 @@ public partial class MediaViewModel : ObservableObject, IDisposable
         MediaPlayerService mediaPlayerService,
         MediaDatabaseService mediaDatabaseService,
         IPlaylistService playlistService,
-        ISettingsService settingsService)
+        ISettingsService settingsService,
+        PlayHistoryService playHistoryService)
     {
         _cache = cache;
         _unitOfWork = unitOfWork;
@@ -198,6 +200,7 @@ public partial class MediaViewModel : ObservableObject, IDisposable
         _mediaDatabaseService = mediaDatabaseService;
         _playlistService = playlistService;
         _settingsService = settingsService;
+        _playHistoryService = playHistoryService;
         
         // Load saved sort orders
         var settings = _settingsService.LoadSettings();
@@ -1106,6 +1109,7 @@ public partial class MediaViewModel : ObservableObject, IDisposable
         if (disposing)
         {
             _mediaPlayerService.PlaybackEnded -= OnPlaybackEnded;
+            _playHistoryService.Dispose();
         }
         
         _disposed = true;
