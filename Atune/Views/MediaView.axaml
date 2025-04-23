@@ -53,7 +53,11 @@
                             <Button Content="{DynamicResource Media_AddFolder}" Command="{Binding AddFolderCommand}"/>
                         </StackPanel>
                     </Grid>
-                    <ListBox Grid.Row="1" ItemsSource="{Binding MediaItems}" SelectedItem="{Binding SelectedMediaItem, Mode=TwoWay}" Margin="5">
+                    <ListBox Grid.Row="1"
+                             ItemsSource="{Binding MediaItems}"
+                             SelectedItem="{Binding SelectedMediaItem, Mode=TwoWay}"
+                             Background="Transparent"
+                             Margin="5">
                         <ListBox.ItemsPanel>
                             <ItemsPanelTemplate>
                                 <VirtualizingStackPanel />
@@ -84,7 +88,10 @@
                             <ComboBoxItem Content="{DynamicResource Sort_NewFirst}"/>
                         </ComboBox>
                     </StackPanel>
-                    <ListBox Grid.Row="1" ItemsSource="{Binding Albums}" SelectionMode="Single">
+                    <ListBox Grid.Row="1"
+                             ItemsSource="{Binding Albums}"
+                             SelectionMode="Single"
+                             Background="Transparent">
                         <ListBox.ItemsPanel>
                             <ItemsPanelTemplate>
                                 <VirtualizingStackPanel/>
@@ -106,22 +113,29 @@
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
                     <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,5">
-                        <TextBlock Text="{DynamicResource Media_SortBy}" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                        <TextBlock Text="{DynamicResource Media_SortBy}" VerticalAlignment="Center" Margin="0,0,0,5"/>
                         <ComboBox SelectedIndex="{Binding SortOrderPlaylists, Mode=TwoWay, Converter={StaticResource SortOrderConverter}}" Width="120">
                             <ComboBoxItem Content="{DynamicResource Sort_AZ}"/>
                             <ComboBoxItem Content="{DynamicResource Sort_ZA}"/>
                         </ComboBox>
                         <Button Content="{DynamicResource Media_CreatePlaylist}" Command="{Binding CreatePlaylistCommand}" Margin="10,0,0,0"/>
                     </StackPanel>
-                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-                        <ItemsControl ItemsSource="{Binding Playlists}">
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate x:DataType="models:Playlist">
-                                    <views:PlaylistListView OpenCommand="{Binding OpenPlaylistCommand, ElementName=Root}" />
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                    </ScrollViewer>
+                    <ListBox Grid.Row="1"
+                             ItemsSource="{Binding Playlists}"
+                             Background="Transparent"
+                             SelectionMode="Single"
+                             Margin="5">
+                        <ListBox.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <VirtualizingStackPanel/>
+                            </ItemsPanelTemplate>
+                        </ListBox.ItemsPanel>
+                        <ListBox.ItemTemplate>
+                            <DataTemplate x:DataType="models:Playlist">
+                                <views:PlaylistListView OpenCommand="{Binding OpenPlaylistCommand, ElementName=Root}" />
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
                 </Grid>
             </TabItem>
             <TabItem Header="{DynamicResource Media_Artists}">
@@ -137,7 +151,10 @@
                             <ComboBoxItem Content="{DynamicResource Sort_ZA}"/>
                         </ComboBox>
                     </StackPanel>
-                    <ListBox Grid.Row="1" ItemsSource="{Binding Artists}" SelectionMode="Single">
+                    <ListBox Grid.Row="1"
+                             ItemsSource="{Binding Artists}"
+                             SelectionMode="Single"
+                             Background="Transparent">
                         <ListBox.ItemsPanel>
                             <ItemsPanelTemplate>
                                 <VirtualizingStackPanel/>
@@ -156,7 +173,11 @@
                     <StackPanel Orientation="Horizontal" DockPanel.Dock="Top" Margin="5">
                         <Button Content="Play Next" Command="{Binding PlayNextInQueueCommand}" Margin="0,0,5,0"/>
                     </StackPanel>
-                    <ListBox ItemsSource="{Binding PlaybackQueue}" SelectedItem="{Binding SelectedMediaItem}" Margin="5">
+                    <ListBox
+                             ItemsSource="{Binding PlaybackQueue}"
+                             SelectedItem="{Binding SelectedMediaItem}"
+                             Background="Transparent"
+                             Margin="5">
                         <ListBox.ItemTemplate>
                             <DataTemplate DataType="models:MediaItem">
                                 <views:TrackItemView

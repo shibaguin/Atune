@@ -68,7 +68,10 @@
     </Button>
 
     <!-- Track list -->
-    <ListBox Grid.Row="2" ItemsSource="{Binding Tracks}" Margin="0,20,0,0">
+    <ListBox Grid.Row="2"
+             ItemsSource="{Binding Tracks}"
+             Background="Transparent"
+             Margin="5">
       <ListBox.ItemTemplate>
         <DataTemplate x:DataType="models:MediaItem">
           <views:TrackItemView/>

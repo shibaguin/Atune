@@ -71,7 +71,9 @@
     <!-- Track list -->
     <ListBox x:Name="TrackList"
              Grid.Row="2"
-             ItemsSource="{Binding Artist.Tracks}">
+             ItemsSource="{Binding Artist.Tracks}"
+             Background="Transparent"
+             Margin="5">
       <ListBox.ItemTemplate>
         <DataTemplate x:DataType="models:MediaItem">
           <views:TrackItemView
