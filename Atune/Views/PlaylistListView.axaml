@@ -3,10 +3,12 @@
              xmlns:models="clr-namespace:Atune.Models"
              xmlns:conv="clr-namespace:Atune.Converters"
              xmlns:views="clr-namespace:Atune.Views"
+             xmlns:controls="clr-namespace:Atune.Views.Controls"
              x:Class="Atune.Views.PlaylistListView"
              x:DataType="models:Playlist">
     <UserControl.Resources>
         <conv:CoverArtConverter x:Key="CoverArtConverter"/>
+        <conv:CoverUrisConverter x:Key="CoverUrisConverter"/>
     </UserControl.Resources>
     <Grid ColumnDefinitions="Auto,*" VerticalAlignment="Center" Margin="5">
         <Button x:Name="CoverButton"
@@ -26,18 +28,10 @@
                     <ColumnDefinition/>
                     <ColumnDefinition/>
                 </Grid.ColumnDefinitions>
-                <Image Grid.Row="0" Grid.Column="0"
-                        Source="{Binding PlaylistMediaItems[0].MediaItem.CoverArt, Converter={StaticResource CoverArtConverter}}"
-                        Stretch="Fill"/>
-                <Image Grid.Row="0" Grid.Column="1"
-                        Source="{Binding PlaylistMediaItems[1].MediaItem.CoverArt, Converter={StaticResource CoverArtConverter}}"
-                        Stretch="Fill"/>
-                <Image Grid.Row="1" Grid.Column="0"
-                        Source="{Binding PlaylistMediaItems[2].MediaItem.CoverArt, Converter={StaticResource CoverArtConverter}}"
-                        Stretch="Fill"/>
-                <Image Grid.Row="1" Grid.Column="1"
-                        Source="{Binding PlaylistMediaItems[3].MediaItem.CoverArt, Converter={StaticResource CoverArtConverter}}"
-                        Stretch="Fill"/>
+                <controls:MultiCoverView Grid.RowSpan="2" Grid.ColumnSpan="2"
+                                        CoverUris="{Binding PlaylistMediaItems, Converter={StaticResource CoverUrisConverter}}"
+                                        HorizontalAlignment="Stretch"
+                                        VerticalAlignment="Stretch"/>
                 <Rectangle x:Name="Overlay"
                            Fill="Black"
                            Opacity="0"

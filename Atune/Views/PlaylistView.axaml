@@ -6,6 +6,7 @@
              xmlns:vm="clr-namespace:Atune.ViewModels"
              xmlns:models="clr-namespace:Atune.Models"
              xmlns:conv="clr-namespace:Atune.Converters"
+             xmlns:controls="clr-namespace:Atune.Views.Controls"
              xmlns:views="clr-namespace:Atune.Views"
              mc:Ignorable="d"
              d:DesignWidth="400" d:DesignHeight="600"
@@ -16,6 +17,7 @@
              Focusable="True">
   <UserControl.Resources>
     <conv:CoverArtConverter x:Key="CoverArtConverter"/>
+    <conv:CoverUrisConverter x:Key="CoverUrisConverter"/>
   </UserControl.Resources>
   <Grid Margin="10">
     <Grid.RowDefinitions>
@@ -33,12 +35,9 @@
 
       <!-- Cover mosaic -->
       <Grid Grid.Column="1" Width="200" Height="200" Margin="10,0,10,0">
-        <Grid.RowDefinitions><RowDefinition/><RowDefinition/></Grid.RowDefinitions>
-        <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition/></Grid.ColumnDefinitions>
-        <Image Grid.Row="0" Grid.Column="0" Source="{Binding Tracks[0].CoverArt, Converter={StaticResource CoverArtConverter}}" Stretch="UniformToFill"/>
-        <Image Grid.Row="0" Grid.Column="1" Source="{Binding Tracks[1].CoverArt, Converter={StaticResource CoverArtConverter}}" Stretch="UniformToFill"/>
-        <Image Grid.Row="1" Grid.Column="0" Source="{Binding Tracks[2].CoverArt, Converter={StaticResource CoverArtConverter}}" Stretch="UniformToFill"/>
-        <Image Grid.Row="1" Grid.Column="1" Source="{Binding Tracks[3].CoverArt, Converter={StaticResource CoverArtConverter}}" Stretch="UniformToFill"/>
+        <controls:MultiCoverView HorizontalAlignment="Stretch"
+                                 VerticalAlignment="Stretch"
+                                 CoverUris="{Binding Tracks, Converter={StaticResource CoverUrisConverter}}"/>
       </Grid>
 
       <!-- Details -->
