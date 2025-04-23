@@ -22,7 +22,7 @@ public partial class MainWindow : Window
         => DataContext = vm;
 
     // Handler for Spacebar key up to toggle play/pause
-    private void OnKeyUp(object sender, KeyEventArgs e)
+    private void OnKeyUp(object? sender, KeyEventArgs e)
     {
         if (e.Key == Key.Space && !(e.Source is TextBox) && DataContext is MainViewModel vm)
         {
