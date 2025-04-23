@@ -37,5 +37,12 @@ namespace Atune.Views
                 return mainVm?.MediaViewModelInstance?.PlayTrackCommand;
             }
         }
+
+        private void GoBack_Click(object? sender, RoutedEventArgs e)
+        {
+            var mainVm = (Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)
+                ?.MainWindow?.DataContext as MainViewModel;
+            mainVm?.GoMediaCommand.Execute(null);
+        }
     }
 } 
