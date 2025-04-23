@@ -57,7 +57,7 @@ namespace Atune.Views
         {
             var artist = DataContext as ArtistInfo;
             if (artist == null) return;
-            var service = App.Current.Services.GetRequiredService<IPlayArtistService>();
+            var service = App.Current!.Services!.GetRequiredService<IPlayArtistService>();
             await service.PlayArtistAsync(artist);
         }
 
