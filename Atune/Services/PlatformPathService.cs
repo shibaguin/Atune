@@ -93,5 +93,31 @@ namespace Atune.Services
                 "Atune", 
                 "Plugins");
         }
+
+        // Returns the directory where cover art files are stored
+        public string GetCoversDirectory()
+        {
+            string baseDir;
+            if (OperatingSystem.IsAndroid())
+            {
+                baseDir = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) ?? string.Empty;
+            }
+            else if (OperatingSystem.IsLinux())
+            {
+                baseDir = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) ?? string.Empty;
+            }
+            else
+            {
+                // Windows and others
+                baseDir = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) ?? string.Empty;
+            }
+            return Path.Combine(baseDir, "Atune", "Covers", "Default covers");
+        }
+
+        // Returns the full path to the default cover image file
+        public string GetDefaultCoverPath()
+        {
+            return Path.Combine(GetCoversDirectory(), "default_cover.jpg");
+        }
     }
 } 

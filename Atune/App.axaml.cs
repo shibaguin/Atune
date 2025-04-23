@@ -7,6 +7,7 @@ using Atune.ViewModels;
 using Atune.Views;
 using System.Diagnostics.CodeAnalysis;
 using Atune.Services;
+using Atune.Converters;
 using ThemeVariant = Atune.Models.ThemeVariant;
 using Avalonia.Platform;
 using Microsoft.Extensions.DependencyInjection;
@@ -112,6 +113,25 @@ public partial class App : Application
 
         // Build the dependency provider
         Services = services.BuildServiceProvider();
+
+        // Copy default cover to user data covers directory (Windows, Linux, Android)
+        try
+        {
+            var pathService = Services.GetRequiredService<IPlatformPathService>();
+            var coversDir = pathService.GetCoversDirectory();
+            Directory.CreateDirectory(coversDir);
+            var defaultCoverDest = pathService.GetDefaultCoverPath();
+            if (!File.Exists(defaultCoverDest))
+            {
+                using var assetStream = AssetLoader.Open(new Uri(CoverArtConverter.DefaultCoverUri));
+                using var fileStream = File.Create(defaultCoverDest);
+                assetStream.CopyTo(fileStream);
+            }
+        }
+        catch
+        {
+            // Ignore errors in copying default cover
+        }
 
         // Get the service through the registered provider
         var localizationService = Services.GetRequiredService<LocalizationService>();

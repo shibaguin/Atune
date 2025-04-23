@@ -21,6 +21,8 @@ using LibVLCSharp.Shared;
 using Atune.Models;
 using Atune.ViewModels;
 using System.Threading;
+using Avalonia.Media;
+using Atune.Converters;
 namespace Atune.ViewModels;
 public partial class MainViewModel : ViewModelBase
 {
@@ -656,22 +658,30 @@ public partial class MainViewModel : ViewModelBase
 
     private Bitmap LoadDefaultCover()
     {
-        try 
+        try
         {
-            var asset = AssetLoader.Open(new Uri("avares://Atune/Assets/default_cover.jpg"));
+            var assetUri = new Uri(CoverArtConverter.DefaultCoverUri);
+            var asset = AssetLoader.Open(assetUri);
             return new Bitmap(asset);
         }
-        catch (System.IO.FileNotFoundException)
+        catch
         {
+            // Fallback: transparent image or a blank bitmap
             return CreateTransparentFallback();
         }
     }
 
     private Bitmap CreateTransparentFallback()
     {
-        // Implementation of CreateTransparentFallback method
-        // ?????????? ?????? CreateTransparentFallback
-        throw new NotImplementedException();
+        // Create a small transparent bitmap as ultimate fallback
+        var pixelSize = new PixelSize(1, 1);
+        var dpi = new Vector(96, 96);
+        var rtb = new RenderTargetBitmap(pixelSize, dpi);
+        using (var ctx = rtb.CreateDrawingContext(false))
+        {
+            ctx.FillRectangle(Brushes.Transparent, new Rect(0, 0, pixelSize.Width, pixelSize.Height));
+        }
+        return rtb;
     }
 
     private void OnPlaybackPaused(object? sender, EventArgs e)

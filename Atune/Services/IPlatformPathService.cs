@@ -13,7 +13,12 @@ namespace Atune.Services
         // Возвращает путь к файлу базы данных (например, "media_library.db")
         string GetDatabasePath(string databaseFileName = "media_library.db");
 
-        // Добавляем новый метод
+        // Returns the directory for plugin files
         string GetPluginsDirectory();
+
+        // Returns the directory for storing cover art files
+        string GetCoversDirectory();
+        // Returns the full path to the default cover image file in the covers directory
+        string GetDefaultCoverPath();
     }
 } 
