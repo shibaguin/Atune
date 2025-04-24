@@ -432,7 +432,9 @@ public partial class App : Application
             sp.GetRequiredService<ILoggerService>(),
             sp.GetRequiredService<IMemoryCache>()
         ));
-        services.AddTransient<HistoryView>(sp => new HistoryView());
+        services.AddTransient<HistoryView>(sp => new HistoryView(
+            sp.GetRequiredService<HistoryViewModel>()
+        ));
         services.AddTransient<SettingsView>(sp => 
             new SettingsView(
                 sp.GetRequiredService<SettingsViewModel>(),

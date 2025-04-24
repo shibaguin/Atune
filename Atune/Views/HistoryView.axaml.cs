@@ -6,8 +6,9 @@ namespace Atune.Views;
 
 public partial class HistoryView : UserControl
 {
-    public HistoryView()
+    public HistoryView(HistoryViewModel viewModel)
     {
         InitializeComponent();
+        DataContext = viewModel;
     }
 }
