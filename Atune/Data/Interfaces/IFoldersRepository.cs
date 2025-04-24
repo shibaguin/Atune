@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.IO;
 
-namespace Atune.Data.Repositories
+namespace Atune.Data.Interfaces
 {
     public interface IFoldersRepository
     {

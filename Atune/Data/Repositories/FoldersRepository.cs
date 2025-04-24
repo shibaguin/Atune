@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Atune.Data.Interfaces;
 
 namespace Atune.Data.Repositories
 {

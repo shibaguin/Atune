@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Atune.Data;
 using Atune.Models;
 using Microsoft.EntityFrameworkCore;
+using Atune.Data.Interfaces;
 
 namespace Atune.Data.Repositories
 {

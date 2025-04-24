@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Atune.Models;
 
-namespace Atune.Data.Repositories
+namespace Atune.Data.Interfaces
 {
     public interface IArtistRepository
     {

@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Atune.Data.Repositories;
 using Atune.Models;
 using Microsoft.Extensions.Caching.Memory;
+using Atune.Data.Interfaces;
 
 namespace Atune.Services
 {
