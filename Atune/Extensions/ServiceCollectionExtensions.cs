@@ -42,6 +42,7 @@ namespace Atune.Extensions
                 return new CachedMediaRepository(baseRepo, provider.GetRequiredService<IMemoryCache>());
             });
             services.AddSingleton<IFoldersRepository, FoldersRepository>();
+            services.AddScoped<IHomeRepository, HomeRepository>();
 
             // Unit of work with logger
             services.AddScoped<IUnitOfWork>(provider =>
