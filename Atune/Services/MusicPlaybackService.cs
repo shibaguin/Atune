@@ -8,11 +8,12 @@ using Microsoft.Extensions.Logging;
 using System.Linq;
 using ATL;
 using Microsoft.Extensions.Caching.Memory;
+using Atune.Services;
 
 namespace Atune.Services
 {
-    // Сервис для воспроизведения музыки с использованием VLC и поддержкой очереди воспроизведения.
-    public class MusicPlaybackService : IDisposable
+    // High-level playback management service with queue and metadata support
+    public class PlaybackService : IPlaybackService
     {
         private readonly LibVLC _libVLC;
         private readonly MediaPlayer _mediaPlayer;
@@ -20,7 +21,7 @@ namespace Atune.Services
         private int _currentIndex;
         private Media? _currentMedia;
         private int _volume = 50;
-        private readonly ILogger<MusicPlaybackService> _logger;
+        private readonly ILogger<PlaybackService> _logger;
         private readonly IMemoryCache _cache;
 
         // Добавляем необходимые события для уведомления о начале, паузе и окончании воспроизведения.
@@ -31,10 +32,14 @@ namespace Atune.Services
         // Добавляем свойство для хранения метаданных текущего трека.
         public MediaItem? CurrentTrack { get; private set; }
         public TimeSpan CurrentTime { get; private set; }
-        public int Volume { get; private set; }
+        public int Volume
+        {
+            get => _volume;
+            set => SetVolume(value);
+        }
 
         // Конструктор – инициализируем LibVLC и создаём MediaPlayer, а также подписываемся на событие окончания трека.
-        public MusicPlaybackService(ILogger<MusicPlaybackService> logger, IMemoryCache cache)
+        public PlaybackService(ILogger<PlaybackService> logger, IMemoryCache cache)
         {
             // Инициализация библиотеки VLC (вызывается один раз в приложении).
             Core.Initialize();
@@ -42,7 +47,7 @@ namespace Atune.Services
             _libVLC = new LibVLC();
             _mediaPlayer = new MediaPlayer(_libVLC);
             _mediaPlayer.EndReached += OnMediaEndReached;
-            _playbackQueue = [];
+            _playbackQueue = new List<MediaItem>();
             _currentIndex = 0;
             _logger = logger;
             _cache = cache;
@@ -190,6 +195,12 @@ namespace Atune.Services
             _mediaPlayer.Stop();
             _currentMedia?.Dispose();
             _currentMedia = null;
+        }
+
+        // Async stop for IPlaybackService
+        public async Task StopAsync()
+        {
+            await Dispatcher.UIThread.InvokeAsync(() => Stop());
         }
 
         // Свойство, возвращающее состояние воспроизведения.

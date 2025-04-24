@@ -87,7 +87,7 @@ public partial class MainViewModel : ViewModelBase
     private readonly Func<Type, Control> _viewFactory;
     private readonly INavigationKeywordProvider _keywordProvider;
     private readonly LocalizationService _localizationService;
-    private readonly MediaPlayerService _mediaPlayerService;
+    private readonly IPlaybackEngineService _playbackEngineService;
     private readonly ILogger<MainViewModel> _logger;
     private readonly ICoverArtService _coverArtService;
     private readonly SearchViewModel _searchViewModel;
@@ -113,7 +113,7 @@ public partial class MainViewModel : ViewModelBase
         Func<Type, Control> viewFactory,
         INavigationKeywordProvider keywordProvider,
         LocalizationService localizationService,
-        MediaPlayerService mediaPlayerService,
+        IPlaybackEngineService playbackEngineService,
         ILogger<MainViewModel> logger,
         ICoverArtService coverArtService,
         SearchViewModel searchViewModel)
@@ -129,8 +129,8 @@ public partial class MainViewModel : ViewModelBase
 
         try
         {
-            _mediaPlayerService = mediaPlayerService;
-            // Apply initial settings now that media player service is available
+            _playbackEngineService = playbackEngineService;
+            // Apply initial settings now that playback engine service is available
             LoadInitialSettings();
         }
         catch (MediaPlayerInitializationException ex)
@@ -167,10 +167,10 @@ public partial class MainViewModel : ViewModelBase
         _positionTimer.Tick += PositionTimer_Tick;
 
         // ????????????? ?? ??????? ????????? ??????
-        _mediaPlayerService.PlaybackStarted += OnPlaybackStarted;
-        _mediaPlayerService.PlaybackPaused += OnPlaybackPaused;
+        _playbackEngineService.PlaybackStarted += OnPlaybackStarted;
+        _playbackEngineService.PlaybackPaused += OnPlaybackPaused;
 
-        _mediaPlayerService.PlaybackEnded += (s, e) =>
+        _playbackEngineService.PlaybackEnded += (s, e) =>
         {
             CurrentPosition = TimeSpan.Zero;
             Duration = TimeSpan.Zero;
@@ -476,18 +476,18 @@ public partial class MainViewModel : ViewModelBase
         // First try to resume the last-loaded track
         if (!string.IsNullOrEmpty(CurrentMediaPath))
         {
-            _mediaPlayerService.Volume = Volume;
+            _playbackEngineService.Volume = Volume;
             // Normalize loaded path
-            string? mrl = _mediaPlayerService.CurrentPath;
+            string? mrl = _playbackEngineService.CurrentPath;
             string? loadedPath = null;
             if (!string.IsNullOrEmpty(mrl) && Uri.TryCreate(mrl, UriKind.Absolute, out var uri) && uri.IsFile)
                 loadedPath = uri.LocalPath;
             else
                 loadedPath = mrl;
             if (string.Equals(loadedPath, CurrentMediaPath, StringComparison.OrdinalIgnoreCase))
-                _mediaPlayerService.Resume();
+                _playbackEngineService.Resume();
             else
-                await _mediaPlayerService.Play(CurrentMediaPath);
+                await _playbackEngineService.Play(CurrentMediaPath);
             IsPlaying = true;
             return;
         }
@@ -496,8 +496,8 @@ public partial class MainViewModel : ViewModelBase
             mediaView.DataContext is MediaViewModel mvm &&
             mvm.SelectedMediaItem != null)
         {
-            _mediaPlayerService.Volume = Volume;
-            await _mediaPlayerService.Play(mvm.SelectedMediaItem.Path);
+            _playbackEngineService.Volume = Volume;
+            await _playbackEngineService.Play(mvm.SelectedMediaItem.Path);
             IsPlaying = true;
         }
     }
@@ -514,16 +514,16 @@ public partial class MainViewModel : ViewModelBase
         _lastToggleTime = DateTime.UtcNow;
 
         // Immediately reflect state in UI
-        if (_mediaPlayerService.IsPlaying)
+        if (_playbackEngineService.IsPlaying)
         {
-            _mediaPlayerService.Pause();
+            _playbackEngineService.Pause();
             IsPlaying = false;
         }
         else
         {
-            _mediaPlayerService.Resume();
+            _playbackEngineService.Resume();
             // Seek to saved position after resuming
-            _mediaPlayerService.Position = CurrentPosition;
+            _playbackEngineService.Position = CurrentPosition;
             IsPlaying = true;
         }
     }
@@ -547,7 +547,7 @@ public partial class MainViewModel : ViewModelBase
     // ?????????? ????????????? ??? ????????? Volume; ????????? ???????? ? FFmpegService
     partial void OnVolumeChanged(int value)
     {
-        _mediaPlayerService.Volume = value;
+        _playbackEngineService.Volume = value;
         _ = UpdateMetadataAsync();
 
         // Debounce final save after user finishes adjusting
@@ -587,11 +587,11 @@ public partial class MainViewModel : ViewModelBase
     {
         Dispatcher.UIThread.InvokeAsync(() =>
         {
-            if (_mediaPlayerService == null || _positionTimer == null)
+            if (_playbackEngineService == null || _positionTimer == null)
                 return;
 
             // Determine local file path from CurrentPath (could be file URI)
-            var mrl = _mediaPlayerService.CurrentPath;
+            var mrl = _playbackEngineService.CurrentPath;
             var localPath = string.Empty;
             if (!string.IsNullOrEmpty(mrl))
             {
@@ -605,7 +605,7 @@ public partial class MainViewModel : ViewModelBase
             IsPlaying = true;
             _positionTimer.Start();
             // Apply main volume setting when playback actually starts
-            _mediaPlayerService.Volume = Volume;
+            _playbackEngineService.Volume = Volume;
 
             // Update current media item in Now Playing
             var mediaVm = _views[SectionType.Media].DataContext as MediaViewModel;
@@ -637,7 +637,7 @@ public partial class MainViewModel : ViewModelBase
 
     private void PositionTimer_Tick(object? sender, EventArgs e)
     {
-        if (_mediaPlayerService == null)
+        if (_playbackEngineService == null)
         {
             _positionTimer.Stop();
             return;
@@ -646,13 +646,13 @@ public partial class MainViewModel : ViewModelBase
         try
         {
             // ?????? ????????? ???????, ???? ???? ??????????????? ?? ?????
-            var newPosition = _mediaPlayerService.Position;
+            var newPosition = _playbackEngineService.Position;
             if (newPosition != CurrentPosition)
             {
                 CurrentPosition = newPosition;
             }
 
-            var newDuration = _mediaPlayerService.Duration;
+            var newDuration = _playbackEngineService.Duration;
             if (newDuration != Duration)
             {
                 Duration = newDuration;
@@ -668,12 +668,12 @@ public partial class MainViewModel : ViewModelBase
     partial void OnCurrentPositionChanged(TimeSpan value)
     {
         // ??????? ???????? ?? IsPlaying, ????????? ????????? ??????? ??????
-        if (_mediaPlayerService != null
-            && Math.Abs((_mediaPlayerService.Position - value).TotalSeconds) > 0.5)
+        if (_playbackEngineService != null
+            && Math.Abs((_playbackEngineService.Position - value).TotalSeconds) > 0.5)
         {
             try
             {
-                _mediaPlayerService.Position = value;
+                _playbackEngineService.Position = value;
                 // ?? ?????? ???????? ??????? ??? ?????? ?????????
             }
             catch (Exception ex)
@@ -692,7 +692,7 @@ public partial class MainViewModel : ViewModelBase
             _logger.LogInformation($"PlayAsync started for: {path}");
 
             CurrentMediaPath = path;
-            await _mediaPlayerService.Play(path);
+            await _playbackEngineService.Play(path);
             IsPlaying = true;
 
             _logger.LogDebug("Starting metadata update delay");
@@ -710,15 +710,15 @@ public partial class MainViewModel : ViewModelBase
     [RelayCommand]
     private void Stop()
     {
-        if (_mediaPlayerService == null)
+        if (_playbackEngineService == null)
             return;
 
         // Stop playback if it's currently playing
-        if (_mediaPlayerService.IsPlaying)
-            _mediaPlayerService.Pause();
+        if (_playbackEngineService.IsPlaying)
+            _playbackEngineService.Pause();
 
         // Rewind to track start
-        _mediaPlayerService.Position = TimeSpan.Zero;
+        _playbackEngineService.Position = TimeSpan.Zero;
 
         // Update UI playback state
         CurrentPosition = TimeSpan.Zero;
@@ -755,7 +755,7 @@ public partial class MainViewModel : ViewModelBase
             if (CurrentPosition.TotalSeconds >= 10)
             {
                 // ????????? ? ?????? ???????? ?????
-                _mediaPlayerService.Position = TimeSpan.Zero;
+                _playbackEngineService.Position = TimeSpan.Zero;
                 CurrentPosition = TimeSpan.Zero;
                 _logger.LogInformation("Rewind to start of current track");
             }

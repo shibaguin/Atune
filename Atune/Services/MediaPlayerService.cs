@@ -8,10 +8,11 @@ using System.Runtime.InteropServices;
 using System.Linq;
 using System.Collections.Generic;
 using Avalonia.Threading;
+using Atune.Services;
 
 namespace Atune.Services
 {
-    public class MediaPlayerService : IDisposable
+    public class MediaPlayerService : IPlaybackEngineService
     {
         private LibVLC? _libVlc;
         private MediaPlayer? _player;

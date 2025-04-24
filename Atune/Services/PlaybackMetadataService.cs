@@ -4,13 +4,14 @@ using System.Threading.Tasks;
 using Avalonia.Threading;
 using Atune.Models;
 using Microsoft.Extensions.Logging;
+using Atune.Services;
 
 namespace Atune.Services
 {
     // Сервис для опроса состояния воспроизведения: метаданные трека, позиция, длительность, громкость
     public class PlaybackMetadataService : INotifyPropertyChanged, IDisposable
     {
-        private readonly MusicPlaybackService _playbackService;
+        private readonly IPlaybackEngineService _playbackService;
         // Удалена зависимость от MediaDatabaseService, так как метаданные будут обновляться напрямую из плеера.
         // private readonly MediaDatabaseService _mediaDatabaseService;
         private readonly ILogger<PlaybackMetadataService> _logger;
@@ -19,7 +20,7 @@ namespace Atune.Services
         public event PropertyChangedEventHandler? PropertyChanged;
 
         // Обновлённый конструктор без MediaDatabaseService
-        public PlaybackMetadataService(MusicPlaybackService playbackService, ILogger<PlaybackMetadataService> logger)
+        public PlaybackMetadataService(IPlaybackEngineService playbackService, ILogger<PlaybackMetadataService> logger)
         {
             _playbackService = playbackService;
             _logger = logger;
@@ -35,14 +36,11 @@ namespace Atune.Services
         {
             try
             {
-                if (CurrentTrack != null)
+                if (_playbackService.IsPlaying)
                 {
-                    // Получаем актуальные метаданные напрямую из плеера,
-                    // а не из БД, чтобы избежать пустых значений.
                     var currentMetadata = await _playbackService.GetCurrentMetadataAsync();
                     if (currentMetadata != null)
                     {
-                        _playbackService.UpdateCurrentTrack(currentMetadata);
                         OnPropertyChanged(nameof(CurrentTrack));
                         _logger.LogInformation("Playback metadata updated for track: {Title}", currentMetadata.Title);
                     }
@@ -60,10 +58,10 @@ namespace Atune.Services
         }
 
         // Текущая позиция воспроизведения в виде TimeSpan
-        public TimeSpan CurrentTime => _playbackService.CurrentTime;
+        public TimeSpan CurrentTime => _playbackService.Position;
 
         // Длительность текущего трека
-        public TimeSpan Duration => TimeSpan.FromMilliseconds(_playbackService.GetDuration());
+        public TimeSpan Duration => _playbackService.Duration;
 
         // Текущая громкость (0–100)
         public int Volume
@@ -72,19 +70,19 @@ namespace Atune.Services
             set
             {
                 _logger.LogInformation("Setting volume to {Volume}", value);
-                _playbackService.SetVolume(value);
+                _playbackService.Volume = value;
                 OnPropertyChanged(nameof(Volume));
             }
         }
 
         // Метаданные текущего трека, берутся из модели MediaItem напрямую из MusicPlaybackService.
-        public MediaItem? CurrentTrack => _playbackService.CurrentTrack;
+        public MediaItem? CurrentTrack { get; private set; }
 
         // Метод перемотки: принимает новое время в миллисекундах
         public void Seek(TimeSpan time)
         {
             _logger.LogInformation("Seeking to {Time} ms", time.TotalMilliseconds);
-            _playbackService.Seek((long)time.TotalMilliseconds);
+            _playbackService.Position = time;
             OnPropertyChanged(nameof(CurrentTime));
         }
 

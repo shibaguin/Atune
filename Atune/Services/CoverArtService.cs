@@ -15,16 +15,16 @@ namespace Atune.Services
     }
 
     public class CoverArtService(
-        MediaPlayerService mediaPlayerService,
+        IPlaybackEngineService playbackEngineService,
         ILogger<CoverArtService> logger) : ICoverArtService
     {
-        private readonly MediaPlayerService _mediaPlayerService = mediaPlayerService;
+        private readonly IPlaybackEngineService _playbackEngineService = playbackEngineService;
         private readonly ILogger<CoverArtService> _logger = logger;
 
         public Stream? GetEmbeddedCoverArt()
         {
-            var media = _mediaPlayerService.GetCurrentMedia();
-            var libVlc = _mediaPlayerService.GetLibVlc();
+            var media = _playbackEngineService.GetCurrentMedia();
+            var libVlc = _playbackEngineService.GetLibVlc();
 
             if (media == null || libVlc == null) return null;
 
@@ -57,7 +57,7 @@ namespace Atune.Services
         {
             try
             {
-                var media = _mediaPlayerService.GetCurrentMedia();
+                var media = _playbackEngineService.GetCurrentMedia();
                 if (media == null) return null;
 
                 media.Parse(MediaParseOptions.ParseLocal | MediaParseOptions.FetchLocal);

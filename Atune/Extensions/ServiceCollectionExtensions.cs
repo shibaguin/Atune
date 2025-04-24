@@ -84,8 +84,11 @@ namespace Atune.Extensions
             // File and media services
             services.AddTransient<MediaDatabaseService>();
             services.AddSingleton<MediaFileService>();
-            services.AddSingleton<MediaPlayerService>();
-            services.AddSingleton<MusicPlaybackService>();
+            // Playback engine and high-level playback services
+            services.AddSingleton<IPlaybackEngineService, MediaPlayerService>();
+            // Also register the concrete service so that classes depending directly on MediaPlayerService can be injected
+            services.AddSingleton<MediaPlayerService>(sp => (MediaPlayerService)sp.GetRequiredService<IPlaybackEngineService>());
+            services.AddSingleton<IPlaybackService, PlaybackService>();
             services.AddSingleton<ICoverArtService, CoverArtService>();
             services.AddSingleton<IPlayAlbumService, PlayAlbumService>();
             services.AddSingleton<IPlayPlaylistService, PlayPlaylistService>();
