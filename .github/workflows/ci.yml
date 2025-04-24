@@ -24,9 +24,16 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-nuget-
       - name: Restore dependencies
-        run: dotnet restore
+        run: |
+          dotnet restore Atune/Atune.csproj
+          dotnet restore Atune.Desktop/Atune.Desktop.csproj
+          dotnet restore Atune.Browser/Atune.Browser.csproj
+          dotnet restore Atune.Tests/Atune.Tests.csproj
       - name: Build
-        run: dotnet build --no-restore --configuration Release
+        run: |
+          dotnet build Atune/Atune.csproj --no-restore --configuration Release
+          dotnet build Atune.Desktop/Atune.Desktop.csproj --no-restore --configuration Release
+          dotnet build Atune.Browser/Atune.Browser.csproj --no-restore --configuration Release
       - name: Test
         run: dotnet test --no-build --verbosity normal
       - name: Install dotnet-format
