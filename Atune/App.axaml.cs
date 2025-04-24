@@ -54,6 +54,8 @@ public partial class App : Application
                     rollingInterval: RollingInterval.Day,
                     retainedFileCountLimit: 7)
                 .MinimumLevel.Debug())
+            .ConfigureServices((context, services) =>
+                services.AddAtuneServices())
             .Build();
 
         try
@@ -100,20 +102,8 @@ public partial class App : Application
         AvaloniaXamlLoader.Load(this);
         base.Initialize();
 
-        var services = new ServiceCollection();
-        // Register the service for platform-specific paths
-        services.AddSingleton<IPlatformPathService, PlatformPathService>();
-        // Register MemoryCache for SettingsService
-        services.AddMemoryCache();
-        // Register the logger implementation (ensure LoggerService implements ILoggerService)
-        services.AddSingleton<ILoggerService, LoggerService>();
-        // Register SettingsService, which requires IMemoryCache, IPlatformPathService and ILoggerService
-        services.AddSingleton<ISettingsService, SettingsService>();
-        // Register LocalizationService
-        services.AddSingleton<LocalizationService>();
-
-        // Build the dependency provider
-        Services = services.BuildServiceProvider();
+        // Use host's service provider for DI
+        Services = _host.Services;
 
         // Copy default cover to user data covers directory (Windows, Linux, Android)
         try
@@ -148,11 +138,6 @@ public partial class App : Application
 
         try
         {
-            var services = new ServiceCollection();
-            ConfigureServices(services); // сначала конфигурируем сервисы
-            var serviceProvider = services.BuildServiceProvider();
-            Services = serviceProvider; // затем присваиваем свойство Services
-
             // Apply migrations and create the database
             await InitializeDatabaseAsync();
 
@@ -160,7 +145,7 @@ public partial class App : Application
             if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
             {
                 DisableAvaloniaDataAnnotationValidation();
-                var mainWindow = serviceProvider.GetRequiredService<MainWindow>();
+                var mainWindow = Services!.GetRequiredService<MainWindow>();
                 // Toggle play/pause on Spacebar for desktop
                 mainWindow.AddHandler(InputElement.KeyDownEvent,
                     new EventHandler<KeyEventArgs>((sender, args) =>
@@ -185,7 +170,7 @@ public partial class App : Application
             {
                 singleView.MainView = new MainView
                 {
-                    DataContext = serviceProvider.GetRequiredService<MainViewModel>()
+                    DataContext = Services!.GetRequiredService<MainViewModel>()
                 };
             }
 
