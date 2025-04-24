@@ -27,7 +27,7 @@ Atune.Plugins/
 .cursor/
 
 # Github
-.github/
+# .github/
 
 # Mono auto generated files
 mono_crash.*
