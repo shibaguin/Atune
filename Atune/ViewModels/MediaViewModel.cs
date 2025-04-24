@@ -292,6 +292,14 @@ public partial class MediaViewModel : ObservableObject, IDisposable
         // Синхронизируем с MediaItems
         await UpdateMediaItemsGradually(MediaContent);
 
+        // Reset caches and populate Albums and Artists collections after loading media items
+        _albumCache = null;
+        UpdateAlbums();
+        SortAlbums();
+        _artistCache = null;
+        UpdateArtists();
+        SortArtists();
+
         // Restore playback state on UI thread after items are loaded
         if (Atune.App.Current is Atune.App app && app.Services is IServiceProvider sp)
         {
