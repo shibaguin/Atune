@@ -1,5 +1,9 @@
 # Contribution to the Atune project
 
+For project overview, requirements, installation, and build instructions, see [README.md](README.md).
+
+For license details, see [LICENSE](LICENSE).
+
 Thank you for your interest in the Atune project! We welcome contributions from the community and external developers. Please refer to this page to learn how you can help.
 
 ## How to contribute
@@ -53,7 +57,7 @@ Thank you for your interest in the Atune project! We welcome contributions from 
 
 ## License
 
-Your contribution will be licensed under the same license as the project (GNU Lesser General Public License v3.0).
+Your contribution will be licensed under the same license as the project ([LICENSE](LICENSE)), i.e., GNU Lesser General Public License v3.0.
 
 ---
 

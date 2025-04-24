@@ -37,27 +37,35 @@ Atune is a modern cross-platform audio player developed using .NET and AvaloniaU
 
 3. **Build the project:**
 
-   - For Desktop:
-   In the Atune.Desktop directory, run the command:
-
+   - **Linux (Desktop):** In the `Atune.Desktop` directory, run:
      ```bash
-     dotnet publish -c Release --runtime {platform}
-
+     dotnet publish -c Release --runtime linux-x64
      ```
-     Where {platform} is the platform you want to build the application on.
-     For example:
-     win-x64
-     win-x86
-     linux-x64
+     (Note: 32-bit builds (e.g. `linux-x86`) are supported "as is" but not actively tested.)
+
+   - **Windows (Desktop):** In the `Atune.Desktop` directory, run:
+     ```bash
+     dotnet publish -c Release --runtime win-x64
+     ```
+     (Note: 32-bit builds (e.g. `win-x86`) are supported "as is" but not actively tested.)
      
-   - For Android:
-      In the Atune.Android directory, run the command:
+   - **macOS (Desktop):** In the `Atune.Desktop` directory, run:
      ```bash
-     dotnet publish -c Release -f net8.0-android34.0
+     dotnet publish -c Release --runtime osx-x64
      ```
-     Or use suitable tools for building and running the application, for example Rider IDE.
+     (For Apple Silicon, use `--runtime osx-arm64`; builds are not actively tested, and there are currently no dedicated contributors maintaining macOS or iOS support.)
 
-   - For iOS and browser version, there are separate projects that require implementation and refinement, as well as tools for building.
+   - **Android:** In the `Atune.Android` directory, ensure you have .NET SDK 8.0.405 installed (many systems default to 8.0.100, which may not support Android targets; check with `dotnet --list-sdks`). Use the TFM pattern `net8.0-android{API}`, replacing `{API}` with the desired Android API level. For example:
+     - Android 15 (API 35): `net8.0-android35.0`
+     - Android 14 (API 34): `net8.0-android34.0`
+     - Android 13 (API 33): `net8.0-android33.0`
+     - For other API levels, adjust accordingly.
+     Then run:
+     ```bash
+     dotnet publish -c Release -f net8.0-android{API}
+     ```
+
+   - **iOS & Browser:** See [Building for iOS and browser](#building-for-ios-and-browser) for detailed commands and requirements.
 
 4. **Run the application:**
 
@@ -92,20 +100,27 @@ Atune supports multiple languages, including Russian and English. Localization i
 
 ## Plugins
 
-Atune supports a plugin system that allows extending the functionality of the application. Plugins are loaded from the `Atune.Plugins` directory, for example, `Atune.Plugin.SpectrumVisualizer`.
+Plugin support remains under active development. While the plugin architecture resides in the `Atune.Plugins` directory, loading and execution of plugins are not yet supported in current releases. Official plugin support is scheduled for a future major release; contributions to accelerate this effort are welcome.
 
 Each plugin consists of:
 - Logic implemented in files with the `.cs` extension.
 - Identifier described in the `plugin.json` file, which contains metadata about the plugin, such as name and version.
 
-Example of a plugin:
-- `Atune.Plugin.SpectrumVisualizer` contains the `Plugin.cs` file, which implements the `IAudioVisualizerPlugin` interface.
-
-Currently, the functionality of plugins is under development, and they cannot be executable or loaded into the program itself. In the future, we plan to complete the implementation of this system, which will allow users to add and use plugins to expand the capabilities of Atune.
-
 ## Building for iOS and browser
 
-Although iOS and browser are not target platforms for Atune now, Avalonia supports them. The project contains corresponding directories `Atune.iOS` and `Atune.Browser`, however, at the moment they are not supported. The community can take on their implementation, as they are not significantly different from `Atune.Desktop` and `Atune.Android`.
+The solution includes `Atune.iOS` and `Atune.Browser` directories for additional targets:
+- **iOS (`Atune.iOS`):** Requires macOS with .NET 8 SDK and Xcode command-line tools. In the `Atune.iOS` directory, run:
+  ```bash
+  dotnet publish -c Release -f net8.0-ios
+  ```
+  (This target is not actively tested and has no dedicated maintainers.)
+- **Browser (`Atune.Browser`):** Avalonia WebAssembly project planned for near-future support. In the `Atune.Browser` directory, you can experiment by running:
+  ```bash
+  dotnet publish -c Release -f net8.0-webassembly
+  ```
+  (Experimental and not production-ready; contributions are welcome.)
+
+Contributions to implement and maintain these platforms are highly encouraged.
 
 ## Testing
 
@@ -118,53 +133,18 @@ For testing, the xUnit framework is used. The `Atune.Tests` project already cont
 ### How to run tests
 
 1. Go to the `Atune.Tests` directory:
-   ```bash
-   cd Atune.Tests
-   ```
+  ```bash
+  cd Atune.Tests
+  ```
 
 2. Restore dependencies:
-   ```bash
-   dotnet restore
-   ```
+  ```bash
+  dotnet restore
+  ```
 
 3. Run tests:
-   ```bash
-   dotnet test
-   ```
-   
+  ```bash
+  dotnet test
+  ```
+
 After executing these commands, you will see the test results in the console. Ensure that all tests pass to guarantee that changes do not break existing functionality.
-
-
-## Contribution
-
-We welcome contributions from the community and external developers! If you have ideas, improvements or found errors:
-- **GitHub Issues:** Create tasks for discussion and tracking.
-- **Pull Requests:** Send pull requests with your suggestions.
-
-Please refer to [CONTRIBUTING.md](CONTRIBUTING.md) for detailed information on the contribution process. We recommend following the code standards and writing tests for new features or corrections.
-
-## Community
-
-Join the discussions and share your ideas:
-- **GitHub Discussions/Issues:** For questions and suggestions.
-- **Chats/forums:** (If available, provide links to Discord, Telegram or other platforms).
-
-## License
-
-The project is distributed under the **GNU Lesser General Public License v3.0 (LGPL-3.0)**. This guarantees:
-- Free use, modification and distribution of software
-- The obligation to preserve copyright and license notices
-- The requirement to open the source code of derivatives when distributing
-
-The full text of the license is available in the file [LICENSE](LICENSE).
-
-## Contacts
-
-If you have any questions or suggestions, please contact us through:
-- [GitHub](https://github.com/shibaguin/Atune)
-- [Telegram](https://t.me/dazabrzezinski)
-- [Email](mailto:mizuguinalt@gmail.com)
-
----
-
-Thank you for using Atune! We hope that our audio player will become your reliable assistant in the world of high-quality sound.
