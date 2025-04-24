@@ -2,8 +2,10 @@
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
-    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(OS)' == 'Windows_NT'">
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="xunit" />
@@ -17,11 +19,11 @@
     <!-- Add a package for supporting UnitTestApplication -->
     <PackageReference Include="VideoLAN.LibVLC.Windows" Condition="'$(OS)' == 'Windows_NT'" />
   </ItemGroup>
-  <Target Name="CopyLibVlcNative" AfterTargets="Build">
+  <Target Name="CopyLibVlcNative" AfterTargets="Build" Condition="'$(OS)' == 'Windows_NT'">
     <ItemGroup>
       <LibVlcNativeBinaries Include="$(PkgVideoLAN_LibVLC_Windows)/runtimes/win-x64/native/*.*" />
     </ItemGroup>
-    <Copy SourceFiles="@(LibVlcNativeBinaries)" DestinationFolder="$(OutputPath)libvlc\win-x64\" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(LibVlcNativeBinaries)" DestinationFolder="$(OutputPath)libvlc\\win-x64\\" SkipUnchangedFiles="true" />
   </Target>
   <ItemGroup>
     <ProjectReference Include="..\Atune\Atune.csproj" />
