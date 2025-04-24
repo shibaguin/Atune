@@ -125,7 +125,8 @@ namespace Atune.Extensions
                 (Control)ActivatorUtilities.CreateInstance(provider, type));
 
             // Plugins
-            services.AddSingleton<PluginLoader>();
+            // Register PluginLoader as a hosted service to initialize plugins after host start
+            services.AddHostedService<PluginLoader>();
             // Navigation keywords provider for MainViewModel
             services.AddSingleton<INavigationKeywordProvider, NavigationKeywordProvider>();
 

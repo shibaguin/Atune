@@ -12,12 +12,22 @@ using System.Runtime.Loader;
 using System.Composition.Convention;
 using System.Composition.Hosting.Core;
 using System.Composition;
+using Microsoft.Extensions.Hosting;
+using System.Threading;
+using System.Threading.Tasks;
 
-public class PluginLoader(IPlatformPathService pathService, ILoggerService logger)
+public class PluginLoader : IHostedService
 {
-    private readonly IPlatformPathService _pathService = pathService;
-    private readonly ILoggerService _logger = logger;
-    private readonly List<Assembly> _loadedAssemblies = [];
+    private readonly IPlatformPathService _pathService;
+    private readonly ILoggerService _logger;
+    private readonly List<Assembly> _loadedAssemblies = new();
+    private readonly List<IPlugin> _initializedPlugins = new();
+
+    public PluginLoader(IPlatformPathService pathService, ILoggerService logger)
+    {
+        _pathService = pathService;
+        _logger = logger;
+    }
 
     public IEnumerable<Lazy<IPlugin, IPluginMetadata>> LoadPlugins()
     {
@@ -90,6 +100,42 @@ public class PluginLoader(IPlatformPathService pathService, ILoggerService logge
         };
 
         return context.LoadFromAssemblyPath(assemblyFile);
+    }
+
+    public Task StartAsync(CancellationToken cancellationToken)
+    {
+        var plugins = LoadPlugins();
+        foreach (var lazy in plugins)
+        {
+            try
+            {
+                var plugin = lazy.Value;
+                plugin.Initialize();
+                _initializedPlugins.Add(plugin);
+                _logger.LogInformation($"Initialized plugin {lazy.Metadata.Id}");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Failed to initialize plugin {lazy.Metadata.Id}: {ex.Message}");
+            }
+        }
+        return Task.CompletedTask;
+    }
+
+    public Task StopAsync(CancellationToken cancellationToken)
+    {
+        foreach (var plugin in _initializedPlugins)
+        {
+            try
+            {
+                plugin.Shutdown();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Failed to shutdown plugin {plugin.Name}: {ex.Message}");
+            }
+        }
+        return Task.CompletedTask;
     }
 }
 

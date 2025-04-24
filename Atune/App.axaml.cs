@@ -45,6 +45,8 @@ public partial class App : Application
             .ConfigureServices((context, services) =>
                 services.AddAtuneServices())
             .Build();
+        // Start the host to initialize hosted services (including PluginLoader)
+        _host.Start();
 
         try
         {
