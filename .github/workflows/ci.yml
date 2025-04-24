@@ -9,15 +9,20 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-latest, windows-latest]
     steps:
       - uses: actions/checkout@v3
       - name: Install LibVLC on Linux
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y libvlc-dev libvlc5 libvlccore9
-      - name: Install LibVLC on macOS
-        if: runner.os == 'macOS'
-        run: brew update && brew install --cask vlc
+      - name: Install LibVLC on Windows
+        if: runner.os == 'Windows'
+        run: |
+          choco install vlc --yes
+      - name: Add VLC to PATH on Windows
+        if: runner.os == 'Windows'
+        run: |
+          echo "C:\Program Files\VideoLAN\VLC" >> $Env:GITHUB_PATH
       - name: Setup .NET
         uses: actions/setup-dotnet@v3
         with:
