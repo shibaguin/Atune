@@ -39,4 +39,4 @@ jobs:
       - name: Install dotnet-format
         run: dotnet tool install -g dotnet-format
       - name: Check code formatting
-        run: dotnet format --verify-no-changes
+        run: dotnet format Atune.sln --verify-no-changes --no-restore
