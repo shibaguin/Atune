@@ -2,6 +2,7 @@
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <IsPackable>false</IsPackable>
   </PropertyGroup>
   <ItemGroup>
@@ -14,7 +15,14 @@
     <PackageReference Include="Avalonia.Headless" />
     <!-- Добавляем пакет для поддержки UnitTestApplication -->
     <!-- Add a package for supporting UnitTestApplication -->
+    <PackageReference Include="VideoLAN.LibVLC.Windows" Condition="'$(OS)' == 'Windows_NT'" />
   </ItemGroup>
+  <Target Name="CopyLibVlcNative" AfterTargets="Build">
+    <ItemGroup>
+      <LibVlcNativeBinaries Include="$(PkgVideoLAN_LibVLC_Windows)/runtimes/win-x64/native/*.*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(LibVlcNativeBinaries)" DestinationFolder="$(OutputPath)libvlc\win-x64\" SkipUnchangedFiles="true" />
+  </Target>
   <ItemGroup>
     <ProjectReference Include="..\Atune\Atune.csproj" />
   </ItemGroup>

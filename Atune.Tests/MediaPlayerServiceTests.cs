@@ -189,5 +189,107 @@ namespace Atune.Tests
             // Assert
             Assert.True(ended);
         }
+
+        // Additional unit tests for MediaPlayerService
+
+        [Fact]
+        public void Playing_Event_ShouldRaisePlaybackStarted_OnUnderlyingPlayer()
+        {
+            var service = CreateService(out var mediaPlayerMock, out var mediaMock);
+            bool started = false;
+            service.PlaybackStarted += (_, _) => started = true;
+            mediaPlayerMock.Raise(m => m.Playing += null, EventArgs.Empty);
+            Assert.True(started);
+        }
+
+        [Fact]
+        public void Paused_Event_ShouldRaisePlaybackPaused_OnUnderlyingPlayer()
+        {
+            var service = CreateService(out var mediaPlayerMock, out var mediaMock);
+            bool paused = false;
+            service.PlaybackPaused += (_, _) => paused = true;
+            mediaPlayerMock.Raise(m => m.Paused += null, EventArgs.Empty);
+            Assert.True(paused);
+        }
+
+        [Fact]
+        public void Volume_Setter_ShouldSetPlayerVolume()
+        {
+            var service = CreateService(out var mediaPlayerMock, out var mediaMock);
+            service.Volume = 75;
+            mediaPlayerMock.VerifySet(p => p.Volume = 75, Times.Once);
+            Assert.Equal(75, service.Volume);
+        }
+
+        [Fact]
+        public void Position_Getter_ShouldReturnCorrectTimeSpan()
+        {
+            var service = CreateService(out var mediaPlayerMock, out var mediaMock);
+            mediaPlayerMock.SetupGet(p => p.Media).Returns(mediaMock.Object);
+            mediaMock.SetupGet(m => m.Duration).Returns(2000L);
+            mediaPlayerMock.SetupGet(p => p.Position).Returns(0.25f);
+            var pos = service.Position;
+            Assert.Equal(TimeSpan.FromMilliseconds(0.25 * 2000), pos);
+        }
+
+        [Fact]
+        public void Position_Setter_ShouldSetPlayerPosition()
+        {
+            var service = CreateService(out var mediaPlayerMock, out var mediaMock);
+            mediaPlayerMock.SetupGet(p => p.Media).Returns(mediaMock.Object);
+            mediaMock.SetupGet(m => m.Duration).Returns(4000L);
+            service.Position = TimeSpan.FromMilliseconds(2000);
+            mediaPlayerMock.VerifySet(p => p.Position = 0.5f, Times.Once);
+        }
+
+        [Fact]
+        public async Task Duration_ShouldReturnCurrentMediaDuration()
+        {
+            var service = CreateService(out var mediaPlayerMock, out var mediaMock);
+            mediaMock.SetupGet(m => m.Duration).Returns(3000L);
+            await service.Play("file.mp3");
+            Assert.Equal(TimeSpan.FromMilliseconds(3000), service.Duration);
+        }
+
+        [Fact]
+        public async Task CurrentPath_ShouldReturnMediaMrl()
+        {
+            var service = CreateService(out var mediaPlayerMock, out var mediaMock);
+            var uri = "file.mp3";
+            mediaMock.SetupGet(m => m.Mrl).Returns(uri);
+            await service.Play(uri);
+            Assert.Equal(uri, service.CurrentPath);
+        }
+
+        [Fact]
+        public async Task IsNetworkStream_ShouldReturnTrueForNetworkUri()
+        {
+            var service = CreateService(out var mediaPlayerMock, out var mediaMock);
+            var uri = "http://example.com/stream";
+            mediaMock.SetupGet(m => m.Mrl).Returns(uri);
+            await service.Play(uri);
+            Assert.True(service.IsNetworkStream);
+        }
+
+        [Fact]
+        public async Task GetCurrentMetadataAsync_WithMetadata_ReturnsMetadata()
+        {
+            var service = CreateService(out var mediaPlayerMock, out var mediaMock);
+            mediaMock.Setup(m => m.Meta(MetadataType.Title)).Returns("Title");
+            mediaMock.Setup(m => m.Meta(MetadataType.Artist)).Returns("Artist");
+            mediaMock.SetupGet(m => m.Mrl).Returns("file.mp3");
+            await service.Play("file.mp3");
+            var metadata = await service.GetCurrentMetadataAsync();
+            Assert.Equal("Title", metadata.Title);
+            Assert.Equal("Artist", metadata.Artist);
+        }
+
+        [Fact]
+        public async Task Load_ShouldSetPlayerMedia()
+        {
+            var service = CreateService(out var mediaPlayerMock, out var mediaMock);
+            await service.Load("file.mp3");
+            mediaPlayerMock.VerifySet(p => p.Media = mediaMock.Object, Times.Once);
+        }
     }
-} 
+}

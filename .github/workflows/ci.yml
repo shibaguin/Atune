@@ -9,9 +9,15 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        os: [ubuntu-latest, windows-latest, macos-latest]
     steps:
       - uses: actions/checkout@v3
+      - name: Install LibVLC on Linux
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libvlc-dev libvlc5 libvlccore9
+      - name: Install LibVLC on macOS
+        if: runner.os == 'macOS'
+        run: brew update && brew install --cask vlc
       - name: Setup .NET
         uses: actions/setup-dotnet@v3
         with:
@@ -36,6 +42,8 @@ jobs:
           dotnet build Atune.Browser/Atune.Browser.csproj --no-restore --configuration Release
       - name: Test
         run: dotnet test --no-build --verbosity normal
+      - name: Integration Test
+        run: dotnet test Atune.Tests/Atune.Tests.csproj --filter "FullyQualifiedName~Integration" --no-build --verbosity normal
       - name: Install dotnet-format
         run: dotnet tool install -g dotnet-format
       - name: Check code formatting

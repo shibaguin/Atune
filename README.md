@@ -148,3 +148,39 @@ For testing, the xUnit framework is used. The `Atune.Tests` project already cont
   ```
 
 After executing these commands, you will see the test results in the console. Ensure that all tests pass to guarantee that changes do not break existing functionality.
+
+## MediaPlayerService API
+
+`MediaPlayerService` provides a high-level API for audio playback using LibVLCSharp. It implements `IPlaybackEngineService` and exposes the following members:
+
+- **Methods**
+  - `Task Play(string path)`: Play media at the specified path, parses metadata and starts playback.
+  - `void Pause()`: Pauses playback.
+  - `void Resume()`: Resumes playback if paused.
+  - `void Stop()`: Stops playback and disposes current media.
+  - `Task StopAsync()`: Stops playback on the dispatcher thread.
+  - `Task Load(string path)`: Loads media without playing.
+  - `Task Preload(string path, int bufferMilliseconds = 1500)`: Preloads media into memory for smoother playback.
+
+- **Properties**
+  - `bool IsPlaying { get; }`: Indicates whether media is currently playing.
+  - `int Volume { get; set; }`: Gets or sets the current volume (0–100).
+  - `TimeSpan Position { get; set; }`: Gets or sets the current playback position.
+  - `TimeSpan Duration { get; }`: Gets the duration of the loaded media.
+  - `bool IsNetworkStream { get; }`: Indicates if current media is a network stream.
+  - `string? CurrentPath { get; }`: Returns the path or URI of the current media.
+
+- **Events**
+  - `event EventHandler? PlaybackStarted`: Raised when playback starts or resumes.
+  - `event EventHandler? PlaybackPaused`: Raised when playback is paused.
+  - `event EventHandler? PlaybackEnded`: Raised when end of media is reached.
+
+### Example
+
+```csharp
+var service = host.Services.GetRequiredService<MediaPlayerService>();
+service.PlaybackStarted += (s, e) => Console.WriteLine("Playback started");
+service.PlaybackPaused += (s, e) => Console.WriteLine("Playback paused");
+service.PlaybackEnded += (s, e) => Console.WriteLine("Playback ended");
+await service.Play("path/to/file.mp3");
+```

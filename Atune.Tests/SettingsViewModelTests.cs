@@ -23,7 +23,8 @@ namespace Atune.Tests
             // Создаем пустой mock для IInterfaceSettingsService, так как он сейчас требуется
             // Create a mock for IInterfaceSettingsService, as it is currently required
             var fakeInterfaceSettingsService = new Mock<IInterfaceSettingsService>();
-            var viewModel = new SettingsViewModel(mockSettingsService.Object, fakeInterfaceSettingsService.Object);
+            var fakeUtilityService = new Mock<IUtilityService>();
+            var viewModel = new SettingsViewModel(mockSettingsService.Object, fakeInterfaceSettingsService.Object, fakeUtilityService.Object);
             
             // Assert – "ru" должен отображаться как "Русский"
             // Assert – "ru" should display as "Russian"
@@ -44,7 +45,8 @@ namespace Atune.Tests
             mockSettingsService.Setup(s => s.LoadSettings()).Returns(settings);
             
             var fakeInterfaceSettingsService = new Mock<IInterfaceSettingsService>();
-            var viewModel = new SettingsViewModel(mockSettingsService.Object, fakeInterfaceSettingsService.Object);
+            var fakeUtilityService = new Mock<IUtilityService>();
+            var viewModel = new SettingsViewModel(mockSettingsService.Object, fakeInterfaceSettingsService.Object, fakeUtilityService.Object);
             viewModel.SelectedLanguage = "English";
             // Допустим, что ThemeVariant.Light имеет числовое значение 1
             // Assume that ThemeVariant.Light has a numerical value of 1
@@ -94,9 +96,8 @@ namespace Atune.Tests
             mockInterfaceSettingsService.SetupGet(s => s.NavigationFontSize).Returns(defaultNavigationFontSize);
             mockInterfaceSettingsService.SetupGet(s => s.BarPadding).Returns(defaultBarPadding);
 
-            // Act: Создаем экземпляр модели представления и изменяем значения интерфейсных свойств.
-            // Act: Create an instance of the view model and change the values of the interface properties.
-            var viewModel = new SettingsViewModel(mockSettingsService.Object, mockInterfaceSettingsService.Object);
+            var fakeUtilityService = new Mock<IUtilityService>();
+            var viewModel = new SettingsViewModel(mockSettingsService.Object, mockInterfaceSettingsService.Object, fakeUtilityService.Object);
             viewModel.HeaderFontSize = 40;
             viewModel.NavigationDividerWidth = 10;
             viewModel.NavigationDividerHeight = 10;

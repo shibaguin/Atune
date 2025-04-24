@@ -84,14 +84,27 @@ namespace Atune.Services
             var lib = _libVlc ?? throw new InvalidOperationException("Media player is not initialized");
             var player = _player ?? throw new InvalidOperationException("Media player is not initialized");
             _currentMedia?.Dispose();
-            var media = _mediaFactory.Create(lib, new Uri(path));
-            _currentMedia = media;
             try
             {
+                // Build URI: for local file paths, convert to file:// URI; otherwise use provided URI
+                Uri mediaUri;
+                if (!Uri.IsWellFormedUriString(path, UriKind.Absolute))
+                {
+                    var fullPath = Path.GetFullPath(path);
+                    mediaUri = new Uri($"file:///{fullPath.Replace('\\','/')}");
+                }
+                else
+                {
+                    mediaUri = new Uri(path, UriKind.Absolute);
+                }
+                var media = _mediaFactory.Create(lib, mediaUri);
+                _currentMedia = media;
                 // Parse metadata and buffer
                 await Task.Run(() => media.Parse(MediaParseOptions.ParseLocal));
                 // Enqueue play on UI thread
                 await _dispatcher.InvokeAsync(() => player.Play(media));
+                // Immediately notify that playback has started
+                PlaybackStarted?.Invoke(this, EventArgs.Empty);
             }
             catch (Exception ex)
             {
@@ -239,7 +252,18 @@ namespace Atune.Services
             if (lib == null || preloadPlayer == null)
                 return;
             _preloadMedia?.Dispose();
-            var media = _mediaFactory.Create(lib, new Uri(path));
+            // Build URI for Preload
+            Uri mediaUri;
+            if (!Uri.IsWellFormedUriString(path, UriKind.Absolute))
+            {
+                var fullPath = Path.GetFullPath(path);
+                mediaUri = new Uri($"file:///{fullPath.Replace('\\','/')}");
+            }
+            else
+            {
+                mediaUri = new Uri(path, UriKind.Absolute);
+            }
+            var media = _mediaFactory.Create(lib, mediaUri);
             _preloadMedia = media;
             try
             {
@@ -263,7 +287,18 @@ namespace Atune.Services
             var lib = _libVlc ?? throw new InvalidOperationException("Media player is not initialized");
             var player = _player ?? throw new InvalidOperationException("Media player is not initialized");
             _currentMedia?.Dispose();
-            var media = _mediaFactory.Create(lib, new Uri(path));
+            // Build URI for Load
+            Uri mediaUri;
+            if (!Uri.IsWellFormedUriString(path, UriKind.Absolute))
+            {
+                var fullPath = Path.GetFullPath(path);
+                mediaUri = new Uri($"file:///{fullPath.Replace('\\','/')}");
+            }
+            else
+            {
+                mediaUri = new Uri(path, UriKind.Absolute);
+            }
+            var media = _mediaFactory.Create(lib, mediaUri);
             _currentMedia = media;
             try
             {
