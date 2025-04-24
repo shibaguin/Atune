@@ -246,11 +246,8 @@ public partial class MediaViewModel : ObservableObject, IDisposable
 
         _mediaPlayerService.PlaybackEnded += OnPlaybackEnded;
 
-        // Заменяем вызов LoadMediaContent на прямое обновление
-        Dispatcher.UIThread.Post(async () =>
-        {
-            await RefreshMedia();
-        });
+        // Load media content and restore playback state on startup
+        Dispatcher.UIThread.Post(() => LoadMediaContent());
 
         MediaItems = [];
         SortOrder = "A-Z"; // Установите значение по умолчанию
@@ -295,10 +292,10 @@ public partial class MediaViewModel : ObservableObject, IDisposable
         // Синхронизируем с MediaItems
         await UpdateMediaItemsGradually(MediaContent);
 
-        // Restore playback state now that media content is loaded
+        // Restore playback state on UI thread after items are loaded
         if (Atune.App.Current is Atune.App app && app.Services is IServiceProvider sp)
         {
-            await PlaybackStateManager.RestoreStateAsync(sp);
+            Dispatcher.UIThread.Post(async () => await PlaybackStateManager.RestoreStateAsync(sp));
         }
     }
 
