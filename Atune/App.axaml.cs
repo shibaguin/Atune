@@ -55,9 +55,9 @@ public partial class App : Application
                 .MinimumLevel.Debug())
             .Build();
 
-        try 
+        try
         {
-            Dispatcher.UIThread.InvokeAsync(() => 
+            Dispatcher.UIThread.InvokeAsync(() =>
             {
                 if (Application.Current?.PlatformSettings != null)
                 {
@@ -65,7 +65,7 @@ public partial class App : Application
                 }
             }, DispatcherPriority.Normal).Wait(TimeSpan.FromSeconds(1));
         }
-        catch 
+        catch
         {
             // Ignore timeouts
         }
@@ -83,7 +83,7 @@ public partial class App : Application
     {
         var settingsService = Services?.GetRequiredService<ISettingsService>();
         if (settingsService == null) return;
-        
+
         var settings = settingsService.LoadSettings();
         if (settings.ThemeVariant == ThemeVariant.System)
         {
@@ -95,7 +95,7 @@ public partial class App : Application
     {
         // Log the start of base initialization: loading XAML and setting up DI services
         Log.Information("Starting base initialization: loading XAML and setting up services");
-        
+
         AvaloniaXamlLoader.Load(this);
         base.Initialize();
 
@@ -134,7 +134,7 @@ public partial class App : Application
         }
 
         // Get the service through the registered provider
-        var localizationService = Services.GetRequiredService<LocalizationService>();
+        _ = Services.GetRequiredService<LocalizationService>();
     }
 
     public new static App? Current => Application.Current as App;
@@ -144,8 +144,8 @@ public partial class App : Application
     {
         // Log the completion of full initialization: the main window has been created, the database and services are configured
         Log.Information("Full initialization completed: the main window has been created, the database and services are configured");
-        
-        try 
+
+        try
         {
             var services = new ServiceCollection();
             ConfigureServices(services); // сначала конфигурируем сервисы
@@ -164,7 +164,7 @@ public partial class App : Application
                 mainWindow.AddHandler(InputElement.KeyDownEvent,
                     new EventHandler<KeyEventArgs>((sender, args) =>
                     {
-                        if (args.Key == Key.Space && !(args.Source is TextBox) && mainWindow.DataContext is MainViewModel vm)
+                        if (args.Key == Key.Space && args.Source is not TextBox && mainWindow.DataContext is MainViewModel vm)
                         {
                             vm.TogglePlayPauseCommand.Execute(null);
                         }
@@ -201,12 +201,12 @@ public partial class App : Application
 
             // Example of adding a test entry to the database
             var testItem = new MediaItem(
-                "Title", 
-                new Album { Title = "Album" }, 
-                2023u, 
-                "Genre", 
-                "/path/to/file.mp3", 
-                TimeSpan.FromMinutes(3), 
+                "Title",
+                new Album { Title = "Album" },
+                2023u,
+                "Genre",
+                "/path/to/file.mp3",
+                TimeSpan.FromMinutes(3),
                 new List<TrackArtist>()
             );
         }
@@ -315,12 +315,12 @@ public partial class App : Application
                 if (raw.StartsWith("__INDEX__:"))
                 {
                     // Parse index after marker
-                    int.TryParse(raw.Substring("__INDEX__:".Length), out stateIndex);
+                    int.TryParse(raw["__INDEX__:".Length..], out stateIndex);
                 }
                 else if (raw.StartsWith("__POSITION__:"))
                 {
                     // Parse position after marker
-                    double.TryParse(raw.Substring("__POSITION__:".Length), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out statePos);
+                    double.TryParse(raw["__POSITION__:".Length..], System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out statePos);
                 }
                 else
                 {
@@ -378,19 +378,19 @@ public partial class App : Application
     }
 
     [UnconditionalSuppressMessage("Trimming", "IL2072", Justification = "DynamicallyAccessedMembers handled in registration")]
-    private void ConfigureServices(IServiceCollection services)
+    private static void ConfigureServices(IServiceCollection services)
     {
         services.AddDbContext<AppDbContext>();
         services.AddDbContextFactory<AppDbContext>();
         // Register playlist repository and unit of work for playlist management
         services.AddScoped<IPlaylistRepository, PlaylistRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
-        
+
         // Register service layer for playlists
         services.AddScoped<IPlaylistService, PlaylistService>();
         // Register utility service for admin/debug operations
         services.AddScoped<IUtilityService, UtilityService>();
-        
+
         // Остальные сервисы
         // Other services
         services.AddMemoryCache(options =>
@@ -400,7 +400,7 @@ public partial class App : Application
             options.ExpirationScanFrequency = TimeSpan.FromMinutes(5); // Frequency of checking expiration
         });
         services.AddSingleton<ViewLocator>();
-        
+
         // Register the platform-specific service and settings service
         // Регистрация сервиса для платформенно-специфичных путей и сервиса настроек
         services.AddSingleton<IPlatformPathService, PlatformPathService>();
@@ -413,7 +413,7 @@ public partial class App : Application
         services.AddTransient<MediaDatabaseService>();
         // Register MediaFileService for file operations
         services.AddSingleton<MediaFileService>();
-        
+
         // Явное регистрация ViewModels
         // Explicit registration of ViewModels
         services.AddTransient<MainViewModel>();
@@ -435,7 +435,7 @@ public partial class App : Application
         services.AddTransient<HistoryView>(sp => new HistoryView(
             sp.GetRequiredService<HistoryViewModel>()
         ));
-        services.AddTransient<SettingsView>(sp => 
+        services.AddTransient<SettingsView>(sp =>
             new SettingsView(
                 sp.GetRequiredService<SettingsViewModel>(),
                 sp.GetRequiredService<ISettingsService>()
@@ -445,32 +445,33 @@ public partial class App : Application
 
         // Фабрики
         // Factories
-        services.AddSingleton<Func<Type, ViewModelBase>>(provider => type => 
+        services.AddSingleton<Func<Type, ViewModelBase>>(provider => type =>
             (ViewModelBase)provider.GetRequiredService(type));
 
-        services.AddTransient<Func<Type, Control>>(provider => 
+        services.AddTransient<Func<Type, Control>>(provider =>
             ([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] Type type) =>
                 (Control)ActivatorUtilities.CreateInstance(provider, type));
 
-        services.AddLogging(builder => {
+        services.AddLogging(builder =>
+        {
             builder.ClearProviders();
             builder.AddSerilog(dispose: true);
         });
 
         // Добавляем новые сервисы
         // Add new services
-        services.AddScoped<IUnitOfWork>(provider => 
+        services.AddScoped<IUnitOfWork>(provider =>
             new UnitOfWork(
                 provider.GetRequiredService<AppDbContext>(),
                 provider.GetRequiredService<ILoggerService>()));
-        
-        services.AddScoped<IMediaRepository>(provider => 
+
+        services.AddScoped<IMediaRepository>(provider =>
         {
             var context = provider.GetRequiredService<AppDbContext>();
             var logger = provider.GetRequiredService<ILoggerService>();
             var baseRepo = new MediaRepository(context);
             return new CachedMediaRepository(
-                baseRepo, 
+                baseRepo,
                 provider.GetRequiredService<IMemoryCache>()
             );
         });
@@ -528,7 +529,7 @@ public partial class App : Application
     }
 
     [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "Disabled for Avalonia compatibility")]
-    private void DisableAvaloniaDataAnnotationValidation()
+    private static void DisableAvaloniaDataAnnotationValidation()
     {
         // Получаем массив плагинов для удаления
         // Get an array of plugins to remove
@@ -549,9 +550,9 @@ public partial class App : Application
         {
             var actualTheme = theme switch
             {
-                ThemeVariant.System => Application.Current?.PlatformSettings?.GetColorValues()?.ThemeVariant 
-                    == PlatformThemeVariant.Dark 
-                    ? ThemeVariant.Dark 
+                ThemeVariant.System => Application.Current?.PlatformSettings?.GetColorValues()?.ThemeVariant
+                    == PlatformThemeVariant.Dark
+                    ? ThemeVariant.Dark
                     : ThemeVariant.Light,
                 _ => theme
             };
@@ -573,25 +574,15 @@ public partial class App : Application
         }, DispatcherPriority.Background);
     }
 
-    private void ConfigureCachePolicies()
-    {
-        if (Services?.GetService<IMemoryCache>() is MemoryCache memoryCache)
-        {
-            // Используем стандартный метод очистки кэша
-            // Use the standard cache cleanup method
-            memoryCache.Compact(percentage: 0.25);
-        }
-    }
-    
     private async Task InitializeDatabaseAsync()
     {
         using var scope = Services!.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        
+
         try
         {
             Log.Information("Initializing database...");
-            
+
             // Всегда применяем ожидающие миграции
             var pendingMigrations = await db.Database.GetPendingMigrationsAsync();
             if (pendingMigrations.Any())
@@ -599,7 +590,7 @@ public partial class App : Application
                 Log.Information($"Applying {pendingMigrations.Count()} pending migrations...");
                 await db.Database.MigrateAsync();
             }
-            
+
             var exists = await db.MediaItems.AnyAsync();
             Log.Information($"Database status: {(exists ? "OK" : "EMPTY")}");
         }
@@ -614,18 +605,15 @@ public partial class App : Application
     {
         // Добавляем принудительное обновление кэша
         var settingsService = Services?.GetRequiredService<ISettingsService>();
-        if (settingsService != null)
-        {
-            // Сбрасываем кэш и загружаем заново
-            settingsService.LoadSettings();
-        }
+        // Сбрасываем кэш и загружаем заново
+        settingsService?.LoadSettings();
 
         var localizationService = Services?.GetRequiredService<LocalizationService>();
         if (localizationService != null && settingsService != null)
         {
             var settings = settingsService.LoadSettings();
             localizationService.SetLanguage(settings.Language);
-            
+
             // Принудительно обновляем все окна
             if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
             {

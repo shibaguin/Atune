@@ -47,4 +47,4 @@ namespace Atune.Models
             CoverArt = artPath!;
         }
     }
-} 
+}

@@ -22,4 +22,4 @@ namespace Atune.Models
         // Date and time when the track was added to the queue
         public DateTime AddedAt { get; set; } = DateTime.UtcNow;
     }
-} 
+}

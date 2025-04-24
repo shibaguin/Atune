@@ -17,4 +17,4 @@ namespace Atune.Data.Interfaces
         Task BulkDeleteAsync(IEnumerable<MediaItem> items, Action<IEnumerable<MediaItem>>? onBatchProcessed = null);
         Task<List<MediaItem>> GetAllMediaItemsAsync();
     }
-} 
+}

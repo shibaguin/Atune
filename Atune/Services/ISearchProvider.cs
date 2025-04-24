@@ -22,4 +22,4 @@ namespace Atune.Services
         // Return a list of SearchResult for the given query
         Task<IEnumerable<SearchResult>> SearchAsync(string query);
     }
-} 
+}

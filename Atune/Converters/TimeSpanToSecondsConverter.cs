@@ -19,4 +19,4 @@ public class TimeSpanToSecondsConverter : IValueConverter
             return TimeSpan.FromSeconds(seconds);
         return TimeSpan.Zero;
     }
-} 
+}

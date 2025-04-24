@@ -10,4 +10,4 @@ public interface ISettingsService
     Task<AppSettings> LoadSettingsAsync();
     void SaveSettings(AppSettings settings);
     AppSettings LoadSettings();
-} 
+}

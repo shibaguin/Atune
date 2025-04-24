@@ -11,10 +11,10 @@ using System.Collections.Generic;
 
 public class LocalizationService : INotifyPropertyChanged
 {
-    private ResourceDictionary _currentResources = new ResourceDictionary();
+    private ResourceDictionary _currentResources = [];
     private readonly ISettingsService _settingsService;
     private readonly ILoggerService _logger;
-    private readonly Dictionary<string, ResourceDictionary> _resourceCache = new Dictionary<string, ResourceDictionary>(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, ResourceDictionary> _resourceCache = new(StringComparer.OrdinalIgnoreCase);
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -25,7 +25,7 @@ public class LocalizationService : INotifyPropertyChanged
         LoadLanguage(_settingsService.LoadSettings().Language);
     }
 
-    public string this[string key] => 
+    public string this[string key] =>
         _currentResources[key]?.ToString() ?? $"#{key}#";
 
     public void SetLanguage(string languageCode)
@@ -37,10 +37,10 @@ public class LocalizationService : INotifyPropertyChanged
             settings.Language = languageCode;
             _settingsService.SaveSettings(settings);
         }
-        
+
         LoadLanguage(languageCode);
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("Item"));
-        
+
         // Заменяем проблемную строку
         if (Application.Current is { } app)
         {
@@ -79,19 +79,19 @@ public class LocalizationService : INotifyPropertyChanged
         ResourceDictionary fallbackRd;
         if (fallbackLanguage != null)
         {
-            fallbackRd = LoadResxAsResourceDictionary(fallbackLanguage) ?? new ResourceDictionary();
+            fallbackRd = LoadResxAsResourceDictionary(fallbackLanguage) ?? [];
         }
         else
         {
-            fallbackRd = new ResourceDictionary();
+            fallbackRd = [];
         }
-        
+
         if (Application.Current?.Resources?.MergedDictionaries == null)
         {
             _logger.LogError("Application.Current or its Resources/MergedDictionaries are null.");
             throw new NullReferenceException("Application.Current or its Resources/MergedDictionaries are null.");
         }
-        
+
         Application.Current.Resources.MergedDictionaries.Clear();
         Application.Current.Resources.MergedDictionaries.Add(fallbackRd);
         Application.Current.Resources.MergedDictionaries.Add(primaryRd);
@@ -105,10 +105,10 @@ public class LocalizationService : INotifyPropertyChanged
     {
         if (string.IsNullOrEmpty(languageCode))
             return null;
-        
+
         if (_resourceCache.TryGetValue(languageCode, out var cachedRd))
             return cachedRd;
-        
+
         var resourceDictionary = new ResourceDictionary();
         try
         {
@@ -129,11 +129,11 @@ public class LocalizationService : INotifyPropertyChanged
             _logger.LogError($"Error loading resource for language: {languageCode}. Exception: {ex.Message}", ex);
             return null;
         }
-        
+
         _resourceCache[languageCode] = resourceDictionary;
         return resourceDictionary;
     }
 
-    public void Refresh() => 
+    public void Refresh() =>
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("Item"));
-} 
+}

@@ -11,15 +11,15 @@ public static class ApplicationLifetimeExtensions
         {
             // Для настольных приложений
             // For desktop applications
-            IClassicDesktopStyleApplicationLifetime desktop => 
+            IClassicDesktopStyleApplicationLifetime desktop =>
                 TopLevel.GetTopLevel(desktop.MainWindow),
-            
+
             // Для Android и других платформ с SingleView
             // For Android and other platforms with SingleView
-            ISingleViewApplicationLifetime singleView when singleView.MainView is Control mainControl => 
+            ISingleViewApplicationLifetime singleView when singleView.MainView is Control mainControl =>
                 TopLevel.GetTopLevel(mainControl),
-            
+
             _ => null
         };
     }
-} 
+}

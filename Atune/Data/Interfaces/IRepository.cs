@@ -12,14 +12,9 @@ public interface IRepository<T> where T : class
     Task DeleteAsync(T entity);
 }
 
-public class Repository<T> : IRepository<T> where T : class
+public class Repository<T>(AppDbContext context) : IRepository<T> where T : class
 {
-    private readonly AppDbContext _context;
-
-    public Repository(AppDbContext context)
-    {
-        _context = context;
-    }
+    private readonly AppDbContext _context = context;
 
     public async Task<T?> GetByIdAsync(int id)
     {
@@ -63,4 +58,4 @@ public class Repository<T> : IRepository<T> where T : class
             throw new InvalidOperationException("Error deleting entity", ex);
         }
     }
-} 
+}

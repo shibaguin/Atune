@@ -14,7 +14,7 @@ namespace Atune.Utils
             {
                 "ru" => "Русский",
                 "en" => "English",
-                _    => code
+                _ => code
             };
         }
 
@@ -26,8 +26,8 @@ namespace Atune.Utils
             {
                 "Русский" => "ru",
                 "English" => "en",
-                _         => display
+                _ => display
             };
         }
     }
-} 
+}

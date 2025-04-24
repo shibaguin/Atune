@@ -12,7 +12,7 @@ public class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<AppDbConte
     public AppDbContext CreateDbContext(string[] args)
     {
         var optionsBuilder = new DbContextOptionsBuilder<AppDbContext>();
-        
+
         // Определяем базовый путь для хранения базы данных в зависимости от ОС
         string basePath;
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
@@ -31,16 +31,16 @@ public class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<AppDbConte
             "Atune",
             "Data",
             "media_library.db");
-        
+
         // Создаем директорию, если не существует
         var directory = Path.GetDirectoryName(dbPath);
         if (directory != null)
         {
             Directory.CreateDirectory(directory);
         }
-        
+
         optionsBuilder.UseSqlite($"Data Source={dbPath}");
-        
+
         return new AppDbContext(optionsBuilder.Options);
     }
-} 
+}

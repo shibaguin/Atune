@@ -15,4 +15,4 @@ namespace Atune.Models
         // Связь с треками через связывающую таблицу
         public IList<PlaylistMediaItem> PlaylistMediaItems { get; set; } = new List<PlaylistMediaItem>();
     }
-} 
+}

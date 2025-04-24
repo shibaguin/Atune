@@ -15,18 +15,12 @@ namespace Atune.Services
 {
     // Сервис для выполнения операций с файлами, таких как копирование, проверка существования и конвертация пути.
     // Service for performing file operations such as copying, checking existence, and path conversion.
-    public class MediaFileService
+    public class MediaFileService(IMemoryCache cache)
     {
         // Поле для кеша
-        private readonly IMemoryCache _cache;
+        private readonly IMemoryCache _cache = cache;
 
-        // Обновлённый конструктор с зависимостью IMemoryCache
-        public MediaFileService(IMemoryCache cache)
-        {
-            _cache = cache;
-        }
-
-        #if ANDROID
+#if ANDROID
         public async Task<string> GetRealPathAsync(IStorageFile file)
         {
             if (file == null)
@@ -43,12 +37,12 @@ namespace Atune.Services
                 .SetSlidingExpiration(TimeSpan.FromMinutes(5)));
             return realPath;
         }
-        #else
-        public Task<string> GetRealPathAsync(IStorageFile file)
+#else
+        public static Task<string> GetRealPathAsync(IStorageFile file)
         {
             return Task.FromResult(file.Path.LocalPath);
         }
-        #endif
+#endif
 
         public Task<bool> FileExistsAsync(string path)
         {
@@ -60,7 +54,7 @@ namespace Atune.Services
             {
                 return Task.FromResult(exists);
             }
-            
+
             bool fileExists = File.Exists(path);
             _cache.Set(cacheKey, fileExists, new MemoryCacheEntryOptions()
                 .SetAbsoluteExpiration(TimeSpan.FromMinutes(1)));
@@ -102,4 +96,4 @@ namespace Atune.Services
         }
 #endif
     }
-} 
+}

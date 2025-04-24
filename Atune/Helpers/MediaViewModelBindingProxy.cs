@@ -15,4 +15,4 @@ namespace Atune.Helpers
             set => SetValue(DataProperty, value);
         }
     }
-} 
+}

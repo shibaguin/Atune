@@ -15,4 +15,4 @@ namespace Atune.Services
         // Проверить, существует ли медиафайл по его идентификатору
         Task<bool> MediaExistsAsync(string mediaId);
     }
-} 
+}

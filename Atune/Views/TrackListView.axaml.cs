@@ -167,4 +167,4 @@ namespace Atune.Views
             menu.ItemsSource = items;
         }
     }
-} 
+}

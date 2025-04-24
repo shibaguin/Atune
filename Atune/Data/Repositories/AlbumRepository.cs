@@ -7,13 +7,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Atune.Data.Repositories
 {
-    public class AlbumRepository : IAlbumRepository
+    public class AlbumRepository(AppDbContext context) : IAlbumRepository
     {
-        private readonly AppDbContext _context;
-        public AlbumRepository(AppDbContext context)
-        {
-            _context = context;
-        }
+        private readonly AppDbContext _context = context;
 
         public async Task<IEnumerable<Album>> GetAllAlbumsAsync()
         {
@@ -48,4 +44,4 @@ namespace Atune.Data.Repositories
                 .ToListAsync();
         }
     }
-} 
+}

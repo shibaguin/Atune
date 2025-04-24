@@ -15,7 +15,7 @@ public partial class MainWindow : Window
         // Tunnel KeyUp event to catch Spacebar before any child control handles it
         this.AddHandler(InputElement.KeyUpEvent, OnKeyUp, RoutingStrategies.Tunnel, handledEventsToo: true);
     }
-    
+
     // Constructor for DI
     // Конструктор для DI
     public MainWindow(MainViewModel vm) : this()
@@ -24,7 +24,7 @@ public partial class MainWindow : Window
     // Handler for Spacebar key up to toggle play/pause
     private void OnKeyUp(object? sender, KeyEventArgs e)
     {
-        if (e.Key == Key.Space && !(e.Source is TextBox) && DataContext is MainViewModel vm)
+        if (e.Key == Key.Space && e.Source is not TextBox && DataContext is MainViewModel vm)
         {
             vm.TogglePlayPauseCommand.Execute(null);
             e.Handled = true;

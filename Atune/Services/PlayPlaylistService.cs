@@ -14,14 +14,9 @@ namespace Atune.Services
         Task PlayPlaylistAsync(Playlist playlist);
     }
 
-    public class PlayPlaylistService : IPlayPlaylistService
+    public class PlayPlaylistService(IPlaylistService playlistService) : IPlayPlaylistService
     {
-        private readonly IPlaylistService _playlistService;
-
-        public PlayPlaylistService(IPlaylistService playlistService)
-        {
-            _playlistService = playlistService;
-        }
+        private readonly IPlaylistService _playlistService = playlistService;
 
         public async Task PlayPlaylistAsync(Playlist playlist)
         {
@@ -47,4 +42,4 @@ namespace Atune.Services
             await mediaVm.PlayNextInQueueCommand.ExecuteAsync(null);
         }
     }
-} 
+}

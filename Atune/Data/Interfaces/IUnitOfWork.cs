@@ -9,4 +9,4 @@ public interface IUnitOfWork : IDisposable
     IPlayHistoryRepository PlayHistory { get; }
     Task<int> CommitAsync(CancellationToken cancellationToken = default);
     Task RollbackAsync();
-} 
+}

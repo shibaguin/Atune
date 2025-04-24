@@ -14,4 +14,4 @@ namespace Atune.Data.Repositories
         Task<int> DeletePlaylistAsync(int playlistId);
         Task RenamePlaylistAsync(int playlistId, string newName);
     }
-} 
+}

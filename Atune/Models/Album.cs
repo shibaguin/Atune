@@ -22,4 +22,4 @@ namespace Atune.Models
         // Один альбом имеет много треков
         public ICollection<MediaItem> Tracks { get; set; } = new List<MediaItem>();
     }
-} 
+}

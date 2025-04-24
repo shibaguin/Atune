@@ -13,8 +13,8 @@ namespace Atune.Exceptions
 {
     public class MediaPlayerInitializationException : Exception
     {
-        public MediaPlayerInitializationException(string message) : base(message) {}
-        public MediaPlayerInitializationException(string message, Exception inner) 
-            : base(message, inner) {}
+        public MediaPlayerInitializationException(string message) : base(message) { }
+        public MediaPlayerInitializationException(string message, Exception inner)
+            : base(message, inner) { }
     }
-} 
+}

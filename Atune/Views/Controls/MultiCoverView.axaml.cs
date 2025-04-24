@@ -22,8 +22,8 @@ namespace Atune.Views.Controls
             set => SetValue(CoverUrisProperty, value);
         }
 
-        private Canvas _coverCanvas = null!;
-        private readonly CoverArtConverter _converter = new CoverArtConverter();
+        private readonly Canvas _coverCanvas = null!;
+        private readonly CoverArtConverter _converter = new();
 
         public MultiCoverView()
         {
@@ -69,8 +69,7 @@ namespace Atune.Views.Controls
                     for (int i = 0; i < 2; i++)
                     {
                         var uri = distinctUris[i];
-                        var bmp = _converter.Convert(uri, typeof(Bitmap), null, culture) as Bitmap;
-                        if (bmp == null) continue;
+                        if (_converter.Convert(uri, typeof(Bitmap), null, culture) is not Bitmap bmp) continue;
                         var px = bmp.PixelSize.Width;
                         var ph = bmp.PixelSize.Height;
                         var cropPx = px / 2;
@@ -92,8 +91,7 @@ namespace Atune.Views.Controls
                     for (int i = 0; i < 3; i++)
                     {
                         var uri = distinctUris[i];
-                        var bmp = _converter.Convert(uri, typeof(Bitmap), null, culture) as Bitmap;
-                        if (bmp == null) continue;
+                        if (_converter.Convert(uri, typeof(Bitmap), null, culture) is not Bitmap bmp) continue;
                         var px = bmp.PixelSize.Width;
                         var ph = bmp.PixelSize.Height;
                         var cropPx = px / 3;
@@ -126,8 +124,7 @@ namespace Atune.Views.Controls
 
         private void AddImage(string uri, double x, double y, double w, double h, CultureInfo culture)
         {
-            var src = _converter.Convert(uri, typeof(Bitmap), null, culture) as IImage;
-            if (src == null)
+            if (_converter.Convert(uri, typeof(Bitmap), null, culture) is not IImage src)
                 return;
             var img = new Image
             {
@@ -141,4 +138,4 @@ namespace Atune.Views.Controls
             _coverCanvas.Children.Add(img);
         }
     }
-} 
+}

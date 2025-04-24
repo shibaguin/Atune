@@ -7,4 +7,4 @@ namespace Atune.Data.Repositories
     {
         List<FileSystemInfo> GetMediaFiles(DirectoryInfo dir, bool acceptDirs);
     }
-} 
+}

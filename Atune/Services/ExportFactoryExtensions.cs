@@ -8,10 +8,10 @@ public static class ExportFactoryExtensions
 {
     public static IEnumerable<Lazy<T, TMetadata>> ToLazy<T, TMetadata>(this IEnumerable<ExportFactory<T, TMetadata>> factories)
     {
-        return factories.Select(factory => 
+        return factories.Select(factory =>
             new Lazy<T, TMetadata>(
-                () => factory.CreateExport().Value, 
+                () => factory.CreateExport().Value,
                 factory.Metadata
             ));
     }
-} 
+}

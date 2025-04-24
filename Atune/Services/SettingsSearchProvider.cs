@@ -9,8 +9,8 @@ namespace Atune.Services
     {
         public string Name => "Settings";
 
-        private static readonly string[] Themes = { "System", "Light", "Dark" };
-        private static readonly string[] Languages = { "Русский", "English" };
+        private static readonly string[] Themes = ["System", "Light", "Dark"];
+        private static readonly string[] Languages = ["Русский", "English"];
 
         public Task<IEnumerable<SearchResult>> SearchAsync(string query)
         {
@@ -40,4 +40,4 @@ namespace Atune.Services
             return Task.FromResult<IEnumerable<SearchResult>>(results);
         }
     }
-} 
+}

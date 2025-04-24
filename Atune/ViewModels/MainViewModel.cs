@@ -27,13 +27,13 @@ namespace Atune.ViewModels;
 public partial class MainViewModel : ViewModelBase
 {
     public enum SectionType { Home, Media, History, Settings }
-    
+
     [ObservableProperty]
     private SectionType _selectedSection;
-    
+
     [ObservableProperty]
     private string _headerText = "Atune";
-    
+
     [ObservableProperty]
     private Control? _currentView;
 
@@ -44,7 +44,7 @@ public partial class MainViewModel : ViewModelBase
     private string searchMessage = string.Empty;
 
     [ObservableProperty]
-    private ObservableCollection<string> searchSuggestions = new ObservableCollection<string>();
+    private ObservableCollection<string> searchSuggestions = [];
 
     [ObservableProperty]
     private bool isSuggestionsOpen;
@@ -76,10 +76,10 @@ public partial class MainViewModel : ViewModelBase
         OnPropertyChanged(nameof(NowPlayingArtist));
     }
 
-    private DispatcherTimer _positionTimer;
-    private DispatcherTimer? _metadataTimer;
+    private readonly DispatcherTimer _positionTimer;
+    private readonly DispatcherTimer? _metadataTimer;
     private CancellationTokenSource? _volumeSaveCts;
-    private bool _isInitializing = true; // skip saves during initial load
+    private readonly bool _isInitializing = true; // skip saves during initial load
 
     private readonly ISettingsService _settingsService;
     private readonly Dictionary<SectionType, Control> _views;
@@ -126,7 +126,7 @@ public partial class MainViewModel : ViewModelBase
         _localizationService = localizationService ?? throw new ArgumentNullException(nameof(localizationService));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _coverArtService = coverArtService ?? throw new ArgumentNullException(nameof(coverArtService));
-        
+
         try
         {
             _mediaPlayerService = mediaPlayerService;
@@ -143,7 +143,7 @@ public partial class MainViewModel : ViewModelBase
         {
             _isInitializing = false;
         }
-        
+
         _views = new Dictionary<SectionType, Control>
         {
             [SectionType.Home] = _viewFactory(typeof(HomeView)),
@@ -151,7 +151,7 @@ public partial class MainViewModel : ViewModelBase
             [SectionType.History] = _viewFactory(typeof(HistoryView)),
             [SectionType.Settings] = _viewFactory(typeof(SettingsView))
         };
-        
+
         CurrentView = _views[SectionType.Home];
         HeaderText = _localizationService["Nav_Home"];
 
@@ -165,12 +165,12 @@ public partial class MainViewModel : ViewModelBase
             Interval = TimeSpan.FromMilliseconds(250) // ????????? ???????? ??? ?????????
         };
         _positionTimer.Tick += PositionTimer_Tick;
-        
+
         // ????????????? ?? ??????? ????????? ??????
         _mediaPlayerService.PlaybackStarted += OnPlaybackStarted;
         _mediaPlayerService.PlaybackPaused += OnPlaybackPaused;
-        
-        _mediaPlayerService.PlaybackEnded += (s, e) => 
+
+        _mediaPlayerService.PlaybackEnded += (s, e) =>
         {
             CurrentPosition = TimeSpan.Zero;
             Duration = TimeSpan.Zero;
@@ -193,24 +193,14 @@ public partial class MainViewModel : ViewModelBase
     // ????????? ???????? HeaderText ? ??????????? ?? ???????? ?????????? ??????? ? ???????????.
     private void UpdateHeaderText()
     {
-        switch (SelectedSection)
+        HeaderText = SelectedSection switch
         {
-            case SectionType.Home:
-                HeaderText = _localizationService["Nav_Home"];
-                break;
-            case SectionType.Media:
-                HeaderText = _localizationService["Nav_Media"];
-                break;
-            case SectionType.History:
-                HeaderText = _localizationService["Nav_History"];
-                break;
-            case SectionType.Settings:
-                HeaderText = _localizationService["Nav_Settings"];
-                break;
-            default:
-                HeaderText = "Atune";
-                break;
-        }
+            SectionType.Home => _localizationService["Nav_Home"],
+            SectionType.Media => _localizationService["Nav_Media"],
+            SectionType.History => _localizationService["Nav_History"],
+            SectionType.Settings => _localizationService["Nav_Settings"],
+            _ => "Atune",
+        };
     }
 
     private void LoadInitialSettings()
@@ -254,7 +244,7 @@ public partial class MainViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    private void Exit()
+    private static void Exit()
     {
         if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
             desktop.Shutdown();
@@ -380,7 +370,7 @@ public partial class MainViewModel : ViewModelBase
     // where 1 means full match.
     // ????? ??? ?????????? ???????????????? ???????? ???????? ????? ????? ???????? (?? 0 ?? 1),
     // ??? 1 ???????? ?????? ??????????.
-    private double CalculateSimilarity(string source, string target)
+    private static double CalculateSimilarity(string source, string target)
     {
         int distance = LevenshteinDistance(source, target);
         int maxLength = Math.Max(source.Length, target.Length);
@@ -448,14 +438,14 @@ public partial class MainViewModel : ViewModelBase
                 }
             }
         }
-        
+
         return suggestionsList.OrderByDescending(x => x.similarity)
                               .Select(x => x.keyword)
                               .Distinct()
                               .Take(3);
     }
 
-    public bool CurrentPageIsMedia => 
+    public bool CurrentPageIsMedia =>
         CurrentView is MediaView;
 
     partial void OnSearchQueryChanged(string value)
@@ -502,7 +492,7 @@ public partial class MainViewModel : ViewModelBase
             return;
         }
         // Fallback: play selected item in MediaView if no media was previously loaded
-        if (CurrentView is MediaView mediaView && 
+        if (CurrentView is MediaView mediaView &&
             mediaView.DataContext is MediaViewModel mvm &&
             mvm.SelectedMediaItem != null)
         {
@@ -510,12 +500,6 @@ public partial class MainViewModel : ViewModelBase
             await _mediaPlayerService.Play(mvm.SelectedMediaItem.Path);
             IsPlaying = true;
         }
-    }
-
-    private void ExecuteStopCommand()
-    {
-        _mediaPlayerService.Pause();
-        IsPlaying = false;
     }
 
     // ??????????? ????? ??? ???????????? ??????????????? (play/pause)
@@ -553,19 +537,9 @@ public partial class MainViewModel : ViewModelBase
     [RelayCommand]
     private void ExecuteNextCommand()
     {
-        if (CurrentView is MediaView mediaView && 
+        if (CurrentView is MediaView mediaView &&
             mediaView.DataContext is MediaViewModel mediaVM)
         {
-            mediaVM.PlayNextInQueueCommand.Execute(null);
-        }
-    }
-
-    private void ExecutePreviousCommand()
-    {
-        if (CurrentView is MediaView mediaView && 
-            mediaView.DataContext is MediaViewModel mediaVM)
-        {
-            // Use playback queue for previous track
             mediaVM.PlayNextInQueueCommand.Execute(null);
         }
     }
@@ -640,36 +614,9 @@ public partial class MainViewModel : ViewModelBase
     }
 
     // Stubbed: no VLC metadata parsing, using DB-backed metadata instead
-    private Task UpdateMetadataAsync(bool force = false) => Task.CompletedTask;
+    private static Task UpdateMetadataAsync(bool force = false) => Task.CompletedTask;
 
-    private Bitmap? LoadCoverSafely(string path)
-    {
-        try 
-        {
-            return File.Exists(path) ? new Bitmap(path) : null;
-        }
-        catch 
-        {
-            return null;
-        }
-    }
-
-    private Bitmap LoadDefaultCover()
-    {
-        try
-        {
-            var assetUri = new Uri(CoverArtConverter.DefaultCoverUri);
-            var asset = AssetLoader.Open(assetUri);
-            return new Bitmap(asset);
-        }
-        catch
-        {
-            // Fallback: transparent image or a blank bitmap
-            return CreateTransparentFallback();
-        }
-    }
-
-    private Bitmap CreateTransparentFallback()
+    private static Bitmap CreateTransparentFallback()
     {
         // Create a small transparent bitmap as ultimate fallback
         var pixelSize = new PixelSize(1, 1);
@@ -690,7 +637,7 @@ public partial class MainViewModel : ViewModelBase
 
     private void PositionTimer_Tick(object? sender, EventArgs e)
     {
-        if (_mediaPlayerService == null) 
+        if (_mediaPlayerService == null)
         {
             _positionTimer.Stop();
             return;
@@ -721,7 +668,7 @@ public partial class MainViewModel : ViewModelBase
     partial void OnCurrentPositionChanged(TimeSpan value)
     {
         // ??????? ???????? ?? IsPlaying, ????????? ????????? ??????? ??????
-        if (_mediaPlayerService != null 
+        if (_mediaPlayerService != null
             && Math.Abs((_mediaPlayerService.Position - value).TotalSeconds) > 0.5)
         {
             try
@@ -736,33 +683,6 @@ public partial class MainViewModel : ViewModelBase
         }
     }
 
-    private async void LoadMediaMetadata()
-    {
-        try
-        {
-            if (_mediaPlayerService == null) return;
-            
-            if (_metadataTimer != null)
-            {
-                _metadataTimer.Stop();
-                _metadataTimer = null;
-            }
-            
-            await Task.Run(() => _mediaPlayerService.GetCurrentMetadataAsync());
-            await Task.Delay(500); 
-            
-            await UpdateMetadataAsync();
-            
-            _metadataTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
-            _metadataTimer.Tick += async (s, e) => await UpdateMetadataAsync();
-            _metadataTimer.Start();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Metadata loading failed");
-        }
-    }
-
     // ?????????? ?????????????? CS1998 ??????????? await
     [RelayCommand]
     private async Task PlayAsync(string path)
@@ -770,15 +690,15 @@ public partial class MainViewModel : ViewModelBase
         try
         {
             _logger.LogInformation($"PlayAsync started for: {path}");
-            
+
             CurrentMediaPath = path;
             await _mediaPlayerService.Play(path);
             IsPlaying = true;
-            
+
             _logger.LogDebug("Starting metadata update delay");
             await Task.Delay(1000); // ??????????? ???????? ??? ?????????????
             await UpdateMetadataAsync();
-            
+
             _logger.LogInformation("Playback started successfully");
         }
         catch (Exception ex)
@@ -810,10 +730,9 @@ public partial class MainViewModel : ViewModelBase
     [RelayCommand]
     private async Task Next()
     {
-        try 
+        try
         {
-            var mediaView = _views[SectionType.Media].DataContext as MediaViewModel;
-            if (mediaView != null)
+            if (_views[SectionType.Media].DataContext is MediaViewModel mediaView)
             {
                 await mediaView.PlayNextInQueueCommand.ExecuteAsync(null);
             }
@@ -829,10 +748,9 @@ public partial class MainViewModel : ViewModelBase
     [RelayCommand]
     private async Task Previous()
     {
-        try 
+        try
         {
-            var mediaView = _views[SectionType.Media].DataContext as MediaViewModel;
-            if (mediaView == null) return;
+            if (_views[SectionType.Media].DataContext is not MediaViewModel mediaView) return;
 
             if (CurrentPosition.TotalSeconds >= 10)
             {

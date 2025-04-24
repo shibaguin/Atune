@@ -2,7 +2,6 @@ using System;
 
 namespace Atune.Exceptions;
 
-public class PlaybackException : Exception
+public class PlaybackException(string message) : Exception(message)
 {
-    public PlaybackException(string message) : base(message) { }
-} 
+}

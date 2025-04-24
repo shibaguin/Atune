@@ -14,7 +14,7 @@ public partial class SettingsViewModel : ViewModelBase
 {
     [ObservableProperty]
     private int selectedThemeIndex;
-    
+
     // Default value - displayed language name
     // Значение по умолчанию - отображаемое название языка
     [ObservableProperty]
@@ -22,7 +22,7 @@ public partial class SettingsViewModel : ViewModelBase
 
     // Список для выбора: отображаемые названия языков
     // List for selection: displayed language names
-    public List<string> AvailableLanguages { get; } = new() { "Русский", "English" };
+    public List<string> AvailableLanguages { get; } = ["Русский", "English"];
 
     private readonly ISettingsService _settingsService;
     private readonly IInterfaceSettingsService _interfaceSettingsService;
@@ -39,11 +39,11 @@ public partial class SettingsViewModel : ViewModelBase
         _settingsService = settingsService;
         _interfaceSettingsService = interfaceSettingsService;
         _utilityService = utilityService;
-        
+
         // Обновляем настройки интерфейса из файла settings.ini
         // Update interface settings from the settings.ini file
         _interfaceSettingsService.LoadSettings();
-        
+
         // Загружаем общие пользовательские настройки
         // Load general user settings
         var settings = _settingsService.LoadSettings();
@@ -68,22 +68,22 @@ public partial class SettingsViewModel : ViewModelBase
     // New properties for interface settings
     [ObservableProperty]
     private double headerFontSize;
-    
+
     [ObservableProperty]
     private double navigationDividerWidth;
-    
+
     [ObservableProperty]
     private double navigationDividerHeight;
-    
+
     [ObservableProperty]
     private double topDockHeight;
-    
+
     [ObservableProperty]
     private double barHeight;
-    
+
     [ObservableProperty]
     private double navigationFontSize;
-    
+
     [ObservableProperty]
     private double barPadding;
 
@@ -95,7 +95,7 @@ public partial class SettingsViewModel : ViewModelBase
         string languageCode = Atune.Utils.LanguageConverter.DisplayToCode(SelectedLanguage);
 
         _settingsService.SaveSettings(new AppSettings
-        { 
+        {
             ThemeVariant = (ThemeVariant)SelectedThemeIndex,
             Language = languageCode
         });
@@ -191,4 +191,4 @@ public partial class SettingsViewModel : ViewModelBase
 
     [RelayCommand]
     private void ClearQueue() => _utilityService.ClearQueue();
-} 
+}

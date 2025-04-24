@@ -13,17 +13,11 @@ using System.Composition.Convention;
 using System.Composition.Hosting.Core;
 using System.Composition;
 
-public class PluginLoader
+public class PluginLoader(IPlatformPathService pathService, ILoggerService logger)
 {
-    private readonly IPlatformPathService _pathService;
-    private readonly ILoggerService _logger;
-    private readonly List<Assembly> _loadedAssemblies = new();
-
-    public PluginLoader(IPlatformPathService pathService, ILoggerService logger)
-    {
-        _pathService = pathService;
-        _logger = logger;
-    }
+    private readonly IPlatformPathService _pathService = pathService;
+    private readonly ILoggerService _logger = logger;
+    private readonly List<Assembly> _loadedAssemblies = [];
 
     public IEnumerable<Lazy<IPlugin, IPluginMetadata>> LoadPlugins()
     {
@@ -31,7 +25,7 @@ public class PluginLoader
         if (!Directory.Exists(pluginsDir)) return Enumerable.Empty<Lazy<IPlugin, IPluginMetadata>>();
 
         var configuration = new ContainerConfiguration();
-        
+
         foreach (var pluginDir in Directory.GetDirectories(pluginsDir))
         {
             try
@@ -55,7 +49,7 @@ public class PluginLoader
         return exportFactories.ToLazy();
     }
 
-    private PluginManifest? LoadPluginManifest(string pluginDir)
+    private static PluginManifest? LoadPluginManifest(string pluginDir)
     {
         var manifestPath = Path.Combine(pluginDir, "plugin.json");
         if (!File.Exists(manifestPath))
@@ -64,7 +58,7 @@ public class PluginLoader
         return JsonConvert.DeserializeObject<PluginManifest>(File.ReadAllText(manifestPath));
     }
 
-    private bool ValidateDependencies(PluginManifest manifest)
+    private static bool ValidateDependencies(PluginManifest manifest)
     {
         // Реализуйте проверку версий зависимостей
         return true;
@@ -79,44 +73,23 @@ public class PluginLoader
 #endif
     }
 
-    private Assembly LoadDesktopAssembly(string pluginDir)
+    private static Assembly LoadDesktopAssembly(string pluginDir)
     {
         var assemblyFile = Directory.GetFiles(pluginDir, "*.dll")
             .FirstOrDefault(f => !f.EndsWith(".Views.dll") && !f.EndsWith(".ViewModels.dll"));
-        
+
         if (assemblyFile == null) return null!;
-        
+
         var resolver = new AssemblyDependencyResolver(assemblyFile);
         var context = new AssemblyLoadContext(Path.GetFileNameWithoutExtension(assemblyFile), true);
-        
-        context.Resolving += (loadContext, name) => {
+
+        context.Resolving += (loadContext, name) =>
+        {
             var path = resolver.ResolveAssemblyToPath(name);
             return path != null ? loadContext.LoadFromAssemblyPath(path) : null;
         };
-        
-        return context.LoadFromAssemblyPath(assemblyFile);
-    }
 
-    private Assembly LoadAndroidAssembly(string pluginDir)
-    {
-        try
-        {
-            var assemblyFile = Path.Combine(pluginDir, $"{new DirectoryInfo(pluginDir).Name}.dll");
-            var resolver = new AssemblyDependencyResolver(assemblyFile);
-            
-            using var stream = File.OpenRead(assemblyFile);
-            using var memoryStream = new MemoryStream();
-            stream.CopyTo(memoryStream);
-            var assembly = Assembly.Load(memoryStream.ToArray());
-            _loadedAssemblies.Add(assembly);
-            
-            return assembly;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError($"Android assembly load failed: {ex.Message}");
-            return null!;
-        }
+        return context.LoadFromAssemblyPath(assemblyFile);
     }
 }
 
@@ -126,4 +99,4 @@ public class PluginManifest
     [JsonProperty("name")] public string? Name { get; set; }
     [JsonProperty("version")] public string? Version { get; set; }
     [JsonProperty("dependencies")] public Dictionary<string, string>? Dependencies { get; set; }
-} 
+}

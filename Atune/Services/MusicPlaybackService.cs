@@ -42,7 +42,7 @@ namespace Atune.Services
             _libVLC = new LibVLC();
             _mediaPlayer = new MediaPlayer(_libVLC);
             _mediaPlayer.EndReached += OnMediaEndReached;
-            _playbackQueue = new List<MediaItem>();
+            _playbackQueue = [];
             _currentIndex = 0;
             _logger = logger;
             _cache = cache;
@@ -109,7 +109,7 @@ namespace Atune.Services
         {
             if (string.IsNullOrWhiteSpace(path))
                 throw new ArgumentException("Path cannot be null or empty", nameof(path));
-            
+
             _logger.LogInformation("Starting playback for media: {Path}", path);
             try
             {
@@ -125,7 +125,7 @@ namespace Atune.Services
 
                 // Получаем метаданные через новый метод (асинхронно)
                 var metadata = await ExtractMetadataAsync(path);
-                
+
                 // Запускаем воспроизведение на UI‑потоке.
                 await Dispatcher.UIThread.InvokeAsync(() =>
                 {
@@ -144,18 +144,17 @@ namespace Atune.Services
                     duration: TimeSpan.FromMilliseconds(_currentMedia.Duration),
                     trackArtists: new List<TrackArtist>
                     {
-                        new TrackArtist 
-                        { 
+                        new() {
                             Artist = new Artist { Name = metadata.Artist ?? "Unknown Artist" }
                         }
                     });
-                
+
                 // Логирование успешного старта воспроизведения с правильными метаданными
                 var artistNames = string.Join(", ", CurrentTrack.TrackArtists
                                     .Select(ta => ta.Artist?.Name)
                                     .Where(name => !string.IsNullOrEmpty(name))
                                     .Select(name => name!));
-                _logger.LogInformation("Playback started successfully for media: File={Path}, Title={Title}, Album={Album}, Artist(s)={Artists}", 
+                _logger.LogInformation("Playback started successfully for media: File={Path}, Title={Title}, Album={Album}, Artist(s)={Artists}",
                     path, CurrentTrack.Title, CurrentTrack.Album?.Title ?? "Unknown Album", artistNames);
             }
             catch (Exception ex)
@@ -305,7 +304,7 @@ namespace Atune.Services
             try
             {
                 var track = new ATL.Track(path);
-                MediaMetadata metadata = new MediaMetadata
+                MediaMetadata metadata = new()
                 {
                     Title = string.IsNullOrWhiteSpace(track.Title)
                                 ? System.IO.Path.GetFileNameWithoutExtension(path)!
@@ -338,17 +337,17 @@ namespace Atune.Services
         {
             if (string.IsNullOrEmpty(path))
                 return ExtractMetadataAsync(path);
-            
+
             string cacheKey = "MusicPlaybackService_Metadata_" + path;
             if (_cache.TryGetValue(cacheKey, out MediaMetadata? cachedMetadata) && cachedMetadata is not null)
             {
                 return Task.FromResult(cachedMetadata!);
             }
-            
+
             try
             {
                 var track = new ATL.Track(path);
-                MediaMetadata metadata = new MediaMetadata
+                MediaMetadata metadata = new()
                 {
                     Title = string.IsNullOrWhiteSpace(track.Title)
                         ? System.IO.Path.GetFileNameWithoutExtension(path)!
@@ -377,4 +376,4 @@ namespace Atune.Services
             }
         }
     }
-} 
+}

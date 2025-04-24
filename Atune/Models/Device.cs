@@ -26,4 +26,4 @@ public class Device
 
     // Navigation: playback histories recorded on this device
     public ICollection<PlayHistory> PlayHistories { get; set; } = new List<PlayHistory>();
-} 
+}

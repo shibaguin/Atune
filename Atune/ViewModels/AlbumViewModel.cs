@@ -3,13 +3,8 @@ using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace Atune.ViewModels
 {
-    public class AlbumViewModel : ObservableObject
+    public class AlbumViewModel(AlbumInfo album) : ObservableObject
     {
-        public AlbumInfo Album { get; }
-
-        public AlbumViewModel(AlbumInfo album)
-        {
-            Album = album;
-        }
+        public AlbumInfo Album { get; } = album;
     }
-} 
+}

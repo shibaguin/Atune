@@ -15,18 +15,11 @@ namespace Atune.Services
 {
     // Сервис для работы с БД медиа-записей, инкапсулирующий логику обращения к AppDbContext.
     // Service for working with the media database, encapsulating the logic of accessing AppDbContext.  
-    public class MediaDatabaseService
+    public class MediaDatabaseService(IDbContextFactory<AppDbContext> dbContextFactory, ILoggerService logger, IMemoryCache cache)
     {
-        private readonly IDbContextFactory<AppDbContext> _dbContextFactory;
-        private readonly ILoggerService _logger;
-        private readonly IMemoryCache _cache;
-
-        public MediaDatabaseService(IDbContextFactory<AppDbContext> dbContextFactory, ILoggerService logger, IMemoryCache cache)
-        {
-            _dbContextFactory = dbContextFactory;
-            _logger = logger;
-            _cache = cache;
-        }
+        private readonly IDbContextFactory<AppDbContext> _dbContextFactory = dbContextFactory;
+        private readonly ILoggerService _logger = logger;
+        private readonly IMemoryCache _cache = cache;
 
         public async Task<bool> CanConnectAsync()
         {
@@ -67,7 +60,7 @@ namespace Atune.Services
                     }
                     // Для новой сущности Album путь уже установлен в item.Album
                 }
-                
+
                 // Проверка для каждого артиста в списке TrackArtists
                 foreach (var trackArtist in item.TrackArtists)
                 {
@@ -81,10 +74,10 @@ namespace Atune.Services
                         }
                     }
                 }
-                
+
                 // Добавляем объект в базу через метод AddMediaAsync (который выполняет await MediaItems.AddAsync(media))
                 await dbContext.AddMediaAsync(item);
-                
+
                 var artistNames = string.Join(", ", item.TrackArtists
                                             .Select(ta => ta.Artist?.Name)
                                             .Where(name => !string.IsNullOrEmpty(name)));
@@ -103,7 +96,7 @@ namespace Atune.Services
                 .Where(m => string.IsNullOrEmpty(m.Path) || !File.Exists(m.Path))
                 .ToListAsync();
             _logger.LogInformation($"Found {invalidRecords.Count} invalid media records in the database.");
-            
+
             foreach (var record in invalidRecords)
             {
                 var artistNames = string.Join(", ", record.TrackArtists
@@ -143,7 +136,7 @@ namespace Atune.Services
             {
                 return cachedItem;
             }
-            
+
             using var dbContext = _dbContextFactory.CreateDbContext();
             var mediaItem = await dbContext.MediaItems
                 .AsNoTracking()
@@ -151,7 +144,7 @@ namespace Atune.Services
                 .Include(m => m.TrackArtists)
                     .ThenInclude(ta => ta.Artist)
                 .FirstOrDefaultAsync(m => m.Path == path);
-            
+
             if (mediaItem != null)
             {
                 _cache.Set(cacheKey, mediaItem, new MemoryCacheEntryOptions()
@@ -173,4 +166,4 @@ namespace Atune.Services
                 .ToListAsync();
         }
     }
-} 
+}

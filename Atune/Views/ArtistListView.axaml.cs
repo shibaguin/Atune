@@ -44,7 +44,7 @@ namespace Atune.Views
             if (coverButton != null && overlay != null && playIcon != null)
             {
                 coverButton.PointerEntered += (_, __) => { overlay.Opacity = 0.8; playIcon.Opacity = 1; };
-                coverButton.PointerExited  += (_, __) => { overlay.Opacity = 0  ; playIcon.Opacity = 0; };
+                coverButton.PointerExited += (_, __) => { overlay.Opacity = 0; playIcon.Opacity = 0; };
             }
         }
 
@@ -55,8 +55,7 @@ namespace Atune.Views
 
         private async void PlayBtn_Click(object? sender, RoutedEventArgs e)
         {
-            var artist = DataContext as ArtistInfo;
-            if (artist == null) return;
+            if (DataContext is not ArtistInfo artist) return;
             var service = App.Current!.Services!.GetRequiredService<IPlayArtistService>();
             await service.PlayArtistAsync(artist);
         }
@@ -66,4 +65,4 @@ namespace Atune.Views
             AvaloniaXamlLoader.Load(this);
         }
     }
-} 
+}

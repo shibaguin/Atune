@@ -30,4 +30,4 @@ namespace Atune.Views
             AvaloniaXamlLoader.Load(this);
         }
     }
-} 
+}

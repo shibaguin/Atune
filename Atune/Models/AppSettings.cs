@@ -15,4 +15,4 @@ public class AppSettings
     public string SortOrderAlbums { get; set; } = "A-Z";
     public string SortOrderPlaylists { get; set; } = "A-Z";
     public string SortOrderArtists { get; set; } = "A-Z";
-} 
+}

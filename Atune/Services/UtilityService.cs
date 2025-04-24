@@ -20,40 +20,28 @@ namespace Atune.Services
         void ClearQueue();
     }
 
-    public class UtilityService : IUtilityService
+    public class UtilityService(
+        IUnitOfWork unitOfWork,
+        IMemoryCache cache,
+        ILoggerService logger,
+        MediaDatabaseService mediaDatabaseService,
+        MediaFileService mediaFileService,
+        IPlaylistService playlistService,
+        ISettingsService settingsService) : IUtilityService
     {
-        private readonly IUnitOfWork _unitOfWork;
-        private readonly IMemoryCache _cache;
-        private readonly ILoggerService _logger;
-        private readonly MediaDatabaseService _mediaDatabaseService;
-        private readonly MediaFileService _mediaFileService;
-        private readonly IPlaylistService _playlistService;
-        private readonly ISettingsService _settingsService;
+        private readonly IUnitOfWork _unitOfWork = unitOfWork;
+        private readonly IMemoryCache _cache = cache;
+        private readonly ILoggerService _logger = logger;
+        private readonly MediaDatabaseService _mediaDatabaseService = mediaDatabaseService;
+        private readonly MediaFileService _mediaFileService = mediaFileService;
+        private readonly IPlaylistService _playlistService = playlistService;
+        private readonly ISettingsService _settingsService = settingsService;
 
-        public UtilityService(
-            IUnitOfWork unitOfWork,
-            IMemoryCache cache,
-            ILoggerService logger,
-            MediaDatabaseService mediaDatabaseService,
-            MediaFileService mediaFileService,
-            IPlaylistService playlistService,
-            ISettingsService settingsService)
-        {
-            _unitOfWork = unitOfWork;
-            _cache = cache;
-            _logger = logger;
-            _mediaDatabaseService = mediaDatabaseService;
-            _mediaFileService = mediaFileService;
-            _playlistService = playlistService;
-            _settingsService = settingsService;
-        }
-
-        private MediaViewModel? GetMediaViewModel()
+        private static MediaViewModel? GetMediaViewModel()
         {
             if (Application.Current?.ApplicationLifetime is not IClassicDesktopStyleApplicationLifetime desktop)
                 return null;
-            var mainVm = desktop.MainWindow?.DataContext as MainViewModel;
-            if (mainVm == null)
+            if (desktop.MainWindow?.DataContext is not MainViewModel mainVm)
                 return null;
             // Ensure Media view is active
             mainVm.GoMediaCommand.Execute(null);
@@ -103,4 +91,4 @@ namespace Atune.Services
             mvm?.ClearQueueCommand.Execute(null);
         }
     }
-} 
+}

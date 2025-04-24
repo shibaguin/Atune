@@ -28,7 +28,7 @@ namespace Atune.Views
         }
 
         // Expose MediaViewModel's PlayTrackCommand for TrackListView
-        public IAsyncRelayCommand<MediaItem>? PlayTrackCommand
+        public static IAsyncRelayCommand<MediaItem>? PlayTrackCommand
         {
             get
             {
@@ -45,4 +45,4 @@ namespace Atune.Views
             mainVm?.GoMediaCommand.Execute(null);
         }
     }
-} 
+}

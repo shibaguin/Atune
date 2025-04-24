@@ -7,7 +7,7 @@ namespace Atune.Data.Repositories
 {
     public class FoldersRepository : IFoldersRepository
     {
-        private static readonly string[] SupportedExtensions = { "mp3", "mp4", "m4a", "aac", "ogg", "wav" };
+        private static readonly string[] SupportedExtensions = ["mp3", "mp4", "m4a", "aac", "ogg", "wav"];
         private const string NoMedia = ".nomedia";
 
         public List<FileSystemInfo> GetMediaFiles(DirectoryInfo dir, bool acceptDirs)
@@ -64,15 +64,15 @@ namespace Atune.Data.Repositories
             }
         }
 
-        private bool CheckFileExt(string name)
+        private static bool CheckFileExt(string name)
         {
             if (string.IsNullOrEmpty(name))
                 return false;
             int p = name.LastIndexOf('.') + 1;
             if (p < 1)
                 return false;
-            var ext = name.Substring(p).ToLowerInvariant();
+            var ext = name[p..].ToLowerInvariant();
             return SupportedExtensions.Contains(ext);
         }
     }
-} 
+}

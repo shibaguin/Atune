@@ -60,18 +60,14 @@ namespace Atune.Views
 
         private void OpenBtn_Click(object? sender, RoutedEventArgs e)
         {
-            if (OpenCommand != null)
-            {
-                OpenCommand.Execute(DataContext as AlbumInfo);
-            }
+            OpenCommand?.Execute(DataContext as AlbumInfo);
         }
 
         private async void PlayBtn_Click(object? sender, RoutedEventArgs e)
         {
-            var album = DataContext as AlbumInfo;
-            if (album == null) return;
+            if (DataContext is not AlbumInfo album) return;
             var service = App.Current!.Services!.GetRequiredService<IPlayAlbumService>();
             await service.PlayAlbumAsync(album);
         }
     }
-} 
+}

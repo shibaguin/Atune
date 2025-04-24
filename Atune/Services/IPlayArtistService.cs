@@ -7,4 +7,4 @@ namespace Atune.Services
     {
         Task PlayArtistAsync(ArtistInfo artist);
     }
-} 
+}

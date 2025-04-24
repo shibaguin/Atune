@@ -10,14 +10,9 @@ using System.IO;
 
 namespace Atune.Data.Repositories
 {
-    public class MediaRepository : IMediaRepository
+    public class MediaRepository(AppDbContext context) : IMediaRepository
     {
-        private readonly AppDbContext _context;
-
-        public MediaRepository(AppDbContext context)
-        {
-            _context = context;
-        }
+        private readonly AppDbContext _context = context;
 
         public async Task<MediaItem?> GetByIdAsync(int id)
         {
@@ -66,17 +61,17 @@ namespace Atune.Data.Repositories
         {
             // Фильтрация дубликатов: получаем список всех путей из переданных элементов
             var allPaths = items.Select(x => x.Path).Distinct().ToList();
-            
+
             // Запрашиваем существующие пути из БД
             var existingPaths = await _context.MediaItems
                 .Where(m => allPaths.Contains(m.Path))
                 .Select(m => m.Path)
                 .ToListAsync();
-            
+
             // Исключаем медиа-объекты, у которых Path уже присутствует в БД
             var newItems = items.Where(item => !existingPaths.Contains(item.Path)).ToList();
-            
-            if (!newItems.Any())
+
+            if (newItems.Count == 0)
             {
                 // Если все элементы являются дубликатами, вызываем callback (если он задан) и завершаем метод
                 onBatchProcessed?.Invoke(items);
@@ -84,7 +79,7 @@ namespace Atune.Data.Repositories
             }
 
             // Настройки для разных платформ
-            var (batchSize, delayMs) = OperatingSystem.IsAndroid() 
+            var (batchSize, delayMs) = OperatingSystem.IsAndroid()
                 ? (200, 20)    // Для Android – меньшие батчи с небольшой задержкой
                 : (500, 50);   // Для desktop – большие батчи
 
@@ -126,7 +121,7 @@ namespace Atune.Data.Repositories
         {
             var allFiles = Directory.EnumerateFiles(folderPath, "*.*", SearchOption.AllDirectories)
                 .Select(Path.GetFullPath);
-            
+
             return await GetExistingPathsAsync(allFiles);
         }
 
@@ -139,7 +134,7 @@ namespace Atune.Data.Repositories
             try
             {
                 // Используем новый метод BulkUpdateAsync из контекста
-                await _context.BulkUpdateAsync(items, options => 
+                await _context.BulkUpdateAsync(items, options =>
                 {
                     options.BatchSize = batchSize;
                 });
@@ -183,4 +178,4 @@ namespace Atune.Data.Repositories
                 .ToListAsync();
         }
     }
-} 
+}

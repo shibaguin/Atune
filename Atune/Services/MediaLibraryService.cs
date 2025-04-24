@@ -10,18 +10,11 @@ using Atune.Data;
 namespace Atune.Services
 {
     // Сервис для получения метаданных медиа файлов напрямую из хранилища (БД)
-    public class MediaLibraryService
+    public class MediaLibraryService(AppDbContext context, ILogger<MediaLibraryService> logger, IMemoryCache memoryCache)
     {
-        private readonly AppDbContext _context;
-        private readonly ILogger<MediaLibraryService> _logger;
-        private readonly IMemoryCache _cache;
-
-        public MediaLibraryService(AppDbContext context, ILogger<MediaLibraryService> logger, IMemoryCache memoryCache)
-        {
-            _context = context;
-            _logger = logger;
-            _cache = memoryCache;
-        }
+        private readonly AppDbContext _context = context;
+        private readonly ILogger<MediaLibraryService> _logger = logger;
+        private readonly IMemoryCache _cache = memoryCache;
 
         // Метод для получения списка медиа файлов со всеми связанными данными
         public async Task<List<MediaItem>> GetMediaItemsAsync()
@@ -54,8 +47,8 @@ namespace Atune.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Ошибка при получении списка медиа файлов из БД");
-                return new List<MediaItem>();
+                return [];
             }
         }
     }
-} 
+}

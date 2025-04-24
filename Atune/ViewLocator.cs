@@ -10,36 +10,31 @@ using System.Linq;
 
 namespace Atune;
 
-public class ViewLocator : IDataTemplate
+public class ViewLocator(IServiceProvider services) : IDataTemplate
 {
-    private readonly IServiceProvider _services;
-    
-    private readonly ViewMapping[] _viewMappings = new[]
-    {
+    private readonly IServiceProvider _services = services;
+
+    private readonly ViewMapping[] _viewMappings =
+    [
         new ViewMapping(typeof(HomeViewModel), typeof(HomeView)),
         new ViewMapping(typeof(MediaViewModel), typeof(MediaView)),
         new ViewMapping(typeof(HistoryViewModel), typeof(HistoryView)),
         new ViewMapping(typeof(SettingsViewModel), typeof(SettingsView))
-    };
-
-    public ViewLocator(IServiceProvider services)
-    {
-        _services = services;
-    }
+    ];
 
     public Control Build(object? data)
     {
-        if (data is null) 
+        if (data is null)
             return new TextBlock { Text = "Null DataContext" };
-        
+
         var viewModelType = data.GetType();
         var mapping = _viewMappings.FirstOrDefault(m => m.ViewModel == viewModelType);
-        
+
         if (mapping.View != null)
         {
             return CreateViewInstance(mapping.View);
         }
-        
+
         return new TextBlock { Text = $"View not found for {viewModelType.Name}" };
     }
 
@@ -62,18 +57,12 @@ internal static class ViewLocatorExtensions
     }
 }
 
-internal struct ViewMapping
+internal struct ViewMapping(
+    Type viewModel,
+    [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] Type view)
 {
-    public Type ViewModel;
-    
-    [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
-    public Type View;
+    public Type ViewModel = viewModel;
 
-    public ViewMapping(
-        Type viewModel, 
-        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] Type view)
-    {
-        ViewModel = viewModel;
-        View = view;
-    }
+    [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
+    public Type View = view;
 }

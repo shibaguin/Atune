@@ -17,7 +17,7 @@ namespace Atune.Data
         private readonly ILoggerService _logger;
 
         public UnitOfWork(
-            AppDbContext context, 
+            AppDbContext context,
             ILoggerService logger)
         {
             _context = context;
@@ -54,4 +54,4 @@ namespace Atune.Data
             GC.SuppressFinalize(this);
         }
     }
-} 
+}

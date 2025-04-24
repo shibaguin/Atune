@@ -11,4 +11,4 @@ namespace Atune.ViewModels
     {
         Dictionary<MainViewModel.SectionType, IEnumerable<string>> GetNavigationKeywords();
     }
-} 
+}

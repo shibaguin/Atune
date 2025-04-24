@@ -7,7 +7,7 @@ namespace Atune.Services
     public class PlatformPathService : IPlatformPathService
     {
         // Добавляем статический кэш для путей
-        private static readonly Dictionary<string, string> _pathCache = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        private static readonly Dictionary<string, string> _pathCache = new(StringComparer.OrdinalIgnoreCase);
 
         // Объявляем поля, которые не должны содержать null.
         private readonly string _basePath;
@@ -20,7 +20,7 @@ namespace Atune.Services
         }
 
         // Изменён метод: теперь возвращает string вместо string?
-        private string GetConfigPath()
+        private static string GetConfigPath()
         {
             // Ваша логика для получения пути конфигурации.
             // Если нет данных – возвращаем пустую строку.
@@ -42,12 +42,12 @@ namespace Atune.Services
             string key = "settings_" + fileName;
             if (_pathCache.TryGetValue(key, out string? cachedPath))
                 return cachedPath!;
-        
+
             string path;
             if (OperatingSystem.IsAndroid())
             {
                 path = Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) ?? string.Empty, 
+                    Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) ?? string.Empty,
                     fileName);
             }
             else
@@ -63,12 +63,12 @@ namespace Atune.Services
             string key = "database_" + databaseFileName;
             if (_pathCache.TryGetValue(key, out string? cachedPath))
                 return cachedPath!;
-        
+
             string path;
             if (OperatingSystem.IsAndroid())
             {
                 path = Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.Personal) ?? string.Empty, 
+                    Environment.GetFolderPath(Environment.SpecialFolder.Personal) ?? string.Empty,
                     databaseFileName);
             }
             else
@@ -84,13 +84,13 @@ namespace Atune.Services
             if (OperatingSystem.IsAndroid())
             {
                 return Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) ?? string.Empty, 
+                    Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) ?? string.Empty,
                     "AtunePlugins");
             }
-            
+
             return Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) ?? string.Empty, 
-                "Atune", 
+                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) ?? string.Empty,
+                "Atune",
                 "Plugins");
         }
 
@@ -120,4 +120,4 @@ namespace Atune.Services
             return Path.Combine(GetCoversDirectory(), "default_cover.jpg");
         }
     }
-} 
+}

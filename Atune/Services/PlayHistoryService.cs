@@ -106,4 +106,4 @@ public class PlayHistoryService : IDisposable
     {
         _playbackService.PlaybackEnded -= OnPlaybackEnded;
     }
-} 
+}

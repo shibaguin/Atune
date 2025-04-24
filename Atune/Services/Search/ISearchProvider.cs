@@ -8,4 +8,4 @@ public interface ISearchProvider
 {
     string Name { get; }
     Task<IEnumerable<SearchResult>> SearchAsync(string query);
-} 
+}

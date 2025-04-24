@@ -7,13 +7,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Atune.Data.Repositories
 {
-    public class PlaylistRepository : IPlaylistRepository
+    public class PlaylistRepository(AppDbContext context) : IPlaylistRepository
     {
-        private readonly AppDbContext _context;
-        public PlaylistRepository(AppDbContext context)
-        {
-            _context = context;
-        }
+        private readonly AppDbContext _context = context;
 
         public async Task<long> CreatePlaylistAsync(string name)
         {
@@ -48,7 +44,7 @@ namespace Atune.Data.Repositories
                 return 0;
 
             int count = 0;
-            foreach(var mediaId in mediaItemIds)
+            foreach (var mediaId in mediaItemIds)
             {
                 if (!playlist.PlaylistMediaItems.Any(pmi => pmi.MediaItemId == mediaId))
                 {
@@ -103,4 +99,4 @@ namespace Atune.Data.Repositories
             await _context.SaveChangesAsync();
         }
     }
-} 
+}

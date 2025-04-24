@@ -7,4 +7,4 @@ public class MediaMetadata
     public string? Album { get; set; }
     public string? Genre { get; set; }
     public string? Year { get; set; }
-} 
+}

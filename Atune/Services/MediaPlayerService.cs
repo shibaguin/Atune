@@ -19,11 +19,7 @@ namespace Atune.Services
         private int _volume = 50;
         private readonly ILogger<MediaPlayerService> _logger;
         private readonly ISettingsService _settingsService;
-        
-        private const string NetworkCaching = ":network-caching=300";
-        private const string RtspTcp = ":rtsp-tcp";
-
-        private MediaPlayer? _preloadPlayer;
+        private readonly MediaPlayer? _preloadPlayer;
         private Media? _preloadMedia;
 
         public event EventHandler? PlaybackEnded;
@@ -31,17 +27,17 @@ namespace Atune.Services
         public event EventHandler? PlaybackPaused;
 
         public MediaPlayerService(
-            ISettingsService settingsService, 
+            ISettingsService settingsService,
             ILogger<MediaPlayerService> logger)
         {
             _settingsService = settingsService;
             _logger = logger;
-            
+
             try
             {
                 _logger.LogInformation("Initializing LibVLC...");
                 Core.Initialize();
-                
+
                 _libVlc = new LibVLC(
                     enableDebugLogs: false,
                     "--avcodec-hw=none",
@@ -55,9 +51,9 @@ namespace Atune.Services
                 _logger.LogDebug("LibVLC instance created");
 
                 _player = new MediaPlayer(_libVlc);
-                
+
                 _preloadPlayer = new MediaPlayer(_libVlc) { Mute = true };
-                
+
                 _logger.LogInformation("MediaPlayer initialized successfully");
 
                 _player.EndReached += (s, e) => PlaybackEnded?.Invoke(this, EventArgs.Empty);
@@ -90,12 +86,12 @@ namespace Atune.Services
             {
                 _currentMedia?.Dispose();
                 _currentMedia = new Media(_libVlc, new Uri(path));
-                
+
                 // Parse metadata and buffer
                 await Task.Run(() => _currentMedia.Parse(MediaParseOptions.ParseLocal));
 
                 // Enqueue play on UI thread
-                await Dispatcher.UIThread.InvokeAsync(() => 
+                await Dispatcher.UIThread.InvokeAsync(() =>
                 {
                     _player.Play(_currentMedia);
                 });
@@ -113,7 +109,7 @@ namespace Atune.Services
             _player.Pause();
             PlaybackPaused?.Invoke(this, EventArgs.Empty);
         }
-        
+
         public void Resume()
         {
             if (_player == null) return;
@@ -124,7 +120,7 @@ namespace Atune.Services
         public void Stop()
         {
             if (_player == null) return;
-            
+
             try
             {
                 _player.Stop();
@@ -154,9 +150,9 @@ namespace Atune.Services
         {
             get
             {
-                if (_player?.Media?.Duration == null) 
+                if (_player?.Media?.Duration == null)
                     return TimeSpan.Zero;
-                    
+
                 return TimeSpan.FromMilliseconds(_player.Position * _player.Media.Duration);
             }
             set
@@ -166,27 +162,28 @@ namespace Atune.Services
             }
         }
 
-        public TimeSpan Duration => 
-            _currentMedia != null ? 
-            TimeSpan.FromMilliseconds(_currentMedia.Duration) : 
+        public TimeSpan Duration =>
+            _currentMedia != null ?
+            TimeSpan.FromMilliseconds(_currentMedia.Duration) :
             TimeSpan.Zero;
 
-        public bool IsNetworkStream => 
-            _currentMedia?.Mrl != null && 
+        public bool IsNetworkStream =>
+            _currentMedia?.Mrl != null &&
             Uri.IsWellFormedUriString(_currentMedia.Mrl, UriKind.Absolute);
 
         public string? CurrentPath => _currentMedia?.Mrl;
 
         public async Task<MediaMetadata> GetCurrentMetadataAsync()
         {
-            if (_currentMedia == null) 
+            if (_currentMedia == null)
                 return new MediaMetadata { Title = "Нет данных", Artist = "Нет данных" };
 
             return await Task.Run(() =>
             {
                 try
                 {
-                    return new MediaMetadata {
+                    return new MediaMetadata
+                    {
                         Title = _currentMedia.Meta(MetadataType.Title) ?? Path.GetFileNameWithoutExtension(_currentMedia.Mrl),
                         Artist = _currentMedia.Meta(MetadataType.Artist) ?? "Неизвестный исполнитель"
                     };
@@ -215,8 +212,8 @@ namespace Atune.Services
         public async Task StopAsync()
         {
             if (_player == null) return;
-            
-            await Dispatcher.UIThread.InvokeAsync(() => 
+
+            await Dispatcher.UIThread.InvokeAsync(() =>
             {
                 try
                 {
@@ -280,9 +277,7 @@ namespace Atune.Services
         }
     }
 
-    public class MediaPlaybackException : Exception
+    public class MediaPlaybackException(string message, Exception inner) : Exception(message, inner)
     {
-        public MediaPlaybackException(string message, Exception inner) 
-            : base(message, inner) { }
     }
-} 
+}

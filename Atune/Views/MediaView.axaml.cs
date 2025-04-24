@@ -56,7 +56,7 @@ public partial class MediaView : UserControl
     {
         InitializeComponent();
     }
-    
+
     public MediaView(MediaViewModel vm, IDbContextFactory<AppDbContext> dbContextFactory, ILoggerService logger, IMemoryCache cache) : this()
     {
         DataContext = vm;
@@ -71,7 +71,7 @@ public partial class MediaView : UserControl
     {
         const string logHeader = "[MediaView]";
         _logger?.LogInformation($"{logHeader} Button clicked");
-        
+
         if (!await _mediaDatabaseService.CanConnectAsync())
         {
             _logger?.LogWarning($"{logHeader} No database connection");
@@ -80,7 +80,7 @@ public partial class MediaView : UserControl
 
         var topLevel = TopLevel.GetTopLevel(this);
         var storageProvider = topLevel?.StorageProvider;
-        
+
         if (storageProvider is null)
         {
             _logger?.LogWarning($"{logHeader} StorageProvider is not available");
@@ -91,7 +91,7 @@ public partial class MediaView : UserControl
         {
             Title = "Select audio files",
             AllowMultiple = true,
-            FileTypeFilter = new[] 
+            FileTypeFilter = new[]
             {
                 new FilePickerFileType("Audio files")
                 {
@@ -133,15 +133,15 @@ public partial class MediaView : UserControl
                 {
                     realPath = file.Path.LocalPath;
                 }
-                
+
                 _logger?.LogInformation($"{logHeader} Processing file: {realPath}");
-                
+
                 if (await _mediaDatabaseService.ExistsByPathAsync(realPath))
                 {
                     duplicateCount++;
                     continue;
                 }
-                
+
                 if (!OperatingSystem.IsAndroid())
                 {
                     if (!await _mediaFileService.FileExistsAsync(realPath))
@@ -151,9 +151,9 @@ public partial class MediaView : UserControl
                         continue;
                     }
                 }
-                else 
+                else
                 {
-                    #if ANDROID
+#if ANDROID
                     if (file.Path.Scheme != "content")
                     {
                         realPath = await ConvertFileUriToContentUri(file.Path.LocalPath);
@@ -171,17 +171,17 @@ public partial class MediaView : UserControl
                         errorCount++;
                         continue;
                     }
-                    #endif
+#endif
                 }
-                
+
                 var tagInfo = GetDesktopTagInfo(realPath);
 #if ANDROID
                 Android.Util.Log.Debug("MediaView", $"Tags received: Artist={tagInfo.Artist}, Album={tagInfo.Album}, Year={tagInfo.Year}");
 #endif
                 var duration = tagInfo.Duration;
-               
-                uint year = tagInfo.Year > 0 
-                    ? tagInfo.Year 
+
+                uint year = tagInfo.Year > 0
+                    ? tagInfo.Year
                     : (uint)DateTime.Now.Year;
 
                 var mediaItem = new MediaItem(
@@ -192,8 +192,8 @@ public partial class MediaView : UserControl
                     path: realPath,
                     duration: duration,
                     trackArtists: new List<TrackArtist> {
-                        new TrackArtist { 
-                            Artist = new Artist { Name = tagInfo.Artist ?? "Unknown Artist" } 
+                        new() {
+                            Artist = new Artist { Name = tagInfo.Artist ?? "Unknown Artist" }
                         }
                     }
                 );
@@ -214,7 +214,7 @@ public partial class MediaView : UserControl
         if (successCount > 0)
         {
             _logger?.LogInformation($"{logHeader} Successfully added {successCount} files");
-            
+
             if (DataContext is MediaViewModel vm)
             {
                 await vm.RefreshMediaCommand.ExecuteAsync(null);
@@ -304,7 +304,7 @@ public partial class MediaView : UserControl
     }
 #endif
 
-    private async Task<bool> FileExists(string path)
+    private static async Task<bool> FileExists(string path)
     {
         return await Task.Run(() => File.Exists(path));
     }
@@ -312,12 +312,9 @@ public partial class MediaView : UserControl
     private void ShowDbPath_Click(object sender, RoutedEventArgs e)
     {
         var path = _mediaDatabaseService.GetDatabasePath();
-        
-        if (_logger != null)
-        {
-            _logger.LogInformation($"Current database path: {path}");
-        }
-        
+
+        _logger?.LogInformation($"Current database path: {path}");
+
         var vm = DataContext as MediaViewModel;
         vm?.UpdateStatusMessage?.Invoke($"Current database path: {path}");
     }
@@ -342,9 +339,9 @@ public partial class MediaView : UserControl
         }
     }
 
-    private async Task<string> ProcessAndroidFile(string path)
+    private static async Task<string> ProcessAndroidFile(string path)
     {
-        #if ANDROID
+#if ANDROID
         var destFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "AtuneMedia");
         Directory.CreateDirectory(destFolder);
         
@@ -355,9 +352,9 @@ public partial class MediaView : UserControl
             await source.CopyToAsync(dest);
         }
         return destPath;
-        #else
+#else
         return await Task.FromResult(path);
-        #endif
+#endif
     }
 
     private void PlayMediaItem_Click(object sender, RoutedEventArgs e)

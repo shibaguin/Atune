@@ -16,7 +16,7 @@ namespace Atune.Services
         private const double DefaultNavigationFontSize = 14;
         private const double DefaultBarPadding = 8;
         private const double DefaultNavigationDividerHeight = DefaultBarHeight; // По умолчанию равно BarHeight
-        
+
         private readonly string _iniFilePath;
         private readonly ILoggerService _logger;
 
@@ -30,7 +30,7 @@ namespace Atune.Services
         public double BarHeight { get; private set; }
         public double NavigationFontSize { get; private set; }
         public double BarPadding { get; private set; }
-        
+
         // Обновлённый конструктор для задания пути к settings.ini в зависимости от платформы
         // Updated constructor to set the path to settings.ini depending on the platform
         public InterfaceSettingsService(ILoggerService logger)
@@ -53,7 +53,7 @@ namespace Atune.Services
             Directory.CreateDirectory(Path.GetDirectoryName(_iniFilePath)!);
             LoadSettings();
         }
-        
+
         public void LoadSettings()
         {
             if (!File.Exists(_iniFilePath))
@@ -63,7 +63,7 @@ namespace Atune.Services
                 SaveSettings();
                 return;
             }
-            
+
             // Используем кэш, если он уже загружен
             Dictionary<string, List<string>> sections;
             if (_iniCache != null)
@@ -75,16 +75,16 @@ namespace Atune.Services
                 sections = ParseIniFile();
                 _iniCache = sections;
             }
-            
-            if (!sections.ContainsKey("InterfaceDimensions"))
+
+            if (!sections.TryGetValue("InterfaceDimensions", out List<string>? value))
             {
                 _logger.LogWarning("Section [InterfaceDimensions] not found in INI file. Using default interface settings.");
                 SetDefaults();
                 SaveSettings();
                 return;
             }
-            
-            var section = sections["InterfaceDimensions"];
+
+            var section = value;
             // Разбираем секцию в словарь ключ-значение
             var kv = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             foreach (var line in section)
@@ -97,7 +97,7 @@ namespace Atune.Services
                 }
                 kv[parts[0].Trim()] = parts[1].Trim();
             }
-            
+
             // Безопасное чтение настроек с проверкой корректности значений
             if (!kv.TryGetValue("HeaderFontSize", out var headerStr) || !double.TryParse(headerStr, out double headerValue))
             {
@@ -134,7 +134,7 @@ namespace Atune.Services
                 _logger.LogWarning("Invalid or missing BarPadding. Using default.");
                 barPadding = DefaultBarPadding;
             }
-            
+
             // Дополнительные проверки логических зависимостей
             if (headerValue > topDock)
             {
@@ -146,7 +146,7 @@ namespace Atune.Services
                 _logger.LogError($"NavigationDividerHeight ({navHeight}) cannot be greater than BarHeight ({barHeight}). Using BarHeight value.");
                 navHeight = barHeight;
             }
-            
+
             HeaderFontSize = headerValue;
             NavigationDividerWidth = navWidth;
             NavigationDividerHeight = navHeight;
@@ -154,10 +154,10 @@ namespace Atune.Services
             BarHeight = barHeight;
             NavigationFontSize = navFont;
             BarPadding = barPadding;
-            
+
             SaveSettings();
         }
-        
+
         private void SetDefaults()
         {
             HeaderFontSize = DefaultHeaderFontSize;
@@ -168,8 +168,8 @@ namespace Atune.Services
             NavigationFontSize = DefaultNavigationFontSize;
             BarPadding = DefaultBarPadding;
         }
-        
-        private Dictionary<string, string> LoadIniSection(string filePath, string sectionName)
+
+        private static Dictionary<string, string> LoadIniSection(string filePath, string sectionName)
         {
             var dict = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             bool inSection = false;
@@ -178,7 +178,7 @@ namespace Atune.Services
                 string trimmed = line.Trim();
                 if (string.IsNullOrEmpty(trimmed) || trimmed.StartsWith(";") || trimmed.StartsWith("#"))
                     continue;
-                    
+
                 if (trimmed.StartsWith("[") && trimmed.EndsWith("]"))
                 {
                     inSection = string.Equals(trimmed.Trim('[', ']'), sectionName, StringComparison.OrdinalIgnoreCase);
@@ -189,15 +189,15 @@ namespace Atune.Services
                     int separatorIndex = trimmed.IndexOf('=');
                     if (separatorIndex > 0)
                     {
-                        string key = trimmed.Substring(0, separatorIndex).Trim();
-                        string value = trimmed.Substring(separatorIndex + 1).Trim();
+                        string key = trimmed[..separatorIndex].Trim();
+                        string value = trimmed[(separatorIndex + 1)..].Trim();
                         dict[key] = value;
                     }
                 }
             }
             return dict;
         }
-        
+
         // Новый метод для разбора INI-файла на секции
         private Dictionary<string, List<string>> ParseIniFile()
         {
@@ -214,18 +214,16 @@ namespace Atune.Services
                     {
                         // Начало новой секции
                         currentSectionName = trimmed.TrimStart('[').TrimEnd(']');
-                        if (!sections.ContainsKey(currentSectionName))
+                        if (!sections.TryGetValue(currentSectionName, out List<string>? value))
                         {
-                            sections[currentSectionName] = new List<string>();
+                            value = ([]);
+                            sections[currentSectionName] = value;
                         }
-                        currentSectionLines = sections[currentSectionName];
+                        currentSectionLines = value;
                     }
                     else
                     {
-                        if (currentSectionLines != null)
-                        {
-                            currentSectionLines.Add(line);
-                        }
+                        currentSectionLines?.Add(line);
                         // Если строка находится вне секции, её можно игнорировать или сохранять в секцию по умолчанию
                     }
                 }
@@ -285,33 +283,33 @@ namespace Atune.Services
             var app = Avalonia.Application.Current;
             if (app != null)
             {
-                 // Устанавливаем новые значения в глобальный словарь ресурсов
-                 // Sets new values in the global resource dictionary
-                 app.Resources["HeaderFontSize"] = HeaderFontSize;
-                 app.Resources["NavigationDividerWidth"] = NavigationDividerWidth;
-                 app.Resources["NavigationDividerHeight"] = NavigationDividerHeight;
-                 app.Resources["TopDockHeight"] = TopDockHeight;
-                 app.Resources["BarHeight"] = BarHeight;
-                 app.Resources["NavigationFontSize"] = NavigationFontSize;
-                 app.Resources["BarPadding"] = BarPadding;
+                // Устанавливаем новые значения в глобальный словарь ресурсов
+                // Sets new values in the global resource dictionary
+                app.Resources["HeaderFontSize"] = HeaderFontSize;
+                app.Resources["NavigationDividerWidth"] = NavigationDividerWidth;
+                app.Resources["NavigationDividerHeight"] = NavigationDividerHeight;
+                app.Resources["TopDockHeight"] = TopDockHeight;
+                app.Resources["BarHeight"] = BarHeight;
+                app.Resources["NavigationFontSize"] = NavigationFontSize;
+                app.Resources["BarPadding"] = BarPadding;
 
-                 _logger.LogInformation("Global resources updated");
+                _logger.LogInformation("Global resources updated");
 
-                 // Вызываем InvalidateVisual() для перерисовки главного окна на UI-потоке
-                 // Calls InvalidateVisual() to redraw the main window on the UI thread
-                 Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
-                 {
-                     if (app.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop)
-                     {
-                         desktop.MainWindow?.InvalidateVisual();
-                     }
-                 });
+                // Вызываем InvalidateVisual() для перерисовки главного окна на UI-потоке
+                // Calls InvalidateVisual() to redraw the main window on the UI thread
+                Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
+                {
+                    if (app.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop)
+                    {
+                        desktop.MainWindow?.InvalidateVisual();
+                    }
+                });
             }
         }
-        
+
         // Обновляет настройки интерфейса через UI, проверяя допустимые диапазоны значений.
         // Updates the interface settings via UI, validating acceptable value ranges.
-        
+
         // RUS:
         // <param name="headerFontSize">Размер шрифта заголовка</param>
         // <param name="navigationDividerWidth">Ширина разделителя навигации</param>
@@ -404,7 +402,7 @@ namespace Atune.Services
                     _logger.LogError($"Invalid relation: NavigationDividerHeight ({navigationDividerHeight}) cannot be greater than BarHeight ({barHeight}). Using value equal to BarHeight.");
                     navigationDividerHeight = barHeight;
                 }
-                
+
                 HeaderFontSize = headerFontSize;
                 NavigationDividerWidth = navigationDividerWidth;
                 NavigationDividerHeight = navigationDividerHeight;
@@ -412,10 +410,10 @@ namespace Atune.Services
                 BarHeight = barHeight;
                 NavigationFontSize = navigationFontSize;
                 BarPadding = barPadding;
-                    
+
                 SaveSettings();
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 _logger.LogError("Error updating interface settings.", ex);
             }
@@ -439,4 +437,4 @@ namespace Atune.Services
             SaveSettings();
         }
     }
-} 
+}

@@ -34,4 +34,4 @@ namespace Atune.Services
             await mediaVm.PlayNextInQueueCommand.ExecuteAsync(null);
         }
     }
-} 
+}

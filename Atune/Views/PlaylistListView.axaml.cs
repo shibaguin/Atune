@@ -79,16 +79,12 @@ namespace Atune.Views
 
         private void OpenBtn_Click(object? sender, RoutedEventArgs e)
         {
-            if (OpenCommand != null)
-            {
-                OpenCommand.Execute(DataContext as Playlist);
-            }
+            OpenCommand?.Execute(DataContext as Playlist);
         }
 
         private void PlayBtn_Click(object? sender, RoutedEventArgs e)
         {
-            var playlist = DataContext as Playlist;
-            if (playlist == null) return;
+            if (DataContext is not Playlist playlist) return;
 
             var mainVm = (Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)
                             ?.MainWindow?.DataContext as MainViewModel;
@@ -103,4 +99,4 @@ namespace Atune.Views
             mediaVm.PlayNextInQueueCommand.Execute(null);
         }
     }
-} 
+}

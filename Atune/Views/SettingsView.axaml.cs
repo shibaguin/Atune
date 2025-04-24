@@ -30,7 +30,7 @@ namespace Atune.Views
         {
             if (!Design.IsDesignMode)
                 throw new InvalidOperationException("Constructor for design mode only!");
-            
+
             InitializeComponent();
         }
 
@@ -42,7 +42,7 @@ namespace Atune.Views
         private void LoadSettings()
         {
             if (_settingsService == null) return;
-            
+
             var settings = _settingsService.LoadSettings();
             ApplyTheme(settings.ThemeVariant);
             ThemeComboBox.SelectedIndex = (int)settings.ThemeVariant;
@@ -53,12 +53,12 @@ namespace Atune.Views
             SaveSettings();
         }
 
-        private void ApplyTheme(ThemeVariant theme)
+        private static void ApplyTheme(ThemeVariant theme)
         {
             if (Application.Current is App app)
             {
                 app.UpdateTheme(theme);
-                
+
                 // Для Android, используйте условное компиляцию
                 // For Android, use conditional compilation
 #if ANDROID
@@ -80,8 +80,7 @@ namespace Atune.Views
 
             // Получаем VM
             // Get VM
-            var vm = DataContext as SettingsViewModel;
-            if (vm == null)
+            if (DataContext is not SettingsViewModel vm)
                 return;
 
             // Преобразуем выбранное отображаемое название в код языка для сохранения
@@ -108,19 +107,18 @@ namespace Atune.Views
         {
             if (_settingsService == null)
                 return;
-            
+
             // Получаем VM
             // Get VM
-            var vm = DataContext as SettingsViewModel;
-            if (vm == null)
+            if (DataContext is not SettingsViewModel vm)
                 return;
-            
+
             // Преобразуем выбранное отображаемое название в код языка для сохранения
             // Convert the selected display name to a language code for saving
             string languageCode = LanguageConverter.DisplayToCode(vm.SelectedLanguage);
 
-            _settingsService.SaveSettings(new AppSettings 
-            { 
+            _settingsService.SaveSettings(new AppSettings
+            {
                 ThemeVariant = (ThemeVariant)vm.SelectedThemeIndex,
                 Language = languageCode
             });
@@ -130,16 +128,16 @@ namespace Atune.Views
         {
             if (_settingsService == null || ThemeComboBox == null)
                 return;
-            
-            var vm = DataContext as SettingsViewModel;
-            if (vm == null)
+
+            if (DataContext is not SettingsViewModel vm)
                 return;
-            
-            _settingsService.SaveSettings(new AppSettings { 
+
+            _settingsService.SaveSettings(new AppSettings
+            {
                 ThemeVariant = (ThemeVariant)ThemeComboBox.SelectedIndex,
                 Language = LanguageConverter.DisplayToCode(vm.SelectedLanguage)
             });
-            
+
             // Добавляем вызов ApplyTheme
             // Add a call to ApplyTheme
             ApplyTheme((ThemeVariant)ThemeComboBox.SelectedIndex);

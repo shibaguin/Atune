@@ -10,10 +10,10 @@ public partial class HomeViewModel : ViewModelBase
 {
     private readonly IMemoryCache _cache;
     private readonly ILogger<HomeViewModel> _logger;
-    
+
     [ObservableProperty]
     private string _welcomeMessage = string.Empty;
-    
+
     public HomeViewModel(
         IMemoryCache cache,
         ILogger<HomeViewModel> logger)
@@ -21,23 +21,25 @@ public partial class HomeViewModel : ViewModelBase
         _cache = cache;
         _logger = logger;
         _logger.LogInformation("Initialization HomeViewModel");
-        
-        try {
+
+        try
+        {
             Title = "Main page";
-            
-            WelcomeMessage = _cache.GetOrCreate("WelcomeMessage", entry => 
+
+            WelcomeMessage = _cache.GetOrCreate("WelcomeMessage", entry =>
             {
                 entry.SetSize(1024)
                      .SetAbsoluteExpiration(TimeSpan.FromHours(1));
                 return GenerateWelcomeMessage() ?? string.Empty;
             })!;
         }
-        catch (Exception ex) {
+        catch (Exception ex)
+        {
             _logger.LogError(ex, "Error loading welcome message");
         }
     }
 
-    private string GenerateWelcomeMessage()
+    private static string GenerateWelcomeMessage()
     {
         // Heavy calculations or data loading
         // Тяжелые вычисления или загрузка данных
@@ -55,9 +57,9 @@ public partial class HomeViewModel : ViewModelBase
         WelcomeMessage = message ?? string.Empty;
     }
 
-    private async Task<string> GenerateWelcomeMessageAsync()
+    private static async Task<string> GenerateWelcomeMessageAsync()
     {
         await Task.CompletedTask;
         return "Welcome to Atune!";
     }
-} 
+}

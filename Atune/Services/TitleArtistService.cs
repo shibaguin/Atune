@@ -10,13 +10,13 @@ namespace Atune.Services
 {
     public static class TitleArtistService
     {
-        private static readonly Dictionary<string, string> _titleCache = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        private static readonly Dictionary<string, string> _titleCache = new(StringComparer.OrdinalIgnoreCase);
 
         public static string? Sanitize(string? input)
         {
-            if (string.IsNullOrWhiteSpace(input)) 
+            if (string.IsNullOrWhiteSpace(input))
                 return null;
-            
+
             return input.Trim()
                 .Replace("\0", "")
                 .Replace("\uFFFD", "")
@@ -31,11 +31,11 @@ namespace Atune.Services
             {
                 var rawArtist = media.Meta(MetadataType.Artist);
                 var rawAlbumArtist = media.Meta(MetadataType.AlbumArtist);
-                
+
                 Debug.WriteLine($"Raw artist data: Artist={rawArtist}, AlbumArtist={rawAlbumArtist}");
-                
+
                 var artist = Sanitize(rawArtist) ?? Sanitize(rawAlbumArtist) ?? string.Empty;
-                
+
                 if (string.IsNullOrWhiteSpace(artist))
                 {
                     artist = GetFallbackArtist(path);
@@ -56,14 +56,14 @@ namespace Atune.Services
             try
             {
                 var title = Sanitize(media.Meta(MetadataType.Title));
-                
+
                 if (string.IsNullOrEmpty(title))
                 {
                     var fileName = Uri.UnescapeDataString(path);
                     title = Path.GetFileNameWithoutExtension(fileName);
                     title = Sanitize(title) ?? "Неизвестный трек";
                 }
-                
+
                 return title;
             }
             catch
@@ -93,14 +93,14 @@ namespace Atune.Services
         {
             if (string.IsNullOrEmpty(path))
                 return "Неизвестный трек";
-        
+
             if (_titleCache.TryGetValue(path, out string? cachedTitle))
                 return cachedTitle!;
-        
+
             var fileName = Path.GetFileNameWithoutExtension(Uri.UnescapeDataString(path));
             string title = Sanitize(fileName) ?? "Неизвестный трек";
             _titleCache[path] = title;
             return title;
         }
     }
-} 
+}

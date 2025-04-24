@@ -11,4 +11,4 @@ namespace Atune.Data.Interfaces
         Task<IEnumerable<PlayHistory>> GetByMediaItemAndPeriodAsync(int mediaItemId, DateTime from, DateTime to);
         Task<IEnumerable<PlayHistory>> GetBySessionAsync(Guid sessionId);
     }
-} 
+}

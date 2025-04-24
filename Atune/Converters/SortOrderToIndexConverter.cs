@@ -9,8 +9,7 @@ namespace Atune.Converters
     {
         public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
         {
-            var s = value as string;
-            if (s == null) return 0;
+            if (value is not string s) return 0;
             var rd = Application.Current?.Resources;
             string a = rd?["Sort_AZ"]?.ToString() ?? "A-Z";
             string z = rd?["Sort_ZA"]?.ToString() ?? "Z-A";
@@ -38,4 +37,4 @@ namespace Atune.Converters
             };
         }
     }
-} 
+}

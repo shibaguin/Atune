@@ -33,7 +33,7 @@ namespace Atune.Services
 
         private async void TimerTick(object? sender, EventArgs e)
         {
-            try 
+            try
             {
                 if (CurrentTrack != null)
                 {
@@ -94,4 +94,4 @@ namespace Atune.Services
             _timer.Tick -= TimerTick;
         }
     }
-} 
+}

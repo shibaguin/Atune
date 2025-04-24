@@ -21,8 +21,8 @@ public class AppDbContext : DbContext
     public DbSet<PlaybackQueueItem> PlaybackQueueItems { get; set; }
     public DbSet<PlayHistory> PlayHistories { get; set; }
 
-    public AppDbContext(DbContextOptions<AppDbContext> options) 
-        : base(options) 
+    public AppDbContext(DbContextOptions<AppDbContext> options)
+        : base(options)
     {
         var dbPath = Database.GetDbConnection().DataSource;
         Console.WriteLine($"Using DB: {Path.GetFullPath(dbPath)}");
@@ -45,7 +45,7 @@ public class AppDbContext : DbContext
         }
     }
 
-    private string GetDatabasePath()
+    private static string GetDatabasePath()
     {
         if (OperatingSystem.IsAndroid())
         {
@@ -54,7 +54,7 @@ public class AppDbContext : DbContext
                 Environment.GetFolderPath(Environment.SpecialFolder.Personal),
                 "atune_media.db");
         }
-        
+
         return Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
             "Atune",
@@ -62,7 +62,7 @@ public class AppDbContext : DbContext
             "media_library.db");
     }
 
-    private void EnsureDatabaseDirectory(string dbPath)
+    private static void EnsureDatabaseDirectory(string dbPath)
     {
         try
         {
@@ -83,7 +83,7 @@ public class AppDbContext : DbContext
         }
     }
 
-    private void CreateDatabaseFile(string dbPath)
+    private static void CreateDatabaseFile(string dbPath)
     {
         try
         {
@@ -105,29 +105,29 @@ public class AppDbContext : DbContext
         // Явно указываем порядок применения миграций
         modelBuilder.HasAnnotation("Relational:MigrationHistoryTable", "__EFMigrationsHistory");
         modelBuilder.HasAnnotation("Relational:MigrationHistoryTableSchema", null);
-        
+
         modelBuilder.Entity<MediaItem>(entity =>
         {
             entity.ToTable("MediaItems");
             entity.HasKey(e => e.Id);
-            
+
             entity.HasIndex(e => e.Path)
                   .IsUnique()
                   .HasDatabaseName("IX_MediaItems_Path");
-                  
+
             entity.HasIndex(e => new { e.AlbumId, e.Title })
                   .HasDatabaseName("IX_MediaItems_Album_Title");
-                  
+
             entity.Property(e => e.Title)
                 .IsRequired()
                 .HasMaxLength(200);
-                
+
             entity.Property(e => e.Path)
                 .IsRequired();
-                
+
             entity.Property(e => e.AlbumId)
                 .IsRequired();
-                
+
             entity.Property(e => e.Duration)
                 .HasConversion(
                     v => v.Ticks,
@@ -159,12 +159,12 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<AlbumArtist>(entity =>
         {
             entity.HasKey(aa => new { aa.AlbumId, aa.ArtistId });
-            
+
             entity.HasOne(aa => aa.Album)
                   .WithMany(a => a.AlbumArtists)
                   .HasForeignKey(aa => aa.AlbumId)
                   .OnDelete(DeleteBehavior.Cascade);
-                  
+
             entity.HasOne(aa => aa.Artist)
                   .WithMany(a => a.AlbumArtists)
                   .HasForeignKey(aa => aa.ArtistId)
@@ -174,12 +174,12 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<TrackArtist>(entity =>
         {
             entity.HasKey(ta => new { ta.MediaItemId, ta.ArtistId });
-            
+
             entity.HasOne(ta => ta.MediaItem)
                   .WithMany(m => m.TrackArtists)
                   .HasForeignKey(ta => ta.MediaItemId)
                   .OnDelete(DeleteBehavior.Cascade);
-                  
+
             entity.HasOne(ta => ta.Artist)
                   .WithMany(a => a.TrackArtists)
                   .HasForeignKey(ta => ta.ArtistId)
@@ -190,17 +190,17 @@ public class AppDbContext : DbContext
         {
             entity.ToTable("PlaylistMediaItem");
             entity.HasKey(pmi => new { pmi.PlaylistId, pmi.MediaItemId });
-            
+
             entity.HasOne(pmi => pmi.Playlist)
                   .WithMany(p => p.PlaylistMediaItems)
                   .HasForeignKey(pmi => pmi.PlaylistId)
                   .OnDelete(DeleteBehavior.Cascade);
-                  
+
             entity.HasOne(pmi => pmi.MediaItem)
                   .WithMany(m => m.PlaylistMediaItems)
                   .HasForeignKey(pmi => pmi.MediaItemId)
                   .OnDelete(DeleteBehavior.Cascade);
-                  
+
             entity.Property(pmi => pmi.Position).IsRequired();
             entity.Property(pmi => pmi.AddedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
         });
@@ -211,7 +211,7 @@ public class AppDbContext : DbContext
             .HasForeignKey(m => m.AlbumId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        modelBuilder.Entity<MediaItem>().ToTable(nameof(MediaItems), t => 
+        modelBuilder.Entity<MediaItem>().ToTable(nameof(MediaItems), t =>
             t.ExcludeFromMigrations(false));
 
         modelBuilder.Entity<MediaItem>()
@@ -270,7 +270,7 @@ public class AppDbContext : DbContext
         {
             var entries = ChangeTracker
                 .Entries()
-                .Where(e => e.Entity is MediaItem && 
+                .Where(e => e.Entity is MediaItem &&
                     (e.State == EntityState.Added || e.State == EntityState.Modified));
 
             foreach (var entityEntry in entries)
@@ -341,7 +341,7 @@ public class AppDbContext : DbContext
 
     public async Task InitializeDatabase()
     {
-        try 
+        try
         {
             await Database.OpenConnectionAsync();
         }
@@ -350,7 +350,7 @@ public class AppDbContext : DbContext
             // Логируем ошибку
             throw new InvalidOperationException("Error initializing database", ex);
         }
-        finally 
+        finally
         {
             await Database.CloseConnectionAsync();
         }
@@ -373,7 +373,7 @@ public class AppDbContext : DbContext
     {
         var options = new BulkInsertOptions();
         configureOptions?.Invoke(options);
-        
+
         foreach (var entity in entities)
         {
             await MediaItems.AddAsync(entity);
@@ -389,7 +389,7 @@ public class AppDbContext : DbContext
     {
         var options = new BulkUpdateOptions();
         configureOptions?.Invoke(options);
-        
+
         int count = 0;
         foreach (var entity in entities)
         {
@@ -407,7 +407,7 @@ public class AppDbContext : DbContext
     {
         var options = new BulkDeleteOptions();
         configureOptions?.Invoke(options);
-        
+
         int count = 0;
         foreach (var entity in entities)
         {
@@ -442,4 +442,4 @@ public class BulkUpdateOptions
 public class BulkDeleteOptions
 {
     public int BatchSize { get; set; } = 100;
-} 
+}

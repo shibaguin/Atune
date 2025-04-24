@@ -8,17 +8,11 @@ using Atune.Models;
 
 namespace Atune.Data.Repositories
 {
-    public class CachedMediaRepository : IMediaRepository
+    public class CachedMediaRepository(IMediaRepository decorated, IMemoryCache cache) : IMediaRepository
     {
-        private readonly IMediaRepository _decorated;
-        private readonly IMemoryCache _cache;
+        private readonly IMediaRepository _decorated = decorated;
+        private readonly IMemoryCache _cache = cache;
         private const string CacheKey = "AllMediaCached";
-
-        public CachedMediaRepository(IMediaRepository decorated, IMemoryCache cache)
-        {
-            _decorated = decorated;
-            _cache = cache;
-        }
 
         public async Task<IEnumerable<MediaItem>> GetAllWithDetailsAsync(CancellationToken cancellationToken = default)
         {
@@ -74,4 +68,4 @@ namespace Atune.Data.Repositories
             return await _decorated.GetAllMediaItemsAsync();
         }
     }
-} 
+}

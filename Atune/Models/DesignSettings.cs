@@ -11,7 +11,7 @@ namespace Atune.Models
             public static double BarHeight { get; }
             public static double NavigationFontSize { get; }
             public static double BarPadding { get; }
-            
+
             static Dimensions()
             {
                 // Инициализация значений
@@ -20,7 +20,7 @@ namespace Atune.Models
                 NavigationDividerWidth = 3;
                 BarHeight = 50;
                 NavigationDividerHeight = BarHeight;
-                TopDockHeight = 50; 
+                TopDockHeight = 50;
                 NavigationFontSize = 14;
                 BarPadding = 8;
 

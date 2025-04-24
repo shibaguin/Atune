@@ -17,7 +17,7 @@ namespace Atune.ViewModels
     {
         public Playlist Playlist { get; }
         private readonly IPlaylistService _playlistService;
-        public ObservableCollection<MediaItem> Tracks { get; } = new ObservableCollection<MediaItem>();
+        public ObservableCollection<MediaItem> Tracks { get; } = [];
 
         public PlaylistViewModel(Playlist playlist)
         {
@@ -62,7 +62,7 @@ namespace Atune.ViewModels
         }
 
         [RelayCommand]
-        public void GoBack()
+        public static void GoBack()
         {
             if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime lifetime)
             {
@@ -103,4 +103,4 @@ namespace Atune.ViewModels
             await service.PlayPlaylistAsync(Playlist);
         }
     }
-} 
+}

@@ -31,9 +31,9 @@ public class MainActivity : AvaloniaMainActivity<App>
         Xamarin.Essentials.Platform.Init(this, savedInstanceState);
         // ?????????? ????????????? ????? Core
         Core.Initialize();
-        
+
         base.OnCreate(savedInstanceState);
-        
+
         if ((int)Build.VERSION.SdkInt >= 23)
         {
             RequestStoragePermissions();
@@ -47,35 +47,35 @@ public class MainActivity : AvaloniaMainActivity<App>
         };
     }
 
-    [SuppressMessage("Interoperability", "CA1416:Validate platform compatibility", 
+    [SuppressMessage("Interoperability", "CA1416:Validate platform compatibility",
         Justification = "Android version checked programmatically")]
     private void RequestStoragePermissions()
     {
         if ((int)Build.VERSION.SdkInt < 23) return;
 
-        if (CheckSelfPermission(Manifest.Permission.ReadExternalStorage) 
+        if (CheckSelfPermission(Manifest.Permission.ReadExternalStorage)
             != Permission.Granted)
         {
             RequestPermissions(
-                new[] { Manifest.Permission.ReadExternalStorage }, 
+                [Manifest.Permission.ReadExternalStorage],
                 RequestStoragePermission);
         }
     }
 
-    [SuppressMessage("Interoperability", "CA1416:Validate platform compatibility", 
+    [SuppressMessage("Interoperability", "CA1416:Validate platform compatibility",
         Justification = "Base call guarded by version check")]
     public override void OnRequestPermissionsResult(
-        int requestCode, 
-        string[] permissions, 
+        int requestCode,
+        string[] permissions,
         [GeneratedEnum] Permission[] grantResults)
     {
         Xamarin.Essentials.Platform.OnRequestPermissionsResult(requestCode, permissions, grantResults);
-        
+
         if ((int)Build.VERSION.SdkInt < 23) return;
 
         if (requestCode == RequestStoragePermission)
         {
-            if (grantResults.Length > 0 && 
+            if (grantResults.Length > 0 &&
                 grantResults[0] == Permission.Granted)
             {
                 // Permissions granted
@@ -98,7 +98,7 @@ public class MainActivity : AvaloniaMainActivity<App>
     }
 
     // ????? ??? ????????? ??????????? ??????
-    private IEnumerable<Assembly> GetLoadedAssemblies()
+    private static IEnumerable<Assembly> GetLoadedAssemblies()
     {
         // ?????????? ?????? ??? ????????? ??????????? ??????
         return AppDomain.CurrentDomain.GetAssemblies();

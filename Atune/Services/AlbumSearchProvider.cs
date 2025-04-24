@@ -7,13 +7,11 @@ namespace Atune.Services
     using Atune.Models;
 
     // Provides search over album titles
-    public class AlbumSearchProvider : ISearchProvider
+    public class AlbumSearchProvider(MediaDatabaseService dbService) : ISearchProvider
     {
         public string Name => "Albums";
 
-        private readonly MediaDatabaseService _dbService;
-
-        public AlbumSearchProvider(MediaDatabaseService dbService) => _dbService = dbService;
+        private readonly MediaDatabaseService _dbService = dbService;
 
         public async Task<IEnumerable<SearchResult>> SearchAsync(string query)
         {
@@ -37,7 +35,7 @@ namespace Atune.Services
                     first.Album.Title,
                     artistName,
                     metadataYear,
-                    group.ToList());
+                    [.. group]);
                 results.Add(new SearchResult
                 {
                     Title = albumInfo.AlbumName,
@@ -48,4 +46,4 @@ namespace Atune.Services
             return results;
         }
     }
-} 
+}

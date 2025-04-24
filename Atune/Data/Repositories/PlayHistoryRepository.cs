@@ -7,14 +7,9 @@ using Microsoft.EntityFrameworkCore;
 using Atune.Data.Interfaces;
 using Atune.Models;
 
-public class PlayHistoryRepository : IPlayHistoryRepository
+public class PlayHistoryRepository(AppDbContext context) : IPlayHistoryRepository
 {
-    private readonly AppDbContext _context;
-
-    public PlayHistoryRepository(AppDbContext context)
-    {
-        _context = context;
-    }
+    private readonly AppDbContext _context = context;
 
     public async Task<PlayHistory?> GetByIdAsync(int id)
     {
@@ -63,4 +58,4 @@ public class PlayHistoryRepository : IPlayHistoryRepository
             .Where(ph => ph.SessionId == sessionId)
             .ToListAsync();
     }
-} 
+}

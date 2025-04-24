@@ -31,8 +31,8 @@ public partial class HistoryViewModel : ViewModelBase
         FromDate = DateTime.UtcNow.Date.AddDays(-7);
         ToDate = DateTime.UtcNow.Date;
         // Initialize axes for date vs plays
-        XAxes = new Axis[]
-        {
+        XAxes =
+        [
             new Axis
             {
                 Name = "Date",
@@ -52,12 +52,12 @@ public partial class HistoryViewModel : ViewModelBase
                     }
                 }
             }
-        };
-        YAxes = new Axis[]
-        {
+        ];
+        YAxes =
+        [
             new Axis { Name = "Plays" }
-        };
-        Series = new ISeries[0];
+        ];
+        Series = Array.Empty<ISeries>();
 
         LoadStatsCommand = new AsyncRelayCommand(LoadStatsAsync);
         _ = LoadStatsAsync();
@@ -97,14 +97,14 @@ public partial class HistoryViewModel : ViewModelBase
                 .ToList();
 
             TotalPlays = filtered.Count;
-            FirstPlayDate = filtered.Any() ? filtered.Min(h => h.PlayedAt) : (DateTime?)null;
-            LastPlayDate = filtered.Any() ? filtered.Max(h => h.PlayedAt) : (DateTime?)null;
-            AverageDuration = filtered.Any()
+            FirstPlayDate = filtered.Count != 0 ? filtered.Min(h => h.PlayedAt) : (DateTime?)null;
+            LastPlayDate = filtered.Count != 0 ? filtered.Max(h => h.PlayedAt) : (DateTime?)null;
+            AverageDuration = filtered.Count != 0
                 ? TimeSpan.FromSeconds(filtered.Average(h => h.DurationSeconds))
                 : TimeSpan.Zero;
             // Update chart series
-            Series = new ISeries[]
-            {
+            Series =
+            [
                 new LineSeries<DateTimePoint>
                 {
                     Values = filtered
@@ -113,7 +113,7 @@ public partial class HistoryViewModel : ViewModelBase
                         .Select(g => new DateTimePoint(g.Key, g.Count()))
                         .ToArray()
                 }
-            };
+            ];
         }
         finally
         {

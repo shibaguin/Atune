@@ -7,13 +7,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Atune.Data.Repositories
 {
-    public class ArtistRepository : IArtistRepository
+    public class ArtistRepository(AppDbContext context) : IArtistRepository
     {
-        private readonly AppDbContext _context;
-        public ArtistRepository(AppDbContext context)
-        {
-            _context = context;
-        }
+        private readonly AppDbContext _context = context;
 
         public async Task<IEnumerable<Artist>> GetAllArtistsAsync()
         {
@@ -31,7 +27,7 @@ namespace Atune.Data.Repositories
                 return Enumerable.Empty<Artist>();
             var normalized = query.ToLowerInvariant();
             return await _context.Artists
-                .Where(a => a.Name.ToLower().Contains(normalized))
+                .Where(a => a.Name.Contains(normalized, System.StringComparison.CurrentCultureIgnoreCase))
                 .Take(limit)
                 .ToListAsync();
         }
@@ -47,4 +43,4 @@ namespace Atune.Data.Repositories
                 .ToListAsync();
         }
     }
-} 
+}

@@ -13,7 +13,7 @@ namespace Atune.Services
         // Метод для загрузки (обновления) настроек из файла
         // Method for loading (updating) settings from a file
         void LoadSettings();
-        
+
         // Метод для сохранения настроек интерфейса в settings.ini
         // Method for saving interface settings to settings.ini
         void SaveSettings();
@@ -32,4 +32,4 @@ namespace Atune.Services
         // New method for restoring interface settings to default values
         void RestoreDefaults();
     }
-} 
+}

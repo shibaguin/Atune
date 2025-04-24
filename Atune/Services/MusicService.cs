@@ -7,25 +7,16 @@ using Microsoft.Extensions.Caching.Memory;
 
 namespace Atune.Services
 {
-    public class MusicService
+    public class MusicService(
+        IAlbumRepository albumRepository,
+        IArtistRepository artistRepository,
+        IPlaylistRepository playlistRepository,
+        IMemoryCache cache)
     {
-        private readonly IAlbumRepository _albumRepository;
-        private readonly IArtistRepository _artistRepository;
-        private readonly IPlaylistRepository _playlistRepository;
-        private readonly IMemoryCache _cache;
-
-        // Если потребуется, можно внедрить и другие репозитории, например для MediaItem или Folders.
-        public MusicService(
-            IAlbumRepository albumRepository,
-            IArtistRepository artistRepository,
-            IPlaylistRepository playlistRepository,
-            IMemoryCache cache)
-        {
-            _albumRepository = albumRepository;
-            _artistRepository = artistRepository;
-            _playlistRepository = playlistRepository;
-            _cache = cache;
-        }
+        private readonly IAlbumRepository _albumRepository = albumRepository;
+        private readonly IArtistRepository _artistRepository = artistRepository;
+        private readonly IPlaylistRepository _playlistRepository = playlistRepository;
+        private readonly IMemoryCache _cache = cache;
 
         // Получение всех альбомов
         public async Task<IEnumerable<Album>> GetAllAlbumsAsync()
@@ -35,7 +26,7 @@ namespace Atune.Services
             {
                 return cachedAlbums;
             }
-            
+
             var albums = await _albumRepository.GetAllAlbumsAsync();
             _cache?.Set(cacheKey, albums, new MemoryCacheEntryOptions()
                 .SetSlidingExpiration(TimeSpan.FromMinutes(5)));
@@ -50,7 +41,7 @@ namespace Atune.Services
             {
                 return cachedAlbums;
             }
-            
+
             var albums = await _albumRepository.GetAlbumsForArtistAsync(artistId);
             _cache?.Set(cacheKey, albums, new MemoryCacheEntryOptions()
                 .SetSlidingExpiration(TimeSpan.FromMinutes(5)));
@@ -65,7 +56,7 @@ namespace Atune.Services
             {
                 return cachedArtists;
             }
-            
+
             var artists = await _artistRepository.GetAllArtistsAsync();
             _cache?.Set(cacheKey, artists, new MemoryCacheEntryOptions()
                 .SetSlidingExpiration(TimeSpan.FromMinutes(5)));
@@ -80,7 +71,7 @@ namespace Atune.Services
             {
                 return cachedArtists;
             }
-            
+
             var artists = await _artistRepository.SearchArtistsAsync(query);
             _cache?.Set(cacheKey, artists, new MemoryCacheEntryOptions()
                 .SetSlidingExpiration(TimeSpan.FromMinutes(5)));
@@ -95,7 +86,7 @@ namespace Atune.Services
             {
                 return cachedPlaylists;
             }
-            
+
             var playlists = await _playlistRepository.GetPlaylistsAsync();
             _cache?.Set(cacheKey, playlists, new MemoryCacheEntryOptions()
                 .SetSlidingExpiration(TimeSpan.FromMinutes(5)));
@@ -110,4 +101,4 @@ namespace Atune.Services
 
         // Другие операции, например удаление элемента из плейлиста, создание нового плейлиста, и т.д.
     }
-} 
+}

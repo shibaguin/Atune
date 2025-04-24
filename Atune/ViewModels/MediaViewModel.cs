@@ -39,7 +39,7 @@ public partial class MediaViewModel : ObservableObject, IDisposable
     private readonly MediaDatabaseService _mediaDatabaseService;
     private readonly ISettingsService _settingsService;
     private readonly PlayHistoryService _playHistoryService;
-    
+
     // Кэш для альбомов
     private List<AlbumInfo>? _albumCache;
 
@@ -47,10 +47,10 @@ public partial class MediaViewModel : ObservableObject, IDisposable
     private List<ArtistInfo>? _artistCache;
 
     [ObservableProperty]
-    private List<MediaItem> _mediaContent = new List<MediaItem>();
+    private List<MediaItem> _mediaContent = [];
 
     [ObservableProperty]
-    private ObservableCollection<MediaItem> _mediaItems = new();
+    private ObservableCollection<MediaItem> _mediaItems = [];
 
     [ObservableProperty]
     private MediaItem? _selectedMediaItem;
@@ -154,16 +154,16 @@ public partial class MediaViewModel : ObservableObject, IDisposable
     public int CurrentQueueIndex => _currentQueueIndex;
 
     // Сохраняем отсортированный кэш для ускорения последующих операций сортировки
-    private List<MediaItem> _sortedCache = new List<MediaItem>();
+    private List<MediaItem> _sortedCache = [];
 
     // Новое свойство для альбомов
-    public ObservableCollection<AlbumInfo> Albums { get; } = new ObservableCollection<AlbumInfo>();
+    public ObservableCollection<AlbumInfo> Albums { get; } = [];
 
     // New collection to hold the playback queue
-    public ObservableCollection<MediaItem> PlaybackQueue { get; } = new ObservableCollection<MediaItem>();
+    public ObservableCollection<MediaItem> PlaybackQueue { get; } = [];
 
     // New collection for playlists
-    public ObservableCollection<Playlist> Playlists { get; } = new ObservableCollection<Playlist>();
+    public ObservableCollection<Playlist> Playlists { get; } = [];
 
     // Commands to manage playback queue
     public IRelayCommand<MediaItem> AddToQueueCommand { get; }
@@ -181,11 +181,11 @@ public partial class MediaViewModel : ObservableObject, IDisposable
     public IAsyncRelayCommand<Playlist?> AddToPlaylistCommand { get; }
 
     // New collection for artists
-    public ObservableCollection<ArtistInfo> Artists { get; } = new ObservableCollection<ArtistInfo>();
+    public ObservableCollection<ArtistInfo> Artists { get; } = [];
 
     public MediaViewModel(
-        IMemoryCache cache, 
-        IUnitOfWork unitOfWork, 
+        IMemoryCache cache,
+        IUnitOfWork unitOfWork,
         ILoggerService logger,
         MediaPlayerService mediaPlayerService,
         MediaDatabaseService mediaDatabaseService,
@@ -201,7 +201,7 @@ public partial class MediaViewModel : ObservableObject, IDisposable
         _playlistService = playlistService;
         _settingsService = settingsService;
         _playHistoryService = playHistoryService;
-        
+
         // Load saved sort orders
         var settings = _settingsService.LoadSettings();
         _sortOrderTracks = settings.SortOrderTracks;
@@ -244,14 +244,14 @@ public partial class MediaViewModel : ObservableObject, IDisposable
         SetQueuePositionCommand = new RelayCommand<int>(index => { _currentQueueIndex = index - 1; });
 
         _mediaPlayerService.PlaybackEnded += OnPlaybackEnded;
-        
+
         // Заменяем вызов LoadMediaContent на прямое обновление
-        Dispatcher.UIThread.Post(async () => 
+        Dispatcher.UIThread.Post(async () =>
         {
             await RefreshMedia();
         });
 
-        MediaItems = new ObservableCollection<MediaItem>();
+        MediaItems = [];
         SortOrder = "A-Z"; // Установите значение по умолчанию
 
         // Load existing playlists
@@ -278,19 +278,19 @@ public partial class MediaViewModel : ObservableObject, IDisposable
                 .SetSize(content.Count * 500 + 1024)
                 .SetPriority(CacheItemPriority.Normal)
                 .SetSlidingExpiration(TimeSpan.FromMinutes(15));
-            
+
             // For Android, we reduce the caching time
             // Для Android мы уменьшаем время кэширования
             if (OperatingSystem.IsAndroid())
             {
                 cacheOptions.SetSlidingExpiration(TimeSpan.FromMinutes(5));
             }
-            
+
             _cache.Set("MediaContent", content, cacheOptions);
         }
-        
-        MediaContent = content ?? new List<MediaItem>();
-        
+
+        MediaContent = content ?? [];
+
         // Синхронизируем с MediaItems
         await UpdateMediaItemsGradually(MediaContent);
     }
@@ -299,7 +299,7 @@ public partial class MediaViewModel : ObservableObject, IDisposable
     {
         // Loading data from an external source
         // Загрузка данных из внешнего источника
-        return new List<MediaItem>();
+        return [];
     }
 
     [RelayCommand]
@@ -360,7 +360,7 @@ public partial class MediaViewModel : ObservableObject, IDisposable
                 try
                 {
                     var realPath = file.Path.LocalPath;
-                    
+
                     var mediaItem = new MediaItem(
                         title: Path.GetFileNameWithoutExtension(file.Name),
                         album: new Album { Title = "Unknown Album" },
@@ -369,7 +369,7 @@ public partial class MediaViewModel : ObservableObject, IDisposable
                         path: realPath,
                         duration: TimeSpan.Zero,
                         trackArtists: new List<TrackArtist> {
-                            new TrackArtist { Artist = new Artist { Name = "Unknown Artist" } }
+                            new() { Artist = new Artist { Name = "Unknown Artist" } }
                         }
                     );
 
@@ -432,24 +432,24 @@ public partial class MediaViewModel : ObservableObject, IDisposable
         await Dispatcher.UIThread.InvokeAsync(async () =>
         {
             MediaItems.Clear();
-            
+
             // Batch addition for gradual updating
             // Добавление пакета для постепенной обновления
             var batchSize = OperatingSystem.IsAndroid() ? 50 : 200;
             var count = 0;
-            
+
             foreach (var item in items)
             {
                 MediaItems.Add(item);
                 count++;
-                
+
                 if (count % batchSize == 0)
                 {
                     OnPropertyChanged(nameof(MediaItems));
                     await Task.Delay(10); // Delay for rendering / Задержка для рендеринга
                 }
             }
-            
+
             OnPropertyChanged(nameof(MediaItems));
         });
     }
@@ -461,7 +461,7 @@ public partial class MediaViewModel : ObservableObject, IDisposable
         {
             IsBusy = true;
             var items = (await _unitOfWork.Media.GetAllWithDetailsAsync()).ToList();
-            
+
             await Dispatcher.UIThread.InvokeAsync(() =>
             {
                 MediaItems.Clear();
@@ -483,13 +483,12 @@ public partial class MediaViewModel : ObservableObject, IDisposable
                 UpdateArtists();
                 SortArtists();
             });
-            
+
             _cache.Set("MediaContent", items, new MemoryCacheEntryOptions()
                 .SetSlidingExpiration(TimeSpan.FromMinutes(5))
                 .SetSize(items.Count * 500 + 1024));
             // Restore playback state now that media content is loaded
-            var app = Atune.App.Current as Atune.App;
-            if (app != null)
+            if (Atune.App.Current is Atune.App app)
             {
                 await app.RestorePlaybackStateAsync();
             }
@@ -536,7 +535,7 @@ public partial class MediaViewModel : ObservableObject, IDisposable
     private List<string> ParseArtists(string artistString)
     {
         if (string.IsNullOrWhiteSpace(artistString))
-            return new List<string> { "Unknown Artist" };
+            return ["Unknown Artist"];
 
         var separators = new[] { ',', ';' };
         return artistString
@@ -590,9 +589,10 @@ public partial class MediaViewModel : ObservableObject, IDisposable
             path: path,
             duration: tagInfo.Duration,
             trackArtists: trackArtists
-        );
-
-        mediaItem.CoverArt = coverArtPath;
+        )
+        {
+            CoverArt = coverArtPath
+        };
         return mediaItem;
     }
 
@@ -685,7 +685,7 @@ public partial class MediaViewModel : ObservableObject, IDisposable
 
     #endregion
 
-    private (string Artist, string Album, uint Year, string Genre, TimeSpan Duration) GetDesktopTagInfo(string path)
+    private static (string Artist, string Album, uint Year, string Genre, TimeSpan Duration) GetDesktopTagInfo(string path)
     {
         try
         {
@@ -704,7 +704,7 @@ public partial class MediaViewModel : ObservableObject, IDisposable
         }
     }
 
-    private static readonly string[] _supportedFormats = { ".mp3", ".flac", ".wav", ".ogg" };
+    private static readonly string[] _supportedFormats = [".mp3", ".flac", ".wav", ".ogg"];
 
     [RelayCommand]
     private async Task SearchMedia(string query)
@@ -714,13 +714,13 @@ public partial class MediaViewModel : ObservableObject, IDisposable
             IsBusy = true;
             var allItems = await _unitOfWork.Media.GetAllWithDetailsAsync();
             var filtered = allItems.Where(item =>
-                (!string.IsNullOrEmpty(item.Title) && item.Title.ToLower().Contains(query)) ||
-                (item.TrackArtists.Any(ta => 
-                    ta.Artist != null && 
-                    ta.Artist.Name.ToLower().Contains(query))) ||
-                (!string.IsNullOrEmpty(item.Album.Title) && item.Album.Title.ToLower().Contains(query)) ||
-                (!string.IsNullOrEmpty(item.Genre) && item.Genre.ToLower().Contains(query)) ||
-                (!string.IsNullOrEmpty(item.Path) && item.Path.ToLower().Contains(query))
+                (!string.IsNullOrEmpty(item.Title) && item.Title.Contains(query, StringComparison.CurrentCultureIgnoreCase)) ||
+                (item.TrackArtists.Any(ta =>
+                    ta.Artist != null &&
+                    ta.Artist.Name.Contains(query, StringComparison.CurrentCultureIgnoreCase))) ||
+                (!string.IsNullOrEmpty(item.Album.Title) && item.Album.Title.Contains(query, StringComparison.CurrentCultureIgnoreCase)) ||
+                (!string.IsNullOrEmpty(item.Genre) && item.Genre.Contains(query, StringComparison.CurrentCultureIgnoreCase)) ||
+                (!string.IsNullOrEmpty(item.Path) && item.Path.Contains(query, StringComparison.CurrentCultureIgnoreCase))
             ).ToList();
             await Dispatcher.UIThread.InvokeAsync(() =>
             {
@@ -746,8 +746,8 @@ public partial class MediaViewModel : ObservableObject, IDisposable
     private async Task NextMediaItem()
     {
         Dispatcher.UIThread.VerifyAccess();
-        
-        if (MediaItems == null || MediaItems.Count == 0) 
+
+        if (MediaItems == null || MediaItems.Count == 0)
             return;
 
         var currentIndex = SelectedMediaItem != null ? MediaItems.IndexOf(SelectedMediaItem) : -1;
@@ -762,9 +762,9 @@ public partial class MediaViewModel : ObservableObject, IDisposable
         {
             await PlayRandomMediaItem();
         }
-        else 
+        else
         {
-            await Dispatcher.UIThread.InvokeAsync(() => 
+            await Dispatcher.UIThread.InvokeAsync(() =>
             {
                 SelectedMediaItem = null;
                 PlayPauseIcon = "fa-solid fa-play";
@@ -776,11 +776,11 @@ public partial class MediaViewModel : ObservableObject, IDisposable
     private void PreviousMediaItem()
     {
         if (MediaItems.Count == 0) return;
-        
-        int currentIndex = SelectedMediaItem != null 
-            ? MediaItems.IndexOf(SelectedMediaItem) 
+
+        int currentIndex = SelectedMediaItem != null
+            ? MediaItems.IndexOf(SelectedMediaItem)
             : 0;
-        
+
         int newIndex = (currentIndex - 1 + MediaItems.Count) % MediaItems.Count;
         var previousItem = MediaItems[newIndex];
         PlayMediaItemCommand.Execute(previousItem);
@@ -791,22 +791,22 @@ public partial class MediaViewModel : ObservableObject, IDisposable
     {
         if (mediaItem != null && !string.IsNullOrWhiteSpace(mediaItem.Path))
         {
-            try 
+            try
             {
                 // Ensure current volume applied before any playback
                 _mediaPlayerService.Volume = _settingsService.LoadSettings().Volume;
                 await _mediaPlayerService.StopAsync();
                 SelectedMediaItem = mediaItem;
-                
+
                 await Dispatcher.UIThread.InvokeAsync(() =>
                 {
                     OnPropertyChanged(nameof(SelectedMediaItem));
                 });
-                
+
                 await _mediaPlayerService.Play(mediaItem.Path);
                 // Re-apply volume in case Play resets it
                 _mediaPlayerService.Volume = _settingsService.LoadSettings().Volume;
-                
+
                 // Update UI
                 Dispatcher.UIThread.Post(() =>
                 {
@@ -851,7 +851,7 @@ public partial class MediaViewModel : ObservableObject, IDisposable
     private async Task PlayRandomMediaItem()
     {
         if (MediaItems.Count == 0) return;
-        
+
         var random = new Random();
         int index = random.Next(MediaItems.Count);
         await PlayMediaItem(MediaItems[index]);
@@ -867,7 +867,7 @@ public partial class MediaViewModel : ObservableObject, IDisposable
     }
 
     [RelayCommand]
-    private async Task MoreInfo(MediaItem mediaItem)
+    private static async Task MoreInfo(MediaItem mediaItem)
     {
         if (mediaItem == null)
         {
@@ -875,7 +875,7 @@ public partial class MediaViewModel : ObservableObject, IDisposable
             return;
         }
         Log.Information($"Title: {mediaItem.Title}, Artist: {mediaItem.TrackArtists.FirstOrDefault()?.Artist.Name}, Album: {mediaItem.Album.Title}");
-        
+
         var mainWindow = Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop
             ? desktop.MainWindow
             : null;
@@ -903,25 +903,14 @@ public partial class MediaViewModel : ObservableObject, IDisposable
         // Выполняем обновление коллекции в UI-потоке
         Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
         {
-            List<MediaItem> sortedList;
-            switch (SortOrderTracks)
+            List<MediaItem> sortedList = SortOrderTracks switch
             {
-                case "A-Z":
-                    sortedList = MediaItems.OrderBy(item => item.Title, new CustomTitleComparer(true)).ToList();
-                    break;
-                case "Z-A":
-                    sortedList = MediaItems.OrderBy(item => item.Title, new CustomTitleComparer(false)).ToList();
-                    break;
-                case "Сначала старые":
-                    sortedList = MediaItems.OrderBy(item => item.Year).ToList();
-                    break;
-                case "Сначала новые":
-                    sortedList = MediaItems.OrderByDescending(item => item.Year).ToList();
-                    break;
-                default:
-                    sortedList = MediaItems.OrderBy(item => item.Title, new CustomTitleComparer(true)).ToList();
-                    break;
-            }
+                "A-Z" => [.. MediaItems.OrderBy(item => item.Title, new CustomTitleComparer(true))],
+                "Z-A" => [.. MediaItems.OrderBy(item => item.Title, new CustomTitleComparer(false))],
+                "Сначала старые" => [.. MediaItems.OrderBy(item => item.Year)],
+                "Сначала новые" => [.. MediaItems.OrderByDescending(item => item.Year)],
+                _ => [.. MediaItems.OrderBy(item => item.Title, new CustomTitleComparer(true))],
+            };
             MediaItems.Clear();
             foreach (var item in sortedList)
             {
@@ -940,17 +929,17 @@ public partial class MediaViewModel : ObservableObject, IDisposable
         // Если кэш не синхронизирован с MediaItems, пересчитываем его
         if (_sortedCache.Count != MediaItems.Count)
         {
-            _sortedCache = MediaItems.ToList();
+            _sortedCache = [.. MediaItems];
             _sortedCache.Sort(new MediaItemComparer(titleComparer));
         }
-        
+
         // Ищем индекс для вставки нового элемента с помощью бинарного поиска
         int index = _sortedCache.BinarySearch(newItem, new MediaItemComparer(titleComparer));
         if (index < 0)
         {
             index = ~index;
         }
-        
+
         _sortedCache.Insert(index, newItem);
         MediaItems.Insert(index, newItem);
         _logger?.LogInformation($"Inserted new item '{newItem.Title}' at index {index}, SortOrderTracks={SortOrderTracks}");
@@ -992,7 +981,7 @@ public partial class MediaViewModel : ObservableObject, IDisposable
                         albumTitle: g.Key,
                         artistName: first.TrackArtists.FirstOrDefault()?.Artist?.Name ?? "Unknown Artist",
                         year: first.Year,
-                        tracks: g.ToList()
+                        tracks: [.. g]
                     );
                 })
                 .Where(album => album.Tracks.Count >= 3) // Фильтруем альбомы с 3 или более треками
@@ -1105,13 +1094,13 @@ public partial class MediaViewModel : ObservableObject, IDisposable
     protected virtual void Dispose(bool disposing)
     {
         if (_disposed) return;
-        
+
         if (disposing)
         {
             _mediaPlayerService.PlaybackEnded -= OnPlaybackEnded;
             _playHistoryService.Dispose();
         }
-        
+
         _disposed = true;
     }
 
@@ -1130,63 +1119,38 @@ public partial class MediaViewModel : ObservableObject, IDisposable
     private void SortTracks() => SortMediaItems();
     private void SortAlbums()
     {
-        List<AlbumInfo> sorted;
-        switch (SortOrderAlbums)
+        List<AlbumInfo> sorted = SortOrderAlbums switch
         {
-            case "A-Z":
-                sorted = Albums.OrderBy(a => a.AlbumName, new CustomTitleComparer(true)).ToList();
-                break;
-            case "Z-A":
-                sorted = Albums.OrderBy(a => a.AlbumName, new CustomTitleComparer(false)).ToList();
-                break;
-            case "Сначала старые":
-                sorted = Albums.OrderBy(a => a.Year).ToList();
-                break;
-            case "Сначала новые":
-                sorted = Albums.OrderByDescending(a => a.Year).ToList();
-                break;
-            default:
-                sorted = Albums.OrderBy(a => a.AlbumName, new CustomTitleComparer(true)).ToList();
-                break;
-        }
+            "A-Z" => [.. Albums.OrderBy(a => a.AlbumName, new CustomTitleComparer(true))],
+            "Z-A" => [.. Albums.OrderBy(a => a.AlbumName, new CustomTitleComparer(false))],
+            "Сначала старые" => [.. Albums.OrderBy(a => a.Year)],
+            "Сначала новые" => [.. Albums.OrderByDescending(a => a.Year)],
+            _ => [.. Albums.OrderBy(a => a.AlbumName, new CustomTitleComparer(true))],
+        };
         Albums.Clear();
         foreach (var album in sorted) Albums.Add(album);
     }
     private void SortPlaylists()
     {
         // Sort playlists according to SortOrderPlaylists
-        List<Playlist> sorted;
-        switch (SortOrderPlaylists)
+        List<Playlist> sorted = SortOrderPlaylists switch
         {
-            case "A-Z":
-                sorted = Playlists.OrderBy(p => p.Name, new CustomTitleComparer(true)).ToList();
-                break;
-            case "Z-A":
-                sorted = Playlists.OrderBy(p => p.Name, new CustomTitleComparer(false)).ToList();
-                break;
-            default:
-                sorted = Playlists.OrderBy(p => p.Name, new CustomTitleComparer(true)).ToList();
-                break;
-        }
+            "A-Z" => [.. Playlists.OrderBy(p => p.Name, new CustomTitleComparer(true))],
+            "Z-A" => [.. Playlists.OrderBy(p => p.Name, new CustomTitleComparer(false))],
+            _ => [.. Playlists.OrderBy(p => p.Name, new CustomTitleComparer(true))],
+        };
         Playlists.Clear();
         foreach (var p in sorted)
             Playlists.Add(p);
     }
     private void SortArtists()
     {
-        List<ArtistInfo> sorted;
-        switch (SortOrderArtists)
+        List<ArtistInfo> sorted = SortOrderArtists switch
         {
-            case "A-Z":
-                sorted = Artists.OrderBy(a => a.ArtistName, new CustomTitleComparer(true)).ToList();
-                break;
-            case "Z-A":
-                sorted = Artists.OrderBy(a => a.ArtistName, new CustomTitleComparer(false)).ToList();
-                break;
-            default:
-                sorted = Artists.OrderBy(a => a.ArtistName, new CustomTitleComparer(true)).ToList();
-                break;
-        }
+            "A-Z" => [.. Artists.OrderBy(a => a.ArtistName, new CustomTitleComparer(true))],
+            "Z-A" => [.. Artists.OrderBy(a => a.ArtistName, new CustomTitleComparer(false))],
+            _ => [.. Artists.OrderBy(a => a.ArtistName, new CustomTitleComparer(true))],
+        };
         Artists.Clear();
         foreach (var artist in sorted)
             Artists.Add(artist);
@@ -1320,22 +1284,17 @@ public partial class MediaViewModel : ObservableObject, IDisposable
     }
 }
 
-public class CustomTitleComparer : IComparer<string>
+public class CustomTitleComparer(bool ascending) : IComparer<string>
 {
-    private readonly bool _ascending;
-    
-    public CustomTitleComparer(bool ascending)
-    {
-        _ascending = ascending;
-    }
-    
+    private readonly bool _ascending = ascending;
+
     public int Compare(string? s1, string? s2)
     {
         // Если обе строки равны
         if (ReferenceEquals(s1, s2)) return 0;
         if (s1 is null) return _ascending ? -1 : 1;
         if (s2 is null) return _ascending ? 1 : -1;
-        
+
         int minLen = Math.Min(s1.Length, s2.Length);
         for (int i = 0; i < minLen; i++)
         {
@@ -1343,7 +1302,7 @@ public class CustomTitleComparer : IComparer<string>
             char c2 = s2[i];
             int cat1 = GetCategory(c1);
             int cat2 = GetCategory(c2);
-            
+
             if (cat1 != cat2)
             {
                 int cmp = cat1.CompareTo(cat2);
@@ -1360,7 +1319,7 @@ public class CustomTitleComparer : IComparer<string>
         int lenDiff = s1.Length.CompareTo(s2.Length);
         return _ascending ? lenDiff : -lenDiff;
     }
-    
+
     // Метод возвращает числовую категорию символа:
     // 0 - цифры, 1 - латинские буквы, 2 - кириллические буквы, 3 - все остальное
     private int GetCategory(char c)
@@ -1374,13 +1333,13 @@ public class CustomTitleComparer : IComparer<string>
         else
             return 3;
     }
-    
-    private bool IsLatin(char c)
+
+    private static bool IsLatin(char c)
     {
         return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');
     }
-    
-    private bool IsCyrillic(char c)
+
+    private static bool IsCyrillic(char c)
     {
         // Основной диапазон кириллических символов: U+0400 — U+04FF
         return c >= '\u0400' && c <= '\u04FF';
@@ -1388,14 +1347,9 @@ public class CustomTitleComparer : IComparer<string>
 }
 
 // Добавляем новый компаратор для MediaItem, использующий наш компаратор по Title
-public class MediaItemComparer : IComparer<MediaItem>
+public class MediaItemComparer(IComparer<string> titleComparer) : IComparer<MediaItem>
 {
-    private readonly IComparer<string> _titleComparer;
-
-    public MediaItemComparer(IComparer<string> titleComparer)
-    {
-        _titleComparer = titleComparer;
-    }
+    private readonly IComparer<string> _titleComparer = titleComparer;
 
     public int Compare(MediaItem? x, MediaItem? y)
     {
@@ -1407,4 +1361,4 @@ public class MediaItemComparer : IComparer<MediaItem>
 
         return result;
     }
-} 
+}

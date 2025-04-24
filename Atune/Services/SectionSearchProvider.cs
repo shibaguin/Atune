@@ -10,7 +10,7 @@ namespace Atune.Services
     {
         public string Name => "Navigation";
 
-        private static readonly string[] Sections = new[] { "Home", "Media", "History", "Settings" };
+        private static readonly string[] Sections = ["Home", "Media", "History", "Settings"];
 
         public Task<IEnumerable<SearchResult>> SearchAsync(string query)
         {
@@ -30,4 +30,4 @@ namespace Atune.Services
             return Task.FromResult<IEnumerable<SearchResult>>(results);
         }
     }
-} 
+}

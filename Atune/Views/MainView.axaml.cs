@@ -19,8 +19,8 @@ namespace Atune.Views;
 public partial class MainView : UserControl
 {
     // Custom progress bar elements
-    private Border? _progressBarBackground;
-    private Rectangle? _progressBarFill;
+    private readonly Border? _progressBarBackground;
+    private readonly Rectangle? _progressBarFill;
     public MainView()
     {
         InitializeComponent();
@@ -231,7 +231,7 @@ public partial class MainView : UserControl
                     {
                         // Convert DB Album to AlbumInfo
                         var artistName = dbAlbum.AlbumArtists?.FirstOrDefault()?.Artist.Name ?? string.Empty;
-                        var tracks = dbAlbum.Tracks?.ToList() ?? new List<MediaItem>();
+                        var tracks = dbAlbum.Tracks?.ToList() ?? [];
                         albumToShow = new AlbumInfo(dbAlbum.Title, artistName, (uint)dbAlbum.Year, tracks);
                     }
                     if (albumToShow != null)

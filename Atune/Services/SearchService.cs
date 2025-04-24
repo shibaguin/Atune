@@ -10,12 +10,9 @@ namespace Atune.Services
         Task<IEnumerable<SearchResult>> SearchAllAsync(string query);
     }
 
-    public class SearchService : ISearchService
+    public class SearchService(IEnumerable<ISearchProvider> providers) : ISearchService
     {
-        private readonly IEnumerable<ISearchProvider> _providers;
-
-        public SearchService(IEnumerable<ISearchProvider> providers)
-            => _providers = providers;
+        private readonly IEnumerable<ISearchProvider> _providers = providers;
 
         public async Task<IEnumerable<SearchResult>> SearchAllAsync(string query)
         {
@@ -24,4 +21,4 @@ namespace Atune.Services
             return resultsPerProvider.SelectMany(r => r);
         }
     }
-} 
+}

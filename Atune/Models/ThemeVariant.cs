@@ -5,4 +5,4 @@ public enum ThemeVariant
     System,
     Light,
     Dark
-} 
+}

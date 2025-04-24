@@ -24,8 +24,7 @@ namespace Atune.Views
             var desktop = Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime;
             // Find the track list control
             var trackList = this.FindControl<ListBox>("TrackList");
-            var mainVm = desktop?.MainWindow?.DataContext as MainViewModel;
-            if (mainVm != null && trackList != null)
+            if (desktop?.MainWindow?.DataContext is MainViewModel mainVm && trackList != null)
             {
                 // Subscribe to updates
                 mainVm.PropertyChanged += OnMainVmPropertyChanged;
@@ -51,7 +50,7 @@ namespace Atune.Views
         }
 
         // Expose MainViewModel's PlayAlbumFromTrackCommand for TrackListView
-        public IAsyncRelayCommand<MediaItem>? PlayTrackCommand
+        public static IAsyncRelayCommand<MediaItem>? PlayTrackCommand
         {
             get
             {
@@ -140,4 +139,4 @@ namespace Atune.Views
                 lb.LayoutUpdated -= OnTrackListLayoutUpdated;
         }
     }
-} 
+}

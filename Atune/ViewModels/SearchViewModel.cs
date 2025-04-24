@@ -14,7 +14,7 @@ namespace Atune.ViewModels
         private readonly ISearchService _searchService;
         private CancellationTokenSource? _searchCts;
         // Cache for recent search queries (keyed by normalized query)
-        private readonly Dictionary<string, List<SearchResult>> _searchCache = new Dictionary<string, List<SearchResult>>();
+        private readonly Dictionary<string, List<SearchResult>> _searchCache = [];
         private const int MinSearchLength = 2;
 
         [ObservableProperty]
@@ -38,7 +38,7 @@ namespace Atune.ViewModels
             _ = DebouncedSearchAsync(q, _searchCts.Token);
         }
 
-        public ObservableCollection<SearchResult> Results { get; } = new ObservableCollection<SearchResult>();
+        public ObservableCollection<SearchResult> Results { get; } = [];
 
         public IRelayCommand ToggleOpenCommand { get; }
         public IAsyncRelayCommand SearchCommand { get; }
@@ -76,4 +76,4 @@ namespace Atune.ViewModels
             }
         }
     }
-} 
+}

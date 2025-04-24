@@ -8,4 +8,4 @@ public interface ILoggerService
     void LogError(string message, Exception? ex = null);
     void LogWarning(string message);
     void LogDebug(string message);
-} 
+}

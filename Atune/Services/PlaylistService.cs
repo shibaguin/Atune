@@ -16,14 +16,9 @@ namespace Atune.Services
         Task RenamePlaylistAsync(int playlistId, string newName);
     }
 
-    public class PlaylistService : IPlaylistService
+    public class PlaylistService(IPlaylistRepository playlistRepository) : IPlaylistService
     {
-        private readonly IPlaylistRepository _playlistRepository;
-
-        public PlaylistService(IPlaylistRepository playlistRepository)
-        {
-            _playlistRepository = playlistRepository;
-        }
+        private readonly IPlaylistRepository _playlistRepository = playlistRepository;
 
         public Task<long> CreatePlaylistAsync(string name)
             => _playlistRepository.CreatePlaylistAsync(name);
@@ -46,4 +41,4 @@ namespace Atune.Services
         public Task RenamePlaylistAsync(int playlistId, string newName)
             => _playlistRepository.RenamePlaylistAsync(playlistId, newName);
     }
-} 
+}

@@ -5,13 +5,11 @@ namespace Atune.Services
     using System.Linq;
     using System.Threading.Tasks;
 
-    public class TrackSearchProvider : ISearchProvider
+    public class TrackSearchProvider(MediaDatabaseService dbService) : ISearchProvider
     {
         public string Name => "Tracks";
 
-        private readonly MediaDatabaseService _dbService;
-
-        public TrackSearchProvider(MediaDatabaseService dbService) => _dbService = dbService;
+        private readonly MediaDatabaseService _dbService = dbService;
 
         public async Task<IEnumerable<SearchResult>> SearchAsync(string query)
         {
@@ -35,4 +33,4 @@ namespace Atune.Services
             return results;
         }
     }
-} 
+}

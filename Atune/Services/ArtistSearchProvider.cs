@@ -8,14 +8,11 @@ namespace Atune.Services
     using Atune.Models;
 
     // Provides search over artist names
-    public class ArtistSearchProvider : ISearchProvider
+    public class ArtistSearchProvider(MediaDatabaseService dbService) : ISearchProvider
     {
         public string Name => "Artists";
 
-        private readonly MediaDatabaseService _dbService;
-
-        public ArtistSearchProvider(MediaDatabaseService dbService)
-            => _dbService = dbService;
+        private readonly MediaDatabaseService _dbService = dbService;
 
         public async Task<IEnumerable<SearchResult>> SearchAsync(string query)
         {
@@ -59,4 +56,4 @@ namespace Atune.Services
             return results;
         }
     }
-} 
+}

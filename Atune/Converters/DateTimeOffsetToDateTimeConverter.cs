@@ -27,4 +27,4 @@ namespace Atune.Converters
             return AvaloniaProperty.UnsetValue;
         }
     }
-} 
+}

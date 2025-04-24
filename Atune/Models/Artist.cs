@@ -20,4 +20,4 @@ namespace Atune.Models
         // Связь с треками через связывающую таблицу
         public ICollection<TrackArtist> TrackArtists { get; set; } = new List<TrackArtist>();
     }
-} 
+}

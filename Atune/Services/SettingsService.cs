@@ -18,7 +18,7 @@ public class SettingsService : ISettingsService
 {
     private readonly IMemoryCache _cache;
     private readonly MemoryCacheEntryOptions _cacheOptions;
-    private static readonly SemaphoreSlim _fileLockAsync = new SemaphoreSlim(1, 1);
+    private static readonly SemaphoreSlim _fileLockAsync = new(1, 1);
 
     // Add dependency injection for platform-specific paths
     // Добавьте зависимость для платформенно-специфичных путей
@@ -41,7 +41,7 @@ public class SettingsService : ISettingsService
 
     private const string VolumeKey = "PlayerVolume";
     private const int DefaultVolume = 50;
-    
+
     public int Volume
     {
         get
@@ -50,7 +50,7 @@ public class SettingsService : ISettingsService
             var settings = LoadSettings();
             if (settings.Volume != DefaultVolume)
                 return settings.Volume;
-            
+
             // Затем проверяем кэш через новый метод Get
             return Get(VolumeKey, DefaultVolume);
         }
@@ -78,18 +78,6 @@ public class SettingsService : ISettingsService
         _settingsPath = _platformPathService.GetSettingsPath();
 
         _logger = logger;
-    }
-
-    private static long GetPlatformCacheLimit()
-    {
-        if (OperatingSystem.IsAndroid() || OperatingSystem.IsIOS())
-        {
-            return 50 * 1024 * 1024; // 50 MB for mobile devices / 50 MB для мобильных устройств
-        }
-        else
-        {
-            return 100 * 1024 * 1024; // 100 MB for desktop / 100 MB для настольных устройств   
-        }
     }
 
     public void SaveSettings(AppSettings settings)
@@ -171,7 +159,7 @@ public class SettingsService : ISettingsService
         }
         return LoadSettingsInternal();
     }
-    
+
     private AppSettings LoadSettingsInternal()
     {
         lock (_fileLockAsync)
@@ -182,7 +170,7 @@ public class SettingsService : ISettingsService
                     return new AppSettings();
 
                 var settings = new AppSettings();
-                
+
                 foreach (var line in File.ReadAllLines(_settingsPath))
                 {
                     var parts = line.Split('=', 2);
@@ -229,10 +217,8 @@ public class SettingsService : ISettingsService
 
     // Add custom exception
     // Добавьте пользовательское исключение
-    public class SettingsException : Exception
+    public class SettingsException(string message, Exception inner) : Exception(message, inner)
     {
-        public SettingsException(string message, Exception inner) 
-            : base(message, inner) {}
     }
 
     public string GetCacheStatistics()
@@ -244,7 +230,7 @@ public class SettingsService : ISettingsService
         return "Cache statistics are not available";
     }
 
-    public void BackupDatabase(string backupPath)
+    public static void BackupDatabase(string backupPath)
     {
         File.Copy(
             Path.Combine(Environment.CurrentDirectory, "media_library.db"),
@@ -268,15 +254,15 @@ public class SettingsService : ISettingsService
                 .SetSize(1024)
                 .SetPriority(CacheItemPriority.High)
                 .SetSlidingExpiration(TimeSpan.FromMinutes(30));
-            
+
             await Task.Run(() => _cache.Set("AppSettings", settings, cacheOptions));
-            
+
             var directory = Path.GetDirectoryName(_settingsPath);
             if (!string.IsNullOrWhiteSpace(directory))
             {
                 await Task.Run(() => Directory.CreateDirectory(directory));
             }
-            
+
             await File.WriteAllTextAsync(_settingsPath, JsonSerializer.Serialize(settings));
         }
         finally
@@ -302,12 +288,12 @@ public class SettingsService : ISettingsService
 
             var json = await File.ReadAllTextAsync(_settingsPath);
             var settings = JsonSerializer.Deserialize<AppSettings>(json) ?? new AppSettings();
-            
+
             var cacheOptions = new MemoryCacheEntryOptions()
                 .SetSize(1024)
                 .SetPriority(CacheItemPriority.High)
                 .SetSlidingExpiration(TimeSpan.FromMinutes(30));
-            
+
             _cache.Set("AppSettings", settings, cacheOptions);
             return settings;
         }
@@ -316,4 +302,4 @@ public class SettingsService : ISettingsService
             _fileLockAsync.Release();
         }
     }
-} 
+}

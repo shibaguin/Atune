@@ -12,4 +12,4 @@ namespace Atune.Data.Repositories
         Task<IEnumerable<Album>> SearchAlbumsAsync(string query, int limit = 50);
         Task<IEnumerable<Album>> GetAlbumsForArtistAsync(int artistId);
     }
-} 
+}

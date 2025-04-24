@@ -15,7 +15,7 @@ namespace Atune.Converters
         // URI for the built-in default cover image (embedded Avalonia resource)
         public const string DefaultCoverUri = "avares://Atune/Assets/default_cover.jpg";
         // Cache for loaded bitmaps
-        private static readonly Dictionary<string, Bitmap> _bitmapCache = new Dictionary<string, Bitmap>();
+        private static readonly Dictionary<string, Bitmap> _bitmapCache = [];
 
         public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
         {
@@ -57,4 +57,4 @@ namespace Atune.Converters
         public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
             => throw new NotSupportedException();
     }
-} 
+}

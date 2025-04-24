@@ -5,14 +5,11 @@ namespace Atune.Services
     using System.Linq;
     using System.Threading.Tasks;
 
-    public class PlaylistSearchProvider : ISearchProvider
+    public class PlaylistSearchProvider(IPlaylistService playlistService) : ISearchProvider
     {
         public string Name => "Playlists";
 
-        private readonly IPlaylistService _playlistService;
-
-        public PlaylistSearchProvider(IPlaylistService playlistService)
-            => _playlistService = playlistService;
+        private readonly IPlaylistService _playlistService = playlistService;
 
         public async Task<IEnumerable<SearchResult>> SearchAsync(string query)
         {
@@ -36,4 +33,4 @@ namespace Atune.Services
             return results;
         }
     }
-} 
+}

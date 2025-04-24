@@ -4,14 +4,14 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Controls.ApplicationLifetimes;
 using Atune.ViewModels;
-using Avalonia; 
+using Avalonia;
 
 namespace Atune.Views
 {
     public partial class PlaylistView : UserControl
     {
-        private TextBlock _titleText = null!;
-        private TextBox _titleBox = null!;
+        private readonly TextBlock _titleText = null!;
+        private readonly TextBox _titleBox = null!;
 
         public PlaylistView()
         {
@@ -85,4 +85,4 @@ namespace Atune.Views
             _titleText.IsVisible = true;
         }
     }
-} 
+}
