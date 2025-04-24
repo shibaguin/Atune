@@ -3,7 +3,6 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:conv="clr-namespace:Atune.Converters"
-             xmlns:oxy="clr-namespace:OxyPlot.Avalonia;assembly=OxyPlot.Avalonia"
              xmlns:lvc="clr-namespace:LiveChartsCore.SkiaSharpView.Avalonia;assembly=LiveChartsCore.SkiaSharpView.Avalonia"
              mc:Ignorable="d"
              d:DesignWidth="800"
@@ -12,11 +11,10 @@
              x:Class="Atune.Views.HistoryView"
              x:DataType="vm:HistoryViewModel">
     <UserControl.Resources>
-        <conv:DateTimeOffsetToDateTimeConverter x:Key="DateTimeOffsetToDateTimeConverter"/>
+        <conv:DateTimeOffsetToDateTimeConverter x:Key="DateTimeConverter"/>
     </UserControl.Resources>
     <Grid Margin="16">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
@@ -33,9 +31,13 @@
                     Grid.Row="1"
                     Margin="0,0,0,12">
             <TextBlock Text="From:" VerticalAlignment="Center"/>
-            <DatePicker SelectedDate="{Binding FromDate, Converter={StaticResource DateTimeOffsetToDateTimeConverter}, Mode=TwoWay}" Width="120" />
+            <DatePicker SelectedDate="{Binding FromDate, Converter={StaticResource DateTimeConverter}, Mode=TwoWay, StringFormat='yyyy-MM-dd'}"
+                        Width="300"
+                        FontSize="14" />
             <TextBlock Text="To:" VerticalAlignment="Center"/>
-            <DatePicker SelectedDate="{Binding ToDate, Converter={StaticResource DateTimeOffsetToDateTimeConverter}, Mode=TwoWay}" Width="120" />
+            <DatePicker SelectedDate="{Binding ToDate, Converter={StaticResource DateTimeConverter}, Mode=TwoWay, StringFormat='yyyy-MM-dd'}"
+                        Width="300"
+                        FontSize="14" />
             <Button Content="Refresh"
                     Command="{Binding LoadStatsCommand}"
                     Width="80" />
@@ -51,9 +53,11 @@
         </StackPanel>
         <!-- LiveChartsCore CartesianChart -->
         <lvc:CartesianChart Grid.Row="3"
+                            Height="200"
                             Series="{Binding Series}"
                             XAxes="{Binding XAxes}"
                             YAxes="{Binding YAxes}"
-                            LegendPosition="Top" />
+                            LegendPosition="Top"
+                            ZoomMode="X" />
     </Grid>
 </UserControl>

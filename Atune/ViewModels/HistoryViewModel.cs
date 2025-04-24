@@ -33,7 +33,25 @@ public partial class HistoryViewModel : ViewModelBase
         // Initialize axes for date vs plays
         XAxes = new Axis[]
         {
-            new Axis { Name = "Date", Labeler = val => DateTime.FromOADate(val).ToString("yyyy-MM-dd") }
+            new Axis
+            {
+                Name = "Date",
+                // Safely convert OLE Automation date to string, avoid invalid dates
+                Labeler = val =>
+                {
+                    if (double.IsNaN(val) || double.IsInfinity(val))
+                        return string.Empty;
+                    try
+                    {
+                        var dt = DateTime.FromOADate(val);
+                        return dt.ToString("yyyy-MM-dd");
+                    }
+                    catch
+                    {
+                        return string.Empty;
+                    }
+                }
+            }
         };
         YAxes = new Axis[]
         {
