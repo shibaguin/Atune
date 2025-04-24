@@ -43,6 +43,8 @@
     <PackageReference Include="System.Composition.AttributedModel" />
     <PackageReference Include="TagLibSharp" />
     <PackageReference Include="Z440.ATL.Core" />
+    <PackageReference Include="LiveChartsCore" />
+    <PackageReference Include="LiveChartsCore.SkiaSharpView.Avalonia" />
   </ItemGroup>
 
   <ItemGroup>

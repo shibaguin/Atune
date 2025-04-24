@@ -5,6 +5,11 @@ using Atune.Data.Interfaces;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using LiveChartsCore;
+using LiveChartsCore.SkiaSharpView;
+using LiveChartsCore.SkiaSharpView.Avalonia;
+using LiveChartsCore.Defaults;
+using System.Collections.Generic;
 
 namespace Atune.ViewModels;
 
@@ -12,11 +17,30 @@ public partial class HistoryViewModel : ViewModelBase
 {
     private readonly IUnitOfWork _unitOfWork;
 
+    // Chart data for LiveChartsCore
+    [ObservableProperty]
+    private ISeries[] _series;
+    [ObservableProperty]
+    private Axis[] _xAxes;
+    [ObservableProperty]
+    private Axis[] _yAxes;
+
     public HistoryViewModel(IMemoryCache cache, IUnitOfWork unitOfWork)
     {
         _unitOfWork = unitOfWork;
         FromDate = DateTime.UtcNow.Date.AddDays(-7);
         ToDate = DateTime.UtcNow.Date;
+        // Initialize axes for date vs plays
+        XAxes = new Axis[]
+        {
+            new Axis { Name = "Date", Labeler = val => DateTime.FromOADate(val).ToString("yyyy-MM-dd") }
+        };
+        YAxes = new Axis[]
+        {
+            new Axis { Name = "Plays" }
+        };
+        Series = new ISeries[0];
+
         LoadStatsCommand = new AsyncRelayCommand(LoadStatsAsync);
         _ = LoadStatsAsync();
     }
@@ -60,6 +84,18 @@ public partial class HistoryViewModel : ViewModelBase
             AverageDuration = filtered.Any()
                 ? TimeSpan.FromSeconds(filtered.Average(h => h.DurationSeconds))
                 : TimeSpan.Zero;
+            // Update chart series
+            Series = new ISeries[]
+            {
+                new LineSeries<DateTimePoint>
+                {
+                    Values = filtered
+                        .GroupBy(h => h.PlayedAt.Date)
+                        .OrderBy(g => g.Key)
+                        .Select(g => new DateTimePoint(g.Key, g.Count()))
+                        .ToArray()
+                }
+            };
         }
         finally
         {

@@ -36,6 +36,8 @@
       <PrivateAssets Condition="'$(Configuration)' != 'Debug'">All</PrivateAssets>
     </PackageReference>
     <PackageReference Include="TagLibSharp" />
+    <PackageReference Include="LiveChartsCore" />
+    <PackageReference Include="LiveChartsCore.SkiaSharpView.Avalonia" />
     <PackageReference Include="VideoLAN.LibVLC.Windows" Condition="'$(OS)' == 'Windows_NT'" />
   </ItemGroup>
 

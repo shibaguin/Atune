@@ -2,18 +2,58 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:conv="clr-namespace:Atune.Converters"
+             xmlns:oxy="clr-namespace:OxyPlot.Avalonia;assembly=OxyPlot.Avalonia"
+             xmlns:lvc="clr-namespace:LiveChartsCore.SkiaSharpView.Avalonia;assembly=LiveChartsCore.SkiaSharpView.Avalonia"
              mc:Ignorable="d"
              d:DesignWidth="800"
              d:DesignHeight="450"
              xmlns:vm="clr-namespace:Atune.ViewModels"
-             x:Class="Atune.Views.HistoryView">
-    <Grid>
-        <!-- Локализованный текст для представления истории -->
-        <!-- Localized text for history view -->
-        <TextBlock Text="{DynamicResource History_ViewContent}"
-                   HorizontalAlignment="Center"
-                   VerticalAlignment="Center"
+             x:Class="Atune.Views.HistoryView"
+             x:DataType="vm:HistoryViewModel">
+    <UserControl.Resources>
+        <conv:DateTimeOffsetToDateTimeConverter x:Key="DateTimeOffsetToDateTimeConverter"/>
+    </UserControl.Resources>
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="200"/>
+        </Grid.RowDefinitions>
+        <TextBlock Text="Listening History"
                    FontSize="24"
-                   FontWeight="Bold" />
+                   FontWeight="Bold"
+                   Grid.Row="0"
+                   Margin="0,0,0,12"/>
+
+        <StackPanel Orientation="Horizontal"
+                    Spacing="8"
+                    Grid.Row="1"
+                    Margin="0,0,0,12">
+            <TextBlock Text="From:" VerticalAlignment="Center"/>
+            <DatePicker SelectedDate="{Binding FromDate, Converter={StaticResource DateTimeOffsetToDateTimeConverter}, Mode=TwoWay}" Width="120" />
+            <TextBlock Text="To:" VerticalAlignment="Center"/>
+            <DatePicker SelectedDate="{Binding ToDate, Converter={StaticResource DateTimeOffsetToDateTimeConverter}, Mode=TwoWay}" Width="120" />
+            <Button Content="Refresh"
+                    Command="{Binding LoadStatsCommand}"
+                    Width="80" />
+        </StackPanel>
+
+        <StackPanel Orientation="Vertical"
+                    Spacing="6"
+                    Grid.Row="2">
+            <TextBlock Text="{Binding TotalPlays, StringFormat=Total Plays: {0}}"/>
+            <TextBlock Text="{Binding FirstPlayDate, StringFormat=First Played: {0:yyyy-MM-dd HH:mm}}"/>
+            <TextBlock Text="{Binding LastPlayDate, StringFormat=Last Played: {0:yyyy-MM-dd HH:mm}}"/>
+            <TextBlock Text="{Binding AverageDuration, StringFormat=Average Duration: {0:mm\\:ss}}"/>
+        </StackPanel>
+        <!-- LiveChartsCore CartesianChart -->
+        <lvc:CartesianChart Grid.Row="3"
+                            Series="{Binding Series}"
+                            XAxes="{Binding XAxes}"
+                            YAxes="{Binding YAxes}"
+                            LegendPosition="Top" />
     </Grid>
 </UserControl>
