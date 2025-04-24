@@ -35,6 +35,7 @@ using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Atune.Extensions;
 
 namespace Atune;
 
@@ -380,152 +381,8 @@ public partial class App : Application
     [UnconditionalSuppressMessage("Trimming", "IL2072", Justification = "DynamicallyAccessedMembers handled in registration")]
     private static void ConfigureServices(IServiceCollection services)
     {
-        services.AddDbContext<AppDbContext>();
-        services.AddDbContextFactory<AppDbContext>();
-        // Register playlist repository and unit of work for playlist management
-        services.AddScoped<IPlaylistRepository, PlaylistRepository>();
-        services.AddScoped<IUnitOfWork, UnitOfWork>();
-
-        // Register service layer for playlists
-        services.AddScoped<IPlaylistService, PlaylistService>();
-        // Register utility service for admin/debug operations
-        services.AddScoped<IUtilityService, UtilityService>();
-
-        // Остальные сервисы
-        // Other services
-        services.AddMemoryCache(options =>
-        {
-            options.SizeLimit = 100 * 1024 * 1024; // 100 MB limit
-            options.CompactionPercentage = 0.25; // Free up 25% space when the limit is reached
-            options.ExpirationScanFrequency = TimeSpan.FromMinutes(5); // Frequency of checking expiration
-        });
-        services.AddSingleton<ViewLocator>();
-
-        // Register the platform-specific service and settings service
-        // Регистрация сервиса для платформенно-специфичных путей и сервиса настроек
-        services.AddSingleton<IPlatformPathService, PlatformPathService>();
-        services.AddSingleton<ISettingsService, SettingsService>();
-        services.AddSingleton<IInterfaceSettingsService, InterfaceSettingsService>();
-        services.AddSingleton<ILoggerService, LoggerService>();
-        services.AddSingleton<LocalizationService>();
-
-        // Новая регистрация для MediaDatabaseService
-        services.AddTransient<MediaDatabaseService>();
-        // Register MediaFileService for file operations
-        services.AddSingleton<MediaFileService>();
-
-        // Явное регистрация ViewModels
-        // Explicit registration of ViewModels
-        services.AddTransient<MainViewModel>();
-        services.AddTransient<HomeViewModel>();
-        services.AddTransient<MediaViewModel>();
-        services.AddTransient<HistoryViewModel>();
-        services.AddTransient<SettingsViewModel>();
-
-        // Явное регистрация View с конструкторами
-        // Explicit registration of Views with constructors
-        services.AddTransient<MainView>(sp => new MainView());
-        services.AddTransient<HomeView>(sp => new HomeView(sp.GetRequiredService<HomeViewModel>()));
-        services.AddTransient<MediaView>(sp => new MediaView(
-            sp.GetRequiredService<MediaViewModel>(),
-            sp.GetRequiredService<IDbContextFactory<AppDbContext>>(),
-            sp.GetRequiredService<ILoggerService>(),
-            sp.GetRequiredService<IMemoryCache>()
-        ));
-        services.AddTransient<HistoryView>(sp => new HistoryView(
-            sp.GetRequiredService<HistoryViewModel>()
-        ));
-        services.AddTransient<SettingsView>(sp =>
-            new SettingsView(
-                sp.GetRequiredService<SettingsViewModel>(),
-                sp.GetRequiredService<ISettingsService>()
-            )
-        );
-        services.AddTransient<MainWindow>();
-
-        // Фабрики
-        // Factories
-        services.AddSingleton<Func<Type, ViewModelBase>>(provider => type =>
-            (ViewModelBase)provider.GetRequiredService(type));
-
-        services.AddTransient<Func<Type, Control>>(provider =>
-            ([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] Type type) =>
-                (Control)ActivatorUtilities.CreateInstance(provider, type));
-
-        services.AddLogging(builder =>
-        {
-            builder.ClearProviders();
-            builder.AddSerilog(dispose: true);
-        });
-
-        // Добавляем новые сервисы
-        // Add new services
-        services.AddScoped<IUnitOfWork>(provider =>
-            new UnitOfWork(
-                provider.GetRequiredService<AppDbContext>(),
-                provider.GetRequiredService<ILoggerService>()));
-
-        services.AddScoped<IMediaRepository>(provider =>
-        {
-            var context = provider.GetRequiredService<AppDbContext>();
-            var logger = provider.GetRequiredService<ILoggerService>();
-            var baseRepo = new MediaRepository(context);
-            return new CachedMediaRepository(
-                baseRepo,
-                provider.GetRequiredService<IMemoryCache>()
-            );
-        });
-
-        services.AddScoped<IAlbumRepository, AlbumRepository>();
-        services.AddScoped<IArtistRepository, ArtistRepository>();
-        services.AddScoped<IPlaylistRepository, PlaylistRepository>();
-        services.AddScoped<IPlayHistoryRepository, PlayHistoryRepository>();
-        services.AddScoped<PlayHistoryService>(provider =>
-        {
-            var repo = provider.GetRequiredService<IPlayHistoryRepository>();
-            var uow = provider.GetRequiredService<IUnitOfWork>();
-            var playback = provider.GetRequiredService<MediaPlayerService>();
-            var logger = provider.GetRequiredService<ILogger<PlayHistoryService>>();
-            return new PlayHistoryService(repo, uow, playback, logger);
-        });
-        services.AddSingleton<IFoldersRepository, FoldersRepository>();
-
-        services.AddSingleton<INavigationKeywordProvider, NavigationKeywordProvider>();
-
-        // Регистрируем новый сервис воспроизведения
-        services.AddSingleton<MediaPlayerService>();
-        // Register MusicPlaybackService for play history tracking
-        services.AddSingleton<MusicPlaybackService>();
-
-        // Добавляем новый сервис для работы с обложками
-        services.AddSingleton<ICoverArtService, CoverArtService>();
-        services.AddSingleton<IPlayAlbumService, PlayAlbumService>();
-        services.AddSingleton<IPlayPlaylistService, PlayPlaylistService>();
-        services.AddSingleton<IPlayArtistService, PlayArtistService>();
-
-        // Добавляем загрузчик плагинов
-        var pluginLoader = new PluginLoader(services.BuildServiceProvider().GetRequiredService<IPlatformPathService>(), services.BuildServiceProvider().GetRequiredService<ILoggerService>());
-        var plugins = pluginLoader.LoadPlugins();
-
-        foreach (var plugin in plugins)
-        {
-            plugin.Value.Initialize();
-            services.AddSingleton(plugin.Value);
-        }
-
-        // Register search engine and UI
-        services.AddScoped<ISearchService, SearchService>();
-        services.AddScoped<SearchViewModel>();
-        services.AddScoped<ISearchProvider, SectionSearchProvider>();
-        services.AddScoped<ISearchProvider, SettingsSearchProvider>();
-        services.AddScoped<ISearchProvider, AlbumSearchProvider>();
-        services.AddScoped<ISearchProvider, TrackSearchProvider>();
-        services.AddScoped<ISearchProvider, PlaylistSearchProvider>();
-        services.AddScoped<ISearchProvider, ArtistSearchProvider>();
-        // TODO: add more providers: PlaylistSearchProvider, ArtistSearchProvider, etc.
-
-        services.AddTransient<ArtistView>(sp => new ArtistView());
-        services.AddTransient<ArtistListView>(sp => new ArtistListView());
+        // Delegate all registrations to the Atune.Extensions
+        services.AddAtuneServices();
     }
 
     [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "Disabled for Avalonia compatibility")]
