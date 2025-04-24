@@ -53,4 +53,4 @@ namespace Atune.Services
     {
         Task InvokeAsync(Action action);
     }
-} 
+}

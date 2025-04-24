@@ -26,4 +26,4 @@ namespace Atune.Services
         ILibVLC? GetLibVlc();
         IMedia? GetCurrentMedia();
     }
-} 
+}

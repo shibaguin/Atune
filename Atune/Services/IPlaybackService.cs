@@ -27,4 +27,4 @@ namespace Atune.Services
         TimeSpan CurrentTime { get; }
         MediaItem? CurrentTrack { get; }
     }
-} 
+}

@@ -91,7 +91,7 @@ namespace Atune.Services
                 if (!Uri.IsWellFormedUriString(path, UriKind.Absolute))
                 {
                     var fullPath = Path.GetFullPath(path);
-                    mediaUri = new Uri($"file:///{fullPath.Replace('\\','/')}");
+                    mediaUri = new Uri($"file:///{fullPath.Replace('\\', '/')}");
                 }
                 else
                 {
@@ -257,7 +257,7 @@ namespace Atune.Services
             if (!Uri.IsWellFormedUriString(path, UriKind.Absolute))
             {
                 var fullPath = Path.GetFullPath(path);
-                mediaUri = new Uri($"file:///{fullPath.Replace('\\','/')}");
+                mediaUri = new Uri($"file:///{fullPath.Replace('\\', '/')}");
             }
             else
             {
@@ -292,7 +292,7 @@ namespace Atune.Services
             if (!Uri.IsWellFormedUriString(path, UriKind.Absolute))
             {
                 var fullPath = Path.GetFullPath(path);
-                mediaUri = new Uri($"file:///{fullPath.Replace('\\','/')}");
+                mediaUri = new Uri($"file:///{fullPath.Replace('\\', '/')}");
             }
             else
             {
