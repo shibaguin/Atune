@@ -1,7 +1,6 @@
 using System;
 using System.Threading.Tasks;
 using Atune.Models;
-using LibVLCSharp.Shared;
 
 namespace Atune.Services
 {
@@ -24,7 +23,7 @@ namespace Atune.Services
         string? CurrentPath { get; }
 
         Task<MediaMetadata> GetCurrentMetadataAsync();
-        LibVLC? GetLibVlc();
-        Media? GetCurrentMedia();
+        ILibVLC? GetLibVlc();
+        IMedia? GetCurrentMedia();
     }
 } 

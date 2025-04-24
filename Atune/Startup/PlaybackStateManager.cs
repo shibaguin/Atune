@@ -109,18 +109,19 @@ namespace Atune.Startup
                     if (stateIndex >= 0 && stateIndex < mediaVm.PlaybackQueue.Count)
                         mediaVm.SetQueuePositionCommand.Execute(stateIndex + 1);
 
-                    var playbackService = services.GetService<MediaPlayerService>();
-                    if (playbackService != null && stateIndex >= 0 && stateIndex < mediaVm.PlaybackQueue.Count)
+                    // Restore via playback engine interface
+                    var engine = services.GetService<Atune.Services.IPlaybackEngineService>();
+                    if (engine != null && stateIndex >= 0 && stateIndex < mediaVm.PlaybackQueue.Count)
                     {
-                        await playbackService.StopAsync();
-                        await playbackService.Load(mediaVm.PlaybackQueue[stateIndex].Path);
-                        await Dispatcher.UIThread.InvokeAsync(() => playbackService.Position = TimeSpan.FromSeconds(statePos));
-
-                        mainVm.CurrentMediaPath = mediaVm.PlaybackQueue[stateIndex].Path;
-                        mainVm.CurrentMediaItem = mediaVm.PlaybackQueue[stateIndex];
-                        mainVm.CurrentPosition = TimeSpan.FromSeconds(statePos);
-                        mainVm.Duration = playbackService.Duration;
-                        mainVm.IsPlaying = false;
+                        var item = mediaVm.PlaybackQueue[stateIndex];
+                        // Play via MediaViewModel command for proper integration
+                        await mediaVm.PlayTrackCommand.ExecuteAsync(item);
+                        // Allow time for PlaybackStarted to fire and UI to update
+                        await Task.Delay(200);
+                        // Pause and seek to saved position
+                        engine.Pause();
+                        engine.Position = TimeSpan.FromSeconds(statePos);
+                        // No further UI updates required; events handled by MainViewModel
                     }
                 }
             }

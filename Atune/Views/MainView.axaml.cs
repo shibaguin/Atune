@@ -31,14 +31,21 @@ public partial class MainView : UserControl
         {
             _progressBarBackground.PointerPressed += OnProgressBarPointer;
             _progressBarBackground.PointerMoved += OnProgressBarPointer;
+            // Update on layout changes
+            _progressBarBackground.LayoutUpdated += (s, e) => UpdateCustomProgressBar();
         }
-        // Subscribe to ViewModel changes
+        // Subscribe to existing DataContext (initial update)
+        if (DataContext is INotifyPropertyChanged existingVm)
+        {
+            existingVm.PropertyChanged += OnViewModelPropertyChanged;
+            UpdateCustomProgressBar();
+        }
+        // Subscribe to DataContextChanged for future ViewModels
         DataContextChanged += (s, e) =>
         {
             if (DataContext is INotifyPropertyChanged vm)
             {
                 vm.PropertyChanged += OnViewModelPropertyChanged;
-                // Initial update
                 UpdateCustomProgressBar();
             }
         };

@@ -23,15 +23,19 @@ namespace Atune.Services
 
         public Stream? GetEmbeddedCoverArt()
         {
-            var media = _playbackEngineService.GetCurrentMedia();
-            var libVlc = _playbackEngineService.GetLibVlc();
+            var mediaAb = _playbackEngineService.GetCurrentMedia();
+            var libVlcAb = _playbackEngineService.GetLibVlc();
 
-            if (media == null || libVlc == null) return null;
+            if (mediaAb == null || libVlcAb == null) return null;
 
+            // Unwrap abstractions to native types
+            if (libVlcAb is not LibVLCWrapper libVlcWrapper || mediaAb is not MediaWrapper mediaWrapper)
+                return null;
             try
             {
-                using var mp = new MediaPlayer(libVlc);
-                mp.Media = media;
+                var nativeLib = libVlcWrapper.Native;
+                using var mp = new MediaPlayer(nativeLib);
+                mp.Media = mediaWrapper.InnerMedia;
                 mp.Play();
 
                 // Добавляем задержку для инициализации плеера

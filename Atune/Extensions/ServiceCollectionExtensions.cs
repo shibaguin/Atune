@@ -84,6 +84,11 @@ namespace Atune.Extensions
             // File and media services
             services.AddTransient<MediaDatabaseService>();
             services.AddSingleton<MediaFileService>();
+            // VLC abstraction factory registrations for MediaPlayerService
+            services.AddSingleton<ILibVLCFactory, LibVLCFactory>();
+            services.AddSingleton<IMediaFactory, MediaFactory>();
+            services.AddSingleton<IMediaPlayerFactory, MediaPlayerFactory>();
+            services.AddSingleton<IDispatcherService, AvaloniaDispatcherService>();
             // Playback engine and high-level playback services
             services.AddSingleton<IPlaybackEngineService, MediaPlayerService>();
             // Also register the concrete service so that classes depending directly on MediaPlayerService can be injected

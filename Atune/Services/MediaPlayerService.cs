@@ -14,14 +14,18 @@ namespace Atune.Services
 {
     public class MediaPlayerService : IPlaybackEngineService
     {
-        private LibVLC? _libVlc;
-        private MediaPlayer? _player;
-        private Media? _currentMedia;
+        private ILibVLC? _libVlc;
+        private IMediaPlayer? _player;
+        private IMedia? _currentMedia;
         private int _volume = 50;
         private readonly ILogger<MediaPlayerService> _logger;
         private readonly ISettingsService _settingsService;
-        private readonly MediaPlayer? _preloadPlayer;
-        private Media? _preloadMedia;
+        private readonly ILibVLCFactory _libVlcFactory;
+        private readonly IMediaFactory _mediaFactory;
+        private readonly IMediaPlayerFactory _mediaPlayerFactory;
+        private readonly IDispatcherService _dispatcher;
+        private readonly IMediaPlayer? _preloadPlayer;
+        private IMedia? _preloadMedia;
 
         public event EventHandler? PlaybackEnded;
         public event EventHandler? PlaybackStarted;
@@ -29,31 +33,28 @@ namespace Atune.Services
 
         public MediaPlayerService(
             ISettingsService settingsService,
-            ILogger<MediaPlayerService> logger)
+            ILogger<MediaPlayerService> logger,
+            ILibVLCFactory libVlcFactory,
+            IMediaFactory mediaFactory,
+            IMediaPlayerFactory mediaPlayerFactory,
+            IDispatcherService dispatcher)
         {
             _settingsService = settingsService;
             _logger = logger;
+            _libVlcFactory = libVlcFactory;
+            _mediaFactory = mediaFactory;
+            _mediaPlayerFactory = mediaPlayerFactory;
+            _dispatcher = dispatcher;
 
             try
             {
-                _logger.LogInformation("Initializing LibVLC...");
-                Core.Initialize();
-
-                _libVlc = new LibVLC(
-                    enableDebugLogs: false,
-                    "--avcodec-hw=none",
-                    "--no-xlib",
-                    "--ignore-config",
-                    "--no-sub-autodetect-file",
-                    "--network-caching=300",
-                    "--file-caching=300",
-                    "--no-audio-time-stretch"
-                );
+                _logger.LogInformation("Creating LibVLC instance...");
+                _libVlc = _libVlcFactory.Create();
                 _logger.LogDebug("LibVLC instance created");
 
-                _player = new MediaPlayer(_libVlc);
-
-                _preloadPlayer = new MediaPlayer(_libVlc) { Mute = true };
+                _player = _mediaPlayerFactory.Create(_libVlc!);
+                _preloadPlayer = _mediaPlayerFactory.Create(_libVlc!);
+                if (_preloadPlayer != null) _preloadPlayer.Mute = true;
 
                 _logger.LogInformation("MediaPlayer initialized successfully");
 
@@ -80,22 +81,17 @@ namespace Atune.Services
 
         public async Task Play(string path)
         {
-            if (_libVlc == null || _player == null)
-                throw new InvalidOperationException("Media player is not initialized");
-
+            var lib = _libVlc ?? throw new InvalidOperationException("Media player is not initialized");
+            var player = _player ?? throw new InvalidOperationException("Media player is not initialized");
+            _currentMedia?.Dispose();
+            var media = _mediaFactory.Create(lib, new Uri(path));
+            _currentMedia = media;
             try
             {
-                _currentMedia?.Dispose();
-                _currentMedia = new Media(_libVlc, new Uri(path));
-
                 // Parse metadata and buffer
-                await Task.Run(() => _currentMedia.Parse(MediaParseOptions.ParseLocal));
-
+                await Task.Run(() => media.Parse(MediaParseOptions.ParseLocal));
                 // Enqueue play on UI thread
-                await Dispatcher.UIThread.InvokeAsync(() =>
-                {
-                    _player.Play(_currentMedia);
-                });
+                await _dispatcher.InvokeAsync(() => player.Play(media));
             }
             catch (Exception ex)
             {
@@ -176,17 +172,24 @@ namespace Atune.Services
 
         public async Task<MediaMetadata> GetCurrentMetadataAsync()
         {
-            if (_currentMedia == null)
+            if (_currentMedia is not { } currentMedia)
+            {
                 return new MediaMetadata { Title = "Нет данных", Artist = "Нет данных" };
+            }
 
             return await Task.Run(() =>
             {
                 try
                 {
+                    var title = currentMedia.Meta(MetadataType.Title)
+                        ?? Path.GetFileNameWithoutExtension(currentMedia.Mrl)
+                        ?? string.Empty;
+                    var artist = currentMedia.Meta(MetadataType.Artist) ?? "Неизвестный исполнитель";
+
                     return new MediaMetadata
                     {
-                        Title = _currentMedia.Meta(MetadataType.Title) ?? Path.GetFileNameWithoutExtension(_currentMedia.Mrl),
-                        Artist = _currentMedia.Meta(MetadataType.Artist) ?? "Неизвестный исполнитель"
+                        Title = title,
+                        Artist = artist
                     };
                 }
                 catch
@@ -202,8 +205,8 @@ namespace Atune.Services
             GC.SuppressFinalize(this);
         }
 
-        public LibVLC? GetLibVlc() => _libVlc;
-        public Media? GetCurrentMedia() => _currentMedia;
+        public ILibVLC? GetLibVlc() => _libVlc;
+        public IMedia? GetCurrentMedia() => _currentMedia;
 
         private void OnPlaybackEnded(object? sender, EventArgs e)
         {
@@ -214,7 +217,7 @@ namespace Atune.Services
         {
             if (_player == null) return;
 
-            await Dispatcher.UIThread.InvokeAsync(() =>
+            await _dispatcher.InvokeAsync(() =>
             {
                 try
                 {
@@ -231,23 +234,23 @@ namespace Atune.Services
 
         public async Task Preload(string path, int bufferMilliseconds = 1500)
         {
-            if (_libVlc == null || _preloadPlayer == null)
+            var lib = _libVlc;
+            var preloadPlayer = _preloadPlayer;
+            if (lib == null || preloadPlayer == null)
                 return;
+            _preloadMedia?.Dispose();
+            var media = _mediaFactory.Create(lib, new Uri(path));
+            _preloadMedia = media;
             try
             {
-                _preloadMedia?.Dispose();
-                _preloadMedia = new Media(_libVlc, new Uri(path));
-                await Task.Run(() => _preloadMedia.Parse(MediaParseOptions.ParseLocal));
-                await Dispatcher.UIThread.InvokeAsync(() =>
+                await Task.Run(() => media.Parse(MediaParseOptions.ParseLocal));
+                await _dispatcher.InvokeAsync(() =>
                 {
-                    _preloadPlayer.Media = _preloadMedia;
-                    _preloadPlayer.Play(_preloadMedia);
+                    preloadPlayer.Media = media;
+                    preloadPlayer.Play(media);
                 });
                 await Task.Delay(bufferMilliseconds);
-                await Dispatcher.UIThread.InvokeAsync(() =>
-                {
-                    _preloadPlayer.Pause();
-                });
+                await _dispatcher.InvokeAsync(() => preloadPlayer.Pause());
             }
             catch (Exception ex)
             {
@@ -257,18 +260,15 @@ namespace Atune.Services
 
         public async Task Load(string path)
         {
-            if (_libVlc == null || _player == null)
-                throw new InvalidOperationException("Media player is not initialized");
-
+            var lib = _libVlc ?? throw new InvalidOperationException("Media player is not initialized");
+            var player = _player ?? throw new InvalidOperationException("Media player is not initialized");
+            _currentMedia?.Dispose();
+            var media = _mediaFactory.Create(lib, new Uri(path));
+            _currentMedia = media;
             try
             {
-                _currentMedia?.Dispose();
-                _currentMedia = new Media(_libVlc, new Uri(path));
-                await Task.Run(() => _currentMedia.Parse(MediaParseOptions.ParseLocal));
-                await Dispatcher.UIThread.InvokeAsync(() =>
-                {
-                    _player.Media = _currentMedia;
-                });
+                await Task.Run(() => media.Parse(MediaParseOptions.ParseLocal));
+                await _dispatcher.InvokeAsync(() => player.Media = media);
             }
             catch (Exception ex)
             {
