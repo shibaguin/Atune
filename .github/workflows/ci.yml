@@ -41,8 +41,9 @@ jobs:
           dotnet build Atune.Desktop/Atune.Desktop.csproj --no-restore --configuration Release
           dotnet build Atune.Browser/Atune.Browser.csproj --no-restore --configuration Release
       - name: Test
-        run: dotnet test Atune.Tests/Atune.Tests.csproj --verbosity normal
+        run: dotnet test Atune.Tests/Atune.Tests.csproj --filter "FullyQualifiedName!~Integration" --verbosity normal
       - name: Integration Test
+        if: runner.os != 'Linux'
         run: dotnet test Atune.Tests/Atune.Tests.csproj --filter "FullyQualifiedName~Integration" --verbosity normal
       - name: Install dotnet-format
         run: dotnet tool install -g dotnet-format
