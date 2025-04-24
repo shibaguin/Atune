@@ -1,50 +1,38 @@
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
-using Avalonia.Data.Core.Plugins;
-using System.Linq;
 using Avalonia.Markup.Xaml;
+using Avalonia.Interactivity;
+using Avalonia.Input;
+using Avalonia.Platform;
+using Avalonia.Styling;
+using Avalonia.Threading;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Serilog;
+using System;
+using System.IO;
+using System.Threading.Tasks;
+using Atune.Converters;
+using Atune.Extensions;
+using Atune.Startup;
+using ThemeVariant = Atune.Models.ThemeVariant;
 using Atune.ViewModels;
 using Atune.Views;
-using System.Diagnostics.CodeAnalysis;
 using Atune.Services;
-using Atune.Converters;
-using ThemeVariant = Atune.Models.ThemeVariant;
-using Avalonia.Platform;
-using Microsoft.Extensions.DependencyInjection;
-using System;
-using Avalonia.Styling;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Avalonia.Controls;
-using System.Threading.Tasks;
-using Avalonia.Threading;
-using Microsoft.Extensions.Caching.Memory;
-using Serilog;
-using Serilog.Sinks.File;
-using Serilog.Extensions.Logging;
-using Microsoft.EntityFrameworkCore;
-using System.IO;
-using Atune.Models;
-using Microsoft.Extensions.Hosting;
-using Atune.Data.Interfaces;
-using Atune.Data.Repositories;
-using Atune.Data;
-using Microsoft.Extensions.Logging;
-using System.Collections.Generic;
-using System.Text.Json;
-using System.Text.Json.Nodes;
-using System.Text.Json.Serialization;
-using Avalonia.Input;
-using Avalonia.Interactivity;
-using Atune.Extensions;
 
 namespace Atune;
 
 public partial class App : Application
 {
+    // --------------------------------------------------
+    // Host and DI Setup
+    // --------------------------------------------------
     private readonly IHost _host;
 
     public App()
     {
+        // Build generic host with DI and logging
         _host = new HostBuilder()
             .UseSerilog((context, config) => config
                 .Enrich.FromLogContext()
@@ -96,7 +84,9 @@ public partial class App : Application
 
     public override void Initialize()
     {
-        // Log the start of base initialization: loading XAML and setting up DI services
+        // --------------------------------------------------
+        // XAML Initialization and DI Provider Assignment
+        // --------------------------------------------------
         Log.Information("Starting base initialization: loading XAML and setting up services");
 
         AvaloniaXamlLoader.Load(this);
@@ -104,28 +94,6 @@ public partial class App : Application
 
         // Use host's service provider for DI
         Services = _host.Services;
-
-        // Copy default cover to user data covers directory (Windows, Linux, Android)
-        try
-        {
-            var pathService = Services.GetRequiredService<IPlatformPathService>();
-            var coversDir = pathService.GetCoversDirectory();
-            Directory.CreateDirectory(coversDir);
-            var defaultCoverDest = pathService.GetDefaultCoverPath();
-            if (!File.Exists(defaultCoverDest))
-            {
-                using var assetStream = AssetLoader.Open(new Uri(CoverArtConverter.DefaultCoverUri));
-                using var fileStream = File.Create(defaultCoverDest);
-                assetStream.CopyTo(fileStream);
-            }
-        }
-        catch
-        {
-            // Ignore errors in copying default cover
-        }
-
-        // Get the service through the registered provider
-        _ = Services.GetRequiredService<LocalizationService>();
     }
 
     public new static App? Current => Application.Current as App;
@@ -133,18 +101,21 @@ public partial class App : Application
 
     public override async void OnFrameworkInitializationCompleted()
     {
-        // Log the completion of full initialization: the main window has been created, the database and services are configured
+        // --------------------------------------------------
+        // Application Initialization: Database and Window
+        // --------------------------------------------------
         Log.Information("Full initialization completed: the main window has been created, the database and services are configured");
 
         try
         {
-            // Apply migrations and create the database
-            await InitializeDatabaseAsync();
+            // Initialize database
+            await DatabaseInitializer.InitializeAsync(Services!);
 
             // Initialize application windows
             if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
             {
-                DisableAvaloniaDataAnnotationValidation();
+                // Disable Avalonia DataAnnotations validation plugin
+                AvaloniaValidationDisabler.Disable();
                 var mainWindow = Services!.GetRequiredService<MainWindow>();
                 // Toggle play/pause on Spacebar for desktop
                 mainWindow.AddHandler(InputElement.KeyDownEvent,
@@ -158,8 +129,8 @@ public partial class App : Application
                     RoutingStrategies.Tunnel,
                     handledEventsToo: true);
                 desktop.MainWindow = mainWindow;
-                // Save playback state when window is closed
-                mainWindow.Closing += (s, e) => SavePlaybackState();
+                // Handle saving playback state on window closing
+                mainWindow.Closing += (s, e) => PlaybackStateManager.SaveState(Services!);
                 desktop.Exit += OnAppExit;
                 desktop.Startup += (s, e) =>
                 {
@@ -184,17 +155,6 @@ public partial class App : Application
                 var settings = settingsService.LoadSettings();
                 UpdateTheme(settings.ThemeVariant);
             }
-
-            // Example of adding a test entry to the database
-            var testItem = new MediaItem(
-                "Title",
-                new Album { Title = "Album" },
-                2023u,
-                "Genre",
-                "/path/to/file.mp3",
-                TimeSpan.FromMinutes(3),
-                new List<TrackArtist>()
-            );
         }
         catch (Exception ex)
         {
@@ -204,186 +164,16 @@ public partial class App : Application
         }
     }
 
+    // --------------------------------------------------
+    // Playback State Management
+    // --------------------------------------------------
     private void OnAppExit(object? sender, ControlledApplicationLifetimeExitEventArgs e)
     {
         // Save playback state before shutdown
         Log.Information("Calling SavePlaybackState");
-        SavePlaybackState();
+        PlaybackStateManager.SaveState(Services!);
         Log.Information("Application shutdown");
         Log.CloseAndFlush();
-    }
-
-    private void SavePlaybackState()
-    {
-        try
-        {
-            var platformPathService = Services?.GetService<IPlatformPathService>();
-            var playbackService = Services!.GetService<MediaPlayerService>();
-            if (platformPathService == null) return;
-
-            // Use .txt format: each queue path on its own line, then index and position
-            var filePath = platformPathService.GetSettingsPath("playbackstate.txt");
-            Log.Information("Saving playback state to {Path}", filePath);
-            var directory = Path.GetDirectoryName(filePath);
-            if (!string.IsNullOrWhiteSpace(directory))
-                Directory.CreateDirectory(directory);
-
-            if (ApplicationLifetime is not IClassicDesktopStyleApplicationLifetime desktop) return;
-            if (desktop.MainWindow?.DataContext is not MainViewModel mainVm) return;
-            var mediaVm = mainVm.MediaViewModelInstance;
-            if (mediaVm == null) return;
-
-            // Determine current queue index based on SelectedMediaItem
-            int currentIndex = -1;
-            if (mediaVm.SelectedMediaItem != null)
-                currentIndex = mediaVm.PlaybackQueue.IndexOf(mediaVm.SelectedMediaItem);
-            // Fallback to CurrentQueueIndex if SelectedMediaItem not set
-            if (currentIndex < 0 && mediaVm.CurrentQueueIndex >= 0)
-                currentIndex = mediaVm.CurrentQueueIndex;
-            double position = playbackService?.Position.TotalSeconds ?? 0;
-
-            using var writer = new StreamWriter(filePath, false);
-            // Write queue paths
-            foreach (var item in mediaVm.PlaybackQueue)
-            {
-                var path = item.Path?.Replace("\r", string.Empty).Replace("\n", string.Empty) ?? string.Empty;
-                // Escape '|' if present
-                writer.WriteLine(path.Replace("|", "\\|"));
-            }
-            // Marker lines: index and position
-            writer.WriteLine($"__INDEX__:{currentIndex}");
-            writer.WriteLine($"__POSITION__:{position.ToString(System.Globalization.CultureInfo.InvariantCulture)}");
-
-            Log.Information("Playback state saved, exists={Exists}", File.Exists(filePath));
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "Failed to save playback state");
-        }
-    }
-
-    public async Task RestorePlaybackStateAsync()
-    {
-        var platformPathService = Services?.GetService<IPlatformPathService>();
-        if (platformPathService == null) return;
-
-        var filePath = platformPathService.GetSettingsPath("playbackstate.txt");
-        Log.Information("Restoring playback state from {Path}", filePath);
-        var directory = Path.GetDirectoryName(filePath);
-        try
-        {
-            if (!string.IsNullOrWhiteSpace(directory))
-            {
-                var files = Directory.GetFiles(directory);
-                Log.Information("Restore directory '{Dir}' contains: {Files}", directory, files);
-            }
-        }
-        catch (Exception dirEx)
-        {
-            Log.Error(dirEx, "Failed to list directory contents for {Dir}", directory);
-        }
-
-        if (!File.Exists(filePath))
-        {
-            Log.Warning("Playback state file not found: {Path}", filePath);
-            return;
-        }
-
-        try
-        {
-            var lines = await File.ReadAllLinesAsync(filePath);
-            var queuePaths = new List<string>();
-            int stateIndex = -1;
-            double statePos = 0;
-
-            foreach (var raw in lines)
-            {
-                if (raw.StartsWith("__INDEX__:"))
-                {
-                    // Parse index after marker
-                    int.TryParse(raw["__INDEX__:".Length..], out stateIndex);
-                }
-                else if (raw.StartsWith("__POSITION__:"))
-                {
-                    // Parse position after marker
-                    double.TryParse(raw["__POSITION__:".Length..], System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out statePos);
-                }
-                else
-                {
-                    // Unescape '|'
-                    queuePaths.Add(raw.Replace("\\|", "|"));
-                }
-            }
-
-            if (queuePaths.Count == 0) return;
-
-            if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop
-                && desktop.MainWindow?.DataContext is MainViewModel mainVm)
-            {
-                mainVm.GoMediaCommand.Execute(null);
-                var mediaVm = mainVm.MediaViewModelInstance;
-                if (mediaVm == null) return;
-
-                mediaVm.ClearQueueCommand.Execute(null);
-                foreach (var path in queuePaths)
-                {
-                    var item = mediaVm.MediaItems.FirstOrDefault(mi => mi.Path == path);
-                    if (item != null)
-                        mediaVm.AddToQueueCommand.Execute(item);
-                }
-
-                if (stateIndex >= 0 && stateIndex < mediaVm.PlaybackQueue.Count)
-                    mediaVm.SetQueuePositionCommand.Execute(stateIndex + 1);
-
-                var playbackService = Services!.GetService<MediaPlayerService>();
-                if (playbackService != null && stateIndex >= 0 && stateIndex < mediaVm.PlaybackQueue.Count)
-                {
-                    var currentItem = mediaVm.PlaybackQueue[stateIndex];
-                    // Stop any running media and load the saved track without playing
-                    await playbackService.StopAsync();
-                    await playbackService.Load(currentItem.Path);
-                    // Seek to last known position on UI thread
-                    await Dispatcher.UIThread.InvokeAsync(() =>
-                    {
-                        playbackService.Position = TimeSpan.FromSeconds(statePos);
-                    });
-
-                    // Record the restored media path for resume logic
-                    mainVm.CurrentMediaPath = currentItem.Path;
-                    mainVm.CurrentMediaItem = currentItem;
-                    mainVm.CurrentPosition = TimeSpan.FromSeconds(statePos);
-                    mainVm.Duration = playbackService.Duration;
-                    mainVm.IsPlaying = false;
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "Error in RestorePlaybackStateAsync");
-        }
-    }
-
-    [UnconditionalSuppressMessage("Trimming", "IL2072", Justification = "DynamicallyAccessedMembers handled in registration")]
-    private static void ConfigureServices(IServiceCollection services)
-    {
-        // Delegate all registrations to the Atune.Extensions
-        services.AddAtuneServices();
-    }
-
-    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "Disabled for Avalonia compatibility")]
-    private static void DisableAvaloniaDataAnnotationValidation()
-    {
-        // Получаем массив плагинов для удаления
-        // Get an array of plugins to remove
-        var dataValidationPluginsToRemove =
-            BindingPlugins.DataValidators.OfType<DataAnnotationsValidationPlugin>().ToArray();
-
-        // Удаляем каждый найденный плагин
-        // Remove each entry found
-        foreach (var plugin in dataValidationPluginsToRemove)
-        {
-            BindingPlugins.DataValidators.Remove(plugin);
-        }
     }
 
     public void UpdateTheme(ThemeVariant theme)
@@ -416,33 +206,9 @@ public partial class App : Application
         }, DispatcherPriority.Background);
     }
 
-    private async Task InitializeDatabaseAsync()
-    {
-        using var scope = Services!.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-
-        try
-        {
-            Log.Information("Initializing database...");
-
-            // Всегда применяем ожидающие миграции
-            var pendingMigrations = await db.Database.GetPendingMigrationsAsync();
-            if (pendingMigrations.Any())
-            {
-                Log.Information($"Applying {pendingMigrations.Count()} pending migrations...");
-                await db.Database.MigrateAsync();
-            }
-
-            var exists = await db.MediaItems.AnyAsync();
-            Log.Information($"Database status: {(exists ? "OK" : "EMPTY")}");
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "Database initialization failed");
-            throw;
-        }
-    }
-
+    // --------------------------------------------------
+    // Localization Update
+    // --------------------------------------------------
     public void UpdateLocalization()
     {
         // Добавляем принудительное обновление кэша

@@ -26,6 +26,7 @@ using System.ComponentModel;
 using Atune.ViewModels;
 using Atune.Helpers;
 using TagLib;
+using Atune.Startup;
 
 namespace Atune.ViewModels;
 
@@ -293,6 +294,12 @@ public partial class MediaViewModel : ObservableObject, IDisposable
 
         // Синхронизируем с MediaItems
         await UpdateMediaItemsGradually(MediaContent);
+
+        // Restore playback state now that media content is loaded
+        if (Atune.App.Current is Atune.App app && app.Services is IServiceProvider sp)
+        {
+            await PlaybackStateManager.RestoreStateAsync(sp);
+        }
     }
 
     private List<MediaItem> LoadFromDataSource()
@@ -487,11 +494,6 @@ public partial class MediaViewModel : ObservableObject, IDisposable
             _cache.Set("MediaContent", items, new MemoryCacheEntryOptions()
                 .SetSlidingExpiration(TimeSpan.FromMinutes(5))
                 .SetSize(items.Count * 500 + 1024));
-            // Restore playback state now that media content is loaded
-            if (Atune.App.Current is Atune.App app)
-            {
-                await app.RestorePlaybackStateAsync();
-            }
         }
         catch (Exception ex)
         {
