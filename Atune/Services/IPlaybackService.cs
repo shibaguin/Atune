@@ -32,14 +32,20 @@ namespace Atune.Services
         event EventHandler<TimeSpan> PositionChanged;
         event EventHandler<IReadOnlyList<MediaItem>> QueueChanged;
 
+        // Engine events (legacy)
         event EventHandler? PlaybackStarted;
         event EventHandler? PlaybackPaused;
         event EventHandler? PlaybackEnded;
 
+        // Convenience read-only view of the queue
         IReadOnlyList<MediaItem> GetQueue();
 
+        // Current playback info (legacy)
         bool IsPlaying { get; }
         TimeSpan CurrentTime { get; }
         MediaItem? CurrentTrack { get; }
+
+        // Current media path (engine provider)
+        string? CurrentPath { get; }
     }
 }

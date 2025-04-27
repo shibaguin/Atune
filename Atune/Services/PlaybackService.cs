@@ -8,9 +8,15 @@ namespace Atune.Services
 {
     public class PlaybackService : IPlaybackService
     {
+        // Legacy engine events
+        public event EventHandler? PlaybackStarted;
+        public event EventHandler? PlaybackPaused;
+        public event EventHandler? PlaybackEnded;
+
         private readonly IPlaybackEngineService _engine;
         private readonly List<MediaItem> _queue = new List<MediaItem>();
         private int _currentIndex;
+        private MediaItem? _currentTrack;
         private readonly DispatcherTimer _positionTimer;
 
         public event EventHandler<MediaItem?> TrackChanged;
@@ -18,12 +24,23 @@ namespace Atune.Services
         public event EventHandler<TimeSpan> PositionChanged;
         public event EventHandler<IReadOnlyList<MediaItem>> QueueChanged;
 
+        // Legacy interface members
+        public IReadOnlyList<MediaItem> GetQueue() => _queue.AsReadOnly();
+        public bool IsPlaying => _engine.IsPlaying;
+        public TimeSpan CurrentTime => _engine.Position;
+        public MediaItem? CurrentTrack => _currentTrack;
+        public string? CurrentPath => _engine.CurrentPath;
+
         public PlaybackService(IPlaybackEngineService engine)
         {
             _engine = engine ?? throw new ArgumentNullException(nameof(engine));
+            // Subscribe engine events
             _engine.PlaybackStarted += OnEngineStarted;
+            _engine.PlaybackStarted += (_, __) => PlaybackStarted?.Invoke(this, EventArgs.Empty);
             _engine.PlaybackPaused  += OnEnginePaused;
+            _engine.PlaybackPaused  += (_, __) => PlaybackPaused?.Invoke(this, EventArgs.Empty);
             _engine.PlaybackEnded   += async (_, __) => await Next();
+            _engine.PlaybackEnded   += (_, __) => PlaybackEnded?.Invoke(this, EventArgs.Empty);
 
             _positionTimer = new DispatcherTimer
             {
@@ -65,6 +82,7 @@ namespace Atune.Services
                 _currentIndex = 0;
 
             var item = _queue[_currentIndex];
+            _currentTrack = item;
             TrackChanged?.Invoke(this, item);
             await _engine.Play(item.Path);
             _positionTimer.Start();
@@ -98,7 +116,7 @@ namespace Atune.Services
         public void Stop()
         {
             _positionTimer.Stop();
-            _engine.Stop();
+            _engine.StopAsync().GetAwaiter().GetResult();
         }
 
         public TimeSpan Position

@@ -76,10 +76,8 @@ public partial class MainViewModel : ViewModelBase
         OnPropertyChanged(nameof(NowPlayingArtist));
     }
 
-    private readonly DispatcherTimer _positionTimer;
-    private readonly DispatcherTimer? _metadataTimer;
     private CancellationTokenSource? _volumeSaveCts;
-    private readonly bool _isInitializing = true; // skip saves during initial load
+    private bool _isInitializing = true; // skip saves during initial load
 
     private readonly ISettingsService _settingsService;
     private readonly Dictionary<SectionType, Control> _views;
@@ -87,7 +85,7 @@ public partial class MainViewModel : ViewModelBase
     private readonly Func<Type, Control> _viewFactory;
     private readonly INavigationKeywordProvider _keywordProvider;
     private readonly LocalizationService _localizationService;
-    private readonly IPlaybackEngineService _playbackEngineService;
+    private readonly IPlaybackService _playbackService;
     private readonly ILogger<MainViewModel> _logger;
     private readonly ICoverArtService _coverArtService;
     private readonly SearchViewModel _searchViewModel;
@@ -113,7 +111,7 @@ public partial class MainViewModel : ViewModelBase
         Func<Type, Control> viewFactory,
         INavigationKeywordProvider keywordProvider,
         LocalizationService localizationService,
-        IPlaybackEngineService playbackEngineService,
+        IPlaybackService playbackService,
         ILogger<MainViewModel> logger,
         ICoverArtService coverArtService,
         SearchViewModel searchViewModel)
@@ -127,22 +125,9 @@ public partial class MainViewModel : ViewModelBase
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _coverArtService = coverArtService ?? throw new ArgumentNullException(nameof(coverArtService));
 
-        try
-        {
-            _playbackEngineService = playbackEngineService;
-            // Apply initial settings now that playback engine service is available
-            LoadInitialSettings();
-        }
-        catch (MediaPlayerInitializationException ex)
-        {
-            _logger.LogCritical(ex, "Media player initialization failed");
-            throw new CriticalStartupException(
-                "Media components failed to initialize", ex);
-        }
-        finally
-        {
-            _isInitializing = false;
-        }
+        _playbackService = playbackService ?? throw new ArgumentNullException(nameof(playbackService));
+        LoadInitialSettings();
+        _isInitializing = false;
 
         _views = new Dictionary<SectionType, Control>
         {
@@ -156,33 +141,18 @@ public partial class MainViewModel : ViewModelBase
         HeaderText = _localizationService["Nav_Home"];
 
         // Subscribe to localization change event.
-        // ??????????? ?? ??????? ????????? ???????????.
         _localizationService.PropertyChanged += LocalizationService_PropertyChanged;
 
-        // ???????????????? ??????
-        _positionTimer = new DispatcherTimer
-        {
-            Interval = TimeSpan.FromMilliseconds(250) // ????????? ???????? ??? ?????????
-        };
-        _positionTimer.Tick += PositionTimer_Tick;
-
-        // ????????????? ?? ??????? ????????? ??????
-        _playbackEngineService.PlaybackStarted += OnPlaybackStarted;
-        _playbackEngineService.PlaybackPaused += OnPlaybackPaused;
-
-        _playbackEngineService.PlaybackEnded += (s, e) =>
-        {
-            CurrentPosition = TimeSpan.Zero;
-            Duration = TimeSpan.Zero;
-        };
-
-        _metadataTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
+        // Subscribe to playback service events
+        _playbackService.TrackChanged        += (_, item) => CurrentMediaItem = item;
+        _playbackService.PlaybackStateChanged += (_, playing) => IsPlaying = playing;
+        _playbackService.PositionChanged     += (_, pos) => CurrentPosition = pos;
+        _playbackService.QueueChanged        += (_, queue) => Duration = _playbackService.Duration;
     }
 
     private void LocalizationService_PropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         // When localization changes (for example, PropertyName == "Item") update the header.
-        // ??? ????????? ??????????? (????????, PropertyName == "Item") ???????? ?????????.
         if (string.IsNullOrEmpty(e.PropertyName) || e.PropertyName == "Item")
         {
             UpdateHeaderText();
@@ -190,7 +160,6 @@ public partial class MainViewModel : ViewModelBase
     }
 
     // Updates the HeaderText value depending on the current selected section and localization.
-    // ????????? ???????? HeaderText ? ??????????? ?? ???????? ?????????? ??????? ? ???????????.
     private void UpdateHeaderText()
     {
         HeaderText = SelectedSection switch
@@ -267,7 +236,6 @@ public partial class MainViewModel : ViewModelBase
             return;
 
         // Try to execute the navigation command using fuzzy matching
-        // ?????????? ????????? ??????? ????????? ? ?????????????? ????????? ?????????????
         if (TryGetNavigationCommand(query, out var navigationAction))
         {
             navigationAction!();
@@ -276,7 +244,6 @@ public partial class MainViewModel : ViewModelBase
         }
 
         // If the current view is associated with MediaViewModel, perform a search in the database
-        // ???? ??????? ??? ?????? ? MediaViewModel, ????????? ????? ? ???? ??????
         if (CurrentView is UserControl view && view.DataContext is MediaViewModel mediaVM)
         {
             await mediaVM.SearchMediaCommand.ExecuteAsync(query);
@@ -294,7 +261,6 @@ public partial class MainViewModel : ViewModelBase
         else
         {
             // If the current view does not match, switch to MediaView
-            // ???? ??????? ??? ?? ?????????????, ????????????? ?? MediaView
             GoMedia();
             if (CurrentView is UserControl newView && newView.DataContext is MediaViewModel newMediaVM)
             {
@@ -315,15 +281,6 @@ public partial class MainViewModel : ViewModelBase
 
     // Tries to match the entered query with one of the navigation commands.
     // Uses keywords for each section with fuzzy comparison.
-    // <param name="query">The user's query converted to lowercase.</param>
-    // <param name="navigationAction">The returned navigation action if a match is found.</param>
-    // <returns>True, if a suitable match is found, otherwise false.</returns>
-
-    // ????? ??? ??????? ????????????? ?????????? ??????? ? ????? ?? ?????? ?????????.
-    // ?????????? ???????? ????? ??? ??????? ??????? ? ???????? ??????????.
-    // <param name="query">????????? ????????????? ??????, ??????????????? ? ?????? ???????.</param>
-    // <param name="navigationAction">???????????? ??????? ?????????, ???? ??????? ??????????.</param>
-    // <returns>True, ???? ??????? ?????????? ??????????, ????? false.</returns>
     private bool TryGetNavigationCommand(string query, out Action? navigationAction)
     {
         var navigationDict = new Dictionary<SectionType, Action>
@@ -335,11 +292,10 @@ public partial class MainViewModel : ViewModelBase
         };
 
         // Get keywords through the provider
-        // ???????? ???????? ????? ????? ??????????
         var navigationKeywords = _keywordProvider.GetNavigationKeywords();
 
         double bestSimilarity = 0;
-        SectionType bestMatch = SectionType.Home; // Default value / ???????? ?? ?????????
+        SectionType bestMatch = SectionType.Home; // Default value
         bool found = false;
 
         foreach (var kvp in navigationKeywords)
@@ -368,8 +324,6 @@ public partial class MainViewModel : ViewModelBase
 
     // Calculates the normalized similarity value between two strings (from 0 to 1),
     // where 1 means full match.
-    // ????? ??? ?????????? ???????????????? ???????? ???????? ????? ????? ???????? (?? 0 ?? 1),
-    // ??? 1 ???????? ?????? ??????????.
     private static double CalculateSimilarity(string source, string target)
     {
         int distance = LevenshteinDistance(source, target);
@@ -380,8 +334,6 @@ public partial class MainViewModel : ViewModelBase
 
         // If the keyword starts with the query (if the query length >= 2 characters),
         // increase the similarity coefficient.
-        // ???? ???????? ????? ?????????? ? ??????? (???? ????? ??????? >= 2 ????????),
-        // ??????????? ??????????? ????????.
         if (source.Length >= 2 && target.StartsWith(source, StringComparison.InvariantCultureIgnoreCase))
         {
             similarity = Math.Max(similarity, 0.9);
@@ -391,7 +343,6 @@ public partial class MainViewModel : ViewModelBase
     }
 
     // Calculates the Levenshtein distance between two strings.
-    // ????? ??? ?????????? ?????????? ??????????? ????? ????? ????????.
     private static int LevenshteinDistance(string s, string t)
     {
         if (string.IsNullOrEmpty(s))
@@ -421,7 +372,6 @@ public partial class MainViewModel : ViewModelBase
     }
 
     // Method for getting query variants based on similarity
-    // ????? ??? ????????? ????????? ??????? ?? ?????? ????????
     private IEnumerable<string> GetSearchSuggestions(string query)
     {
         var navigationKeywords = _keywordProvider.GetNavigationKeywords();
@@ -458,7 +408,6 @@ public partial class MainViewModel : ViewModelBase
         else
         {
             // Get suggestions based on the entered query.
-            // ???????? ??????????? ?? ?????? ?????????? ???????.
             var suggestions = GetSearchSuggestions(value.ToLowerInvariant());
             SearchSuggestions.Clear();
             foreach (var suggestion in suggestions)
@@ -473,59 +422,15 @@ public partial class MainViewModel : ViewModelBase
     [RelayCommand]
     private async Task ExecutePlayCommand()
     {
-        // First try to resume the last-loaded track
-        if (!string.IsNullOrEmpty(CurrentMediaPath))
-        {
-            _playbackEngineService.Volume = Volume;
-            // Normalize loaded path
-            string? mrl = _playbackEngineService.CurrentPath;
-            string? loadedPath = null;
-            if (!string.IsNullOrEmpty(mrl) && Uri.TryCreate(mrl, UriKind.Absolute, out var uri) && uri.IsFile)
-                loadedPath = uri.LocalPath;
-            else
-                loadedPath = mrl;
-            if (string.Equals(loadedPath, CurrentMediaPath, StringComparison.OrdinalIgnoreCase))
-                _playbackEngineService.Resume();
-            else
-                await _playbackEngineService.Play(CurrentMediaPath);
-            IsPlaying = true;
-            return;
-        }
-        // Fallback: play selected item in MediaView if no media was previously loaded
-        if (CurrentView is MediaView mediaView &&
-            mediaView.DataContext is MediaViewModel mvm &&
-            mvm.SelectedMediaItem != null)
-        {
-            _playbackEngineService.Volume = Volume;
-            await _playbackEngineService.Play(mvm.SelectedMediaItem.Path);
-            IsPlaying = true;
-        }
+        // Delegate to playback service
+        await _playbackService.Play();
     }
 
     // ??????????? ????? ??? ???????????? ??????????????? (play/pause)
     [RelayCommand]
     private void TogglePlayPause()
     {
-        // In TogglePlayPause method, debounce rapid toggles
-        if ((DateTime.UtcNow - _lastToggleTime).TotalMilliseconds < 250)
-        {
-            return; // ignore toggles within 250ms
-        }
-        _lastToggleTime = DateTime.UtcNow;
-
-        // Immediately reflect state in UI
-        if (_playbackEngineService.IsPlaying)
-        {
-            _playbackEngineService.Pause();
-            IsPlaying = false;
-        }
-        else
-        {
-            _playbackEngineService.Resume();
-            // Seek to saved position after resuming
-            _playbackEngineService.Position = CurrentPosition;
-            IsPlaying = true;
-        }
+        if (IsPlaying) _playbackService.Pause(); else _playbackService.Resume();
     }
 
     // ????????????? ?????????? ??? ????????? IsPlaying (???? ???????????? [ObservableProperty])
@@ -535,19 +440,15 @@ public partial class MainViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    private void ExecuteNextCommand()
+    private async Task ExecuteNextCommand()
     {
-        if (CurrentView is MediaView mediaView &&
-            mediaView.DataContext is MediaViewModel mediaVM)
-        {
-            mediaVM.PlayNextInQueueCommand.Execute(null);
-        }
+        await _playbackService.Next();
     }
 
     // ?????????? ????????????? ??? ????????? Volume; ????????? ???????? ? FFmpegService
     partial void OnVolumeChanged(int value)
     {
-        _playbackEngineService.Volume = value;
+        _playbackService.Volume = value;
         _ = UpdateMetadataAsync();
 
         // Debounce final save after user finishes adjusting
@@ -587,11 +488,11 @@ public partial class MainViewModel : ViewModelBase
     {
         Dispatcher.UIThread.InvokeAsync(() =>
         {
-            if (_playbackEngineService == null || _positionTimer == null)
+            if (_playbackService == null)
                 return;
 
             // Determine local file path from CurrentPath (could be file URI)
-            var mrl = _playbackEngineService.CurrentPath;
+            var mrl = _playbackService.CurrentPath;
             var localPath = string.Empty;
             if (!string.IsNullOrEmpty(mrl))
             {
@@ -603,9 +504,6 @@ public partial class MainViewModel : ViewModelBase
             // Update playback state
             CurrentMediaPath = localPath;
             IsPlaying = true;
-            _positionTimer.Start();
-            // Apply main volume setting when playback actually starts
-            _playbackEngineService.Volume = Volume;
 
             // Update current media item in Now Playing
             var mediaVm = _views[SectionType.Media].DataContext as MediaViewModel;
@@ -637,22 +535,21 @@ public partial class MainViewModel : ViewModelBase
 
     private void PositionTimer_Tick(object? sender, EventArgs e)
     {
-        if (_playbackEngineService == null)
+        if (_playbackService == null)
         {
-            _positionTimer.Stop();
             return;
         }
 
         try
         {
             // ?????? ????????? ???????, ???? ???? ??????????????? ?? ?????
-            var newPosition = _playbackEngineService.Position;
+            var newPosition = _playbackService.Position;
             if (newPosition != CurrentPosition)
             {
                 CurrentPosition = newPosition;
             }
 
-            var newDuration = _playbackEngineService.Duration;
+            var newDuration = _playbackService.Duration;
             if (newDuration != Duration)
             {
                 Duration = newDuration;
@@ -661,19 +558,18 @@ public partial class MainViewModel : ViewModelBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error updating media position");
-            _positionTimer.Stop();
         }
     }
 
     partial void OnCurrentPositionChanged(TimeSpan value)
     {
         // ??????? ???????? ?? IsPlaying, ????????? ????????? ??????? ??????
-        if (_playbackEngineService != null
-            && Math.Abs((_playbackEngineService.Position - value).TotalSeconds) > 0.5)
+        if (_playbackService != null
+            && Math.Abs((_playbackService.Position - value).TotalSeconds) > 0.5)
         {
             try
             {
-                _playbackEngineService.Position = value;
+                _playbackService.Position = value;
                 // ?? ?????? ???????? ??????? ??? ?????? ?????????
             }
             catch (Exception ex)
@@ -689,17 +585,7 @@ public partial class MainViewModel : ViewModelBase
     {
         try
         {
-            _logger.LogInformation($"PlayAsync started for: {path}");
-
-            CurrentMediaPath = path;
-            await _playbackEngineService.Play(path);
-            IsPlaying = true;
-
-            _logger.LogDebug("Starting metadata update delay");
-            await Task.Delay(1000); // ??????????? ???????? ??? ?????????????
-            await UpdateMetadataAsync();
-
-            _logger.LogInformation("Playback started successfully");
+            await _playbackService.Play(new MediaItem(title: string.Empty, album: null, year: 0, genre: string.Empty, path: path, duration: TimeSpan.Zero, trackArtists: null));
         }
         catch (Exception ex)
         {
@@ -710,67 +596,23 @@ public partial class MainViewModel : ViewModelBase
     [RelayCommand]
     private void Stop()
     {
-        if (_playbackEngineService == null)
-            return;
+        _playbackService.Stop();
 
-        // Stop playback if it's currently playing
-        if (_playbackEngineService.IsPlaying)
-            _playbackEngineService.Pause();
-
-        // Rewind to track start
-        _playbackEngineService.Position = TimeSpan.Zero;
-
-        // Update UI playback state
         CurrentPosition = TimeSpan.Zero;
         IsPlaying = false;
-
-        _logger.LogInformation("Playback stopped and rewound to start");
+        _logger.LogInformation("Playback stopped");
     }
 
     [RelayCommand]
     private async Task Next()
     {
-        try
-        {
-            if (_views[SectionType.Media].DataContext is MediaViewModel mediaView)
-            {
-                await mediaView.PlayNextInQueueCommand.ExecuteAsync(null);
-            }
-            await UpdateMetadataAsync(true);
-            _logger.LogInformation("Next track played");
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Next track error");
-        }
+        await _playbackService.Next();
     }
 
     [RelayCommand]
     private async Task Previous()
     {
-        try
-        {
-            if (_views[SectionType.Media].DataContext is not MediaViewModel mediaView) return;
-
-            if (CurrentPosition.TotalSeconds >= 10)
-            {
-                // ????????? ? ?????? ???????? ?????
-                _playbackEngineService.Position = TimeSpan.Zero;
-                CurrentPosition = TimeSpan.Zero;
-                _logger.LogInformation("Rewind to start of current track");
-            }
-            else
-            {
-                // ??????? ? ??????????? ????? ? ???????
-                await mediaView.PlayPreviousInQueueCommand.ExecuteAsync(null);
-                await UpdateMetadataAsync(true);
-                _logger.LogInformation("Previous track played");
-            }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Previous track error");
-        }
+        await _playbackService.Previous();
     }
 
     // Command to play entire album via queue

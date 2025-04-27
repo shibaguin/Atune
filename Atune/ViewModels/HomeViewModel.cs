@@ -146,7 +146,7 @@ public partial class HomeViewModel : ViewModelBase
             var media = await _mediaRepository.GetByIdAsync(t.Id);
             if (media != null) _playbackService.Enqueue(media);
         }
-        await _playbackService.PlayAsync();
+        await _playbackService.Play();
     }
 
     [RelayCommand]
@@ -155,7 +155,7 @@ public partial class HomeViewModel : ViewModelBase
         _playbackService.ClearQueue();
         var items = await _albumRepository.GetSongsForAlbumAsync(dto.Id);
         foreach (var item in items) _playbackService.Enqueue(item);
-        await _playbackService.PlayAsync();
+        await _playbackService.Play();
     }
 
     [RelayCommand]
@@ -164,7 +164,7 @@ public partial class HomeViewModel : ViewModelBase
         _playbackService.ClearQueue();
         var items = await _playlistRepository.GetSongsInPlaylistAsync(dto.Id);
         foreach (var item in items) _playbackService.Enqueue(item);
-        await _playbackService.PlayAsync();
+        await _playbackService.Play();
     }
 
     [RelayCommand]
@@ -173,6 +173,6 @@ public partial class HomeViewModel : ViewModelBase
         _playbackService.ClearQueue();
         var media = await _mediaRepository.GetByIdAsync(dto.Id);
         if (media != null) _playbackService.Enqueue(media);
-        await _playbackService.PlayAsync();
+        await _playbackService.Play();
     }
 }

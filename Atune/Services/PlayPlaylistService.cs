@@ -14,9 +14,16 @@ namespace Atune.Services
         Task PlayPlaylistAsync(Playlist playlist);
     }
 
-    public class PlayPlaylistService(IPlaylistService playlistService) : IPlayPlaylistService
+    public class PlayPlaylistService : IPlayPlaylistService
     {
-        private readonly IPlaylistService _playlistService = playlistService;
+        private readonly IPlaylistService _playlistService;
+        private readonly IPlaybackService _playbackService;
+
+        public PlayPlaylistService(IPlaylistService playlistService, IPlaybackService playbackService)
+        {
+            _playlistService = playlistService;
+            _playbackService = playbackService;
+        }
 
         public async Task PlayPlaylistAsync(Playlist playlist)
         {
@@ -26,20 +33,11 @@ namespace Atune.Services
             // Get songs in playlist
             var songs = (await _playlistService.GetSongsInPlaylistAsync(playlist.Id)).ToList();
 
-            // Route through MainViewModel to play playlist
-            var mainVm = (Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)
-                           ?.MainWindow?.DataContext as MainViewModel;
-            var mediaVm = mainVm?.MediaViewModelInstance;
-            if (mediaVm == null)
-                return;
-
-            // Clear existing queue
-            mediaVm.ClearQueueCommand.Execute(null);
-            // Enqueue songs
+            // Use unified playback service
+            _playbackService.ClearQueue();
             foreach (var track in songs)
-                mediaVm.AddToQueueCommand.Execute(track);
-            // Start playback
-            await mediaVm.PlayNextInQueueCommand.ExecuteAsync(null);
+                _playbackService.Enqueue(track);
+            await _playbackService.Play();
         }
     }
 }

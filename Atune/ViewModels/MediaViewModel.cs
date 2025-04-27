@@ -36,7 +36,7 @@ public partial class MediaViewModel : ObservableObject, IDisposable
     private readonly IMemoryCache _cache;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILoggerService? _logger;
-    private readonly MediaPlayerService _mediaPlayerService;
+    private readonly IPlaybackService _playbackService;
     private readonly MediaDatabaseService _mediaDatabaseService;
     private readonly ISettingsService _settingsService;
     private readonly PlayHistoryService _playHistoryService;
@@ -167,14 +167,11 @@ public partial class MediaViewModel : ObservableObject, IDisposable
     public ObservableCollection<Playlist> Playlists { get; } = [];
 
     // Commands to manage playback queue
-    public IRelayCommand<MediaItem> AddToQueueCommand { get; }
-    public IRelayCommand ClearQueueCommand { get; }
     public IAsyncRelayCommand PlayNextInQueueCommand { get; }
     public IAsyncRelayCommand<AlbumInfo?> PlayAlbumCommand { get; }
     public IAsyncRelayCommand PlayAllTracksCommand { get; }
     public IAsyncRelayCommand<MediaItem> PlayTrackCommand { get; }
     public IAsyncRelayCommand PlayPreviousInQueueCommand { get; }
-    public IRelayCommand<int> SetQueuePositionCommand { get; }
 
     // Playlist commands
     public IAsyncRelayCommand CreatePlaylistCommand { get; }
@@ -188,7 +185,7 @@ public partial class MediaViewModel : ObservableObject, IDisposable
         IMemoryCache cache,
         IUnitOfWork unitOfWork,
         ILoggerService logger,
-        MediaPlayerService mediaPlayerService,
+        IPlaybackService playbackService,
         MediaDatabaseService mediaDatabaseService,
         IPlaylistService playlistService,
         ISettingsService settingsService,
@@ -197,11 +194,22 @@ public partial class MediaViewModel : ObservableObject, IDisposable
         _cache = cache;
         _unitOfWork = unitOfWork;
         _logger = logger;
-        _mediaPlayerService = mediaPlayerService;
+        _playbackService = playbackService;
         _mediaDatabaseService = mediaDatabaseService;
         _playlistService = playlistService;
         _settingsService = settingsService;
         _playHistoryService = playHistoryService;
+
+        // Subscribe to unified playback service events
+        _playbackService.QueueChanged += (_, queue) => Dispatcher.UIThread.Post(() =>
+        {
+            PlaybackQueue.Clear();
+            foreach (var mi in queue)
+                PlaybackQueue.Add(mi);
+        });
+        _playbackService.TrackChanged += (_, item) => SelectedMediaItem = item;
+        _playbackService.PlaybackStateChanged += (_, playing) =>
+            PlayPauseIcon = playing ? "fa-solid fa-pause" : "fa-solid fa-play";
 
         // Load saved sort orders
         var settings = _settingsService.LoadSettings();
@@ -215,36 +223,17 @@ public partial class MediaViewModel : ObservableObject, IDisposable
         OnPropertyChanged(nameof(SortOrderPlaylists));
         OnPropertyChanged(nameof(SortOrderArtists));
 
-        // Заменяем команды на релейтед команды из методов
-        PlayCommand = new AsyncRelayCommand<MediaItem>(PlayMediaItem);
-        StopCommand = new RelayCommand(StopPlayback);
-
-        // Initialize playback queue commands
-        AddToQueueCommand = new RelayCommand<MediaItem>(item => { if (item != null) PlaybackQueue.Add(item); });
-        ClearQueueCommand = new RelayCommand(() => { PlaybackQueue.Clear(); _currentQueueIndex = -1; });
-        PlayNextInQueueCommand = new AsyncRelayCommand(PlayNextInQueue);
+        // Initialize playback-high-level commands and remove manual queue manipulations
+        PlayNextInQueueCommand = new AsyncRelayCommand(_playbackService.Next);
+        PlayPreviousInQueueCommand = new AsyncRelayCommand(_playbackService.Previous);
+        StopCommand = new RelayCommand(_playbackService.Stop);
+        PlayCommand = new AsyncRelayCommand<MediaItem>(item => _playbackService.Play(item));
+        // Initialize track and album queue commands
+        PlayTrackCommand = new AsyncRelayCommand<MediaItem>(item => _playbackService.Play(item));
         PlayAlbumCommand = new AsyncRelayCommand<AlbumInfo?>(PlayAlbum);
         PlayAllTracksCommand = new AsyncRelayCommand(PlayAllTracks);
-        PlayTrackCommand = new AsyncRelayCommand<MediaItem>(async track =>
-        {
-            if (track == null) return;
-            // Clear existing queue
-            ClearQueueCommand.Execute(null);
-            // Enqueue tracks starting from the selected one
-            var tracks = MediaItems.ToList();
-            int startIndex = tracks.IndexOf(track);
-            if (startIndex < 0) startIndex = 0;
-            foreach (var t in tracks.Skip(startIndex))
-            {
-                AddToQueueCommand.Execute(t);
-            }
-            // Start playback
-            await PlayNextInQueueCommand.ExecuteAsync(null);
-        });
-        PlayPreviousInQueueCommand = new AsyncRelayCommand(PlayPreviousInQueue);
-        SetQueuePositionCommand = new RelayCommand<int>(index => { _currentQueueIndex = index - 1; });
 
-        _mediaPlayerService.PlaybackEnded += OnPlaybackEnded;
+        _playbackService.PlaybackEnded += OnPlaybackEnded;
 
         // Load media content and restore playback state on startup
         Dispatcher.UIThread.Post(() => LoadMediaContent());
@@ -749,91 +738,6 @@ public partial class MediaViewModel : ObservableObject, IDisposable
         }
     }
 
-    [RelayCommand]
-    private async Task NextMediaItem()
-    {
-        Dispatcher.UIThread.VerifyAccess();
-
-        if (MediaItems == null || MediaItems.Count == 0)
-            return;
-
-        var currentIndex = SelectedMediaItem != null ? MediaItems.IndexOf(SelectedMediaItem) : -1;
-        var nextIndex = currentIndex + 1;
-
-        if (nextIndex < MediaItems.Count)
-        {
-            SelectedMediaItem = MediaItems[nextIndex];
-            await PlayMediaItem(SelectedMediaItem);
-        }
-        else if (IsShuffleEnabled)
-        {
-            await PlayRandomMediaItem();
-        }
-        else
-        {
-            await Dispatcher.UIThread.InvokeAsync(() =>
-            {
-                SelectedMediaItem = null;
-                PlayPauseIcon = "fa-solid fa-play";
-            });
-        }
-    }
-
-    [RelayCommand]
-    private void PreviousMediaItem()
-    {
-        if (MediaItems.Count == 0) return;
-
-        int currentIndex = SelectedMediaItem != null
-            ? MediaItems.IndexOf(SelectedMediaItem)
-            : 0;
-
-        int newIndex = (currentIndex - 1 + MediaItems.Count) % MediaItems.Count;
-        var previousItem = MediaItems[newIndex];
-        PlayMediaItemCommand.Execute(previousItem);
-    }
-
-    [RelayCommand]
-    private async Task PlayMediaItem(MediaItem? mediaItem)
-    {
-        if (mediaItem != null && !string.IsNullOrWhiteSpace(mediaItem.Path))
-        {
-            try
-            {
-                // Ensure current volume applied before any playback
-                _mediaPlayerService.Volume = _settingsService.LoadSettings().Volume;
-                await _mediaPlayerService.StopAsync();
-                SelectedMediaItem = mediaItem;
-
-                await Dispatcher.UIThread.InvokeAsync(() =>
-                {
-                    OnPropertyChanged(nameof(SelectedMediaItem));
-                });
-
-                await _mediaPlayerService.Play(mediaItem.Path);
-                // Re-apply volume in case Play resets it
-                _mediaPlayerService.Volume = _settingsService.LoadSettings().Volume;
-
-                // Update UI
-                Dispatcher.UIThread.Post(() =>
-                {
-                    OnPropertyChanged(nameof(MediaItems));
-                }, DispatcherPriority.Background);
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogError($"Playback error: {ex.Message}", ex);
-            }
-        }
-    }
-
-    [RelayCommand]
-    private void StopPlayback()
-    {
-        _mediaPlayerService.Stop();
-        SelectedMediaItem = null;
-    }
-
     private void OnPlaybackEnded(object? sender, EventArgs e)
     {
         // Обновляем через Dispatcher для работы с UI элементами
@@ -1094,21 +998,11 @@ public partial class MediaViewModel : ObservableObject, IDisposable
 
     public void Dispose()
     {
-        Dispose(true);
-        GC.SuppressFinalize(this);
-    }
-
-    protected virtual void Dispose(bool disposing)
-    {
         if (_disposed) return;
-
-        if (disposing)
-        {
-            _mediaPlayerService.PlaybackEnded -= OnPlaybackEnded;
-            _playHistoryService.Dispose();
-        }
-
         _disposed = true;
+
+        _playbackService.PlaybackEnded -= OnPlaybackEnded;
+        _playbackService.Dispose();
     }
 
     // Persist all sort settings
@@ -1288,6 +1182,54 @@ public partial class MediaViewModel : ObservableObject, IDisposable
             _logger?.LogWarning("MainViewModel not found, cannot open artist view.");
         }
         return Task.CompletedTask;
+    }
+
+    // Add commands to manipulate the playback queue and control media items
+    [RelayCommand]
+    private void ClearQueue()
+    {
+        _currentQueueIndex = -1;
+        _playbackService.ClearQueue();
+    }
+
+    [RelayCommand]
+    private void AddToQueue(MediaItem mediaItem)
+    {
+        if (mediaItem == null) return;
+        _playbackService.Enqueue(mediaItem);
+    }
+
+    [RelayCommand]
+    private void SetQueuePosition(int index)
+    {
+        if (index <= 0 || index > PlaybackQueue.Count) return;
+        int zeroBased = index - 1;
+        _currentQueueIndex = zeroBased;
+        OnPropertyChanged(nameof(CurrentQueueIndex));
+        SelectedMediaItem = PlaybackQueue[zeroBased];
+    }
+
+    [RelayCommand]
+    private async Task PlayMediaItem(MediaItem mediaItem)
+    {
+        if (mediaItem == null) return;
+        await _playbackService.Play(mediaItem);
+    }
+
+    [RelayCommand]
+    private async Task NextMediaItem()
+    {
+        if (MediaItems.Count == 0) return;
+        if (SelectedMediaItem == null)
+        {
+            await PlayMediaItem(MediaItems[0]);
+        }
+        else
+        {
+            int currentIndex = MediaItems.IndexOf(SelectedMediaItem);
+            int nextIndex = (currentIndex + 1) % MediaItems.Count;
+            await PlayMediaItem(MediaItems[nextIndex]);
+        }
     }
 }
 

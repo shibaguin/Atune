@@ -9,7 +9,11 @@ Atune is a modern cross-platform audio player developed using .NET and AvaloniaU
 - **MVVM architecture:** Clear separation of view logic and business logic ensures ease of support and expansion of the project.
 - **Localization:** Available multiple language packages (for now, Russian and English), which simplifies the adaptation of the application for the international community.
 - **Customizable themes:** Support for switching between light, dark and system themes.
-- **Media functions:** Functions for adding music, organizing playlists, managing favorites, playback history and more.
+- **Library navigation & sorting:** Browse tracks, albums, artists, and playlists with customizable sort orders per category; preferences persist across sessions.
+- **Playback queue & controls:** Manage a dynamic playback queue with play, pause, stop, next/previous, shuffle, repeat, and random commands; real-time UI updates.
+- **Playlist management:** Create, open, modify, and play playlists; add tracks to custom playlists.
+- **Album & artist browsing:** Explore media by album or artist and play entire collections.
+- **Playback history & state restoration:** Track playback history and restore current queue index and playback position on restart.
 - **Plugins:** Support for plugins allows you to extend the functionality of the application.
 - **Extensibility:** Modular code organization and use of Dependency Injection allows easy integration of third-party services and plugins.
 
@@ -187,46 +191,46 @@ await service.Play("path/to/file.mp3");
 
 ## Playback Service (IPlaybackService / PlaybackService API)
 
-`IPlaybackService` представляет высокоуровневый интерфейс для управления очередью и воспроизведением в приложении. Реализация `PlaybackService` инкапсулирует логику очереди и делегирует работу движку через `MediaPlayerService` (реализует `IPlaybackEngineService`).
+The `IPlaybackService` provides a high-level interface for queue and playback management in an application. The `PlaybackService` implementation encapsulates the queue logic and delegates work to the engine via `MediaPlayerService` (implements `IPlaybackEngineService`).
 
 ```csharp
-// Регистрация в DI (Program.cs)
+// Registration in DI (Program.cs)
 services.AddSingleton<IPlaybackEngineService, MediaPlayerService>();
 services.AddSingleton<IPlaybackService, PlaybackService>();
 ```
 
-### Интерфейс IPlaybackService
+### IPlaybackService Interface
 ```csharp
 public interface IPlaybackService : IDisposable
 {
-  // Очередь
+  // Queue management
   void ClearQueue();
   void Enqueue(MediaItem item);
   void Enqueue(IEnumerable<MediaItem> items);
 
-  // Управление
-  Task Play();               // воспроизвести текущий элемент очереди
-  Task Play(MediaItem item); // сразу воспроизвести указанный трек
-  Task Next();               // следующий трек
-  Task Previous();           // предыдущий трек
+  // Playback control
+  Task Play();               // Play the current item in the queue
+  Task Play(MediaItem item); // Play the specified track immediately
+  Task Next();               // Next track
+  Task Previous();           // Previous track
   void Pause();
   void Resume();
   void Stop();
 
-  // Позиция и длительность
+  // Position and duration
   TimeSpan Position { get; set; }
   TimeSpan Duration { get; }
   int Volume { get; set; }
 
-  // События для подписки из ViewModel/UI
-  event EventHandler<MediaItem?> TrackChanged;     // когда меняется текущий трек
-  event EventHandler<bool> PlaybackStateChanged;   // play↔pause
-  event EventHandler<TimeSpan> PositionChanged;    // прогресс воспроизведения
-  event EventHandler<IReadOnlyList<MediaItem>> QueueChanged; // когда меняется очередь
+  // Events for UI/ViewModels
+  event EventHandler<MediaItem?> TrackChanged;     // When the current track changes
+  event EventHandler<bool> PlaybackStateChanged;   // Play↔pause
+  event EventHandler<TimeSpan> PositionChanged;    // Playback progress
+  event EventHandler<IReadOnlyList<MediaItem>> QueueChanged; // When the queue changes
 }
 ```
 
-### Реализация PlaybackService
+### PlaybackService Implementation
 ```csharp
 public class PlaybackService : IPlaybackService
 {
@@ -263,4 +267,13 @@ public class PlaybackService : IPlaybackService
 }
 ```
 
-Теперь все ViewModel (Home, Media, History и т.д.) могут инжектить `IPlaybackService`, вызывать единый API для управления очередью, и подписываться на события для обновления UI.
+Now all ViewModels (Home, Media, History, etc.) can inject `IPlaybackService`, call a unified API for queue management, and subscribe to events for UI updates.
+
+## Architecture & MVVM Details
+
+- The application follows the **MVVM** pattern using AvaloniaUI and CommunityToolkit.Mvvm for view bindings and commands.
+- Each module has a dedicated ViewModel managing state, commands, and services (e.g., `HomeViewModel`, `MediaViewModel`, `SettingsViewModel`).
+- **MediaViewModel**: Handles media library loading (tracks, albums, artists, playlists) with sorting, caching, and incremental updates; commands for add, refresh, search, and detailed play controls; integrates with `IPlaybackService`, `IPlaylistService`, and `PlayHistoryService`.
+- **HomeViewModel**: Manages initial view data, recently played items, and navigation commands.
+- **Dependency Injection**: All services and view models are registered in `ServiceCollectionExtensions.cs` and resolved via Avalonia's `IClassicDesktopStyleApplicationLifetime`.
+- **Caching & State Preservation**: Uses `IMemoryCache` for album and artist caches, and settings persistence for sort orders, shuffle/repeat, and current queue index.

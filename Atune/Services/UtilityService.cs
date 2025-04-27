@@ -7,6 +7,7 @@ using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Atune.ViewModels;
 using Atune.Views;
+using Atune.Services;
 
 namespace Atune.Services
 {
@@ -27,7 +28,8 @@ namespace Atune.Services
         MediaDatabaseService mediaDatabaseService,
         MediaFileService mediaFileService,
         IPlaylistService playlistService,
-        ISettingsService settingsService) : IUtilityService
+        ISettingsService settingsService,
+        IPlaybackService playbackService) : IUtilityService
     {
         private readonly IUnitOfWork _unitOfWork = unitOfWork;
         private readonly IMemoryCache _cache = cache;
@@ -36,6 +38,7 @@ namespace Atune.Services
         private readonly MediaFileService _mediaFileService = mediaFileService;
         private readonly IPlaylistService _playlistService = playlistService;
         private readonly ISettingsService _settingsService = settingsService;
+        private readonly IPlaybackService _playbackService = playbackService;
 
         private static MediaViewModel? GetMediaViewModel()
         {
@@ -87,8 +90,7 @@ namespace Atune.Services
 
         public void ClearQueue()
         {
-            var mvm = GetMediaViewModel();
-            mvm?.ClearQueueCommand.Execute(null);
+            _playbackService.ClearQueue();
         }
     }
 }
