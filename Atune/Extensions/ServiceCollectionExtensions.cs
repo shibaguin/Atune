@@ -102,7 +102,14 @@ namespace Atune.Extensions
 
             // ViewModels
             services.AddTransient<MainViewModel>();
-            services.AddTransient<HomeViewModel>();
+            services.AddTransient<HomeViewModel>(sp => new HomeViewModel(
+                sp.GetRequiredService<IMemoryCache>(),
+                sp.GetRequiredService<ILogger<HomeViewModel>>(),
+                sp.GetRequiredService<IHomeRepository>(),
+                sp.GetRequiredService<IPlaybackService>(),
+                sp.GetRequiredService<IMediaRepository>(),
+                sp.GetRequiredService<IPlaylistRepository>(),
+                sp.GetRequiredService<IAlbumRepository>()));
             services.AddTransient<MediaViewModel>();
             services.AddTransient<HistoryViewModel>();
             services.AddTransient<SettingsViewModel>();

@@ -36,7 +36,7 @@ namespace Atune.Data.Repositories
                     Id = m.Id,
                     Title = m.Title,
                     CoverArtPath = m.CoverArt,
-                    ArtistName = m.TrackArtists.FirstOrDefault()!.Artist.Name,
+                    ArtistName = m.TrackArtists.FirstOrDefault()?.Artist.Name ?? string.Empty,
                     Duration = m.Duration,
                     PlayCount = 0
                 })
@@ -50,7 +50,7 @@ namespace Atune.Data.Repositories
                     Id = g.Key.Id,
                     Title = g.Key.Title,
                     CoverArtPath = g.Key.CoverArt,
-                    ArtistName = g.Key.TrackArtists.FirstOrDefault()!.Artist.Name,
+                    ArtistName = g.Key.TrackArtists.FirstOrDefault()?.Artist.Name ?? string.Empty,
                     Duration = g.Key.Duration,
                     PlayCount = g.Count()
                 })
@@ -87,7 +87,7 @@ namespace Atune.Data.Repositories
                     Id = a.Id,
                     Title = a.Title,
                     CoverArtPath = a.CoverArtPath,
-                    ArtistName = a.AlbumArtists.FirstOrDefault()!.Artist.Name,
+                    ArtistName = a.AlbumArtists.FirstOrDefault()?.Artist.Name ?? string.Empty,
                     Year = (uint)a.Year,
                     TrackCount = a.Tracks.Count,
                     PlayCount = 0
@@ -102,7 +102,7 @@ namespace Atune.Data.Repositories
                     Id = g.Key.Id,
                     Title = g.Key.Title,
                     CoverArtPath = g.Key.CoverArtPath,
-                    ArtistName = g.Key.AlbumArtists.FirstOrDefault()!.Artist.Name,
+                    ArtistName = g.Key.AlbumArtists.FirstOrDefault()?.Artist.Name ?? string.Empty,
                     Year = (uint)g.Key.Year,
                     TrackCount = g.Key.Tracks.Count,
                     PlayCount = g.Count()
@@ -136,7 +136,7 @@ namespace Atune.Data.Repositories
                 {
                     Id = p.Id,
                     Name = p.Name,
-                    CoverArtPath = p.PlaylistMediaItems.FirstOrDefault()!.MediaItem.CoverArt,
+                    CoverArtPath = p.PlaylistMediaItems.FirstOrDefault()?.MediaItem.CoverArt ?? string.Empty,
                     TrackCount = p.PlaylistMediaItems.Count,
                     PlayCount = 0
                 })
@@ -151,7 +151,7 @@ namespace Atune.Data.Repositories
                 {
                     Id = g.Key.Id,
                     Name = g.Key.Name,
-                    CoverArtPath = g.Key.PlaylistMediaItems.FirstOrDefault()!.MediaItem.CoverArt,
+                    CoverArtPath = g.Key.PlaylistMediaItems.FirstOrDefault()?.MediaItem.CoverArt ?? string.Empty,
                     TrackCount = g.Key.PlaylistMediaItems.Count,
                     PlayCount = g.Count()
                 })
@@ -166,38 +166,47 @@ namespace Atune.Data.Repositories
             // Fallback to latest media by ReleaseDate when no history
             if (!await _context.PlayHistories.AnyAsync())
             {
-                return await _context.MediaItems
+                var items = await _context.MediaItems
                     .Include(mi => mi.TrackArtists)
                         .ThenInclude(ta => ta.Artist)
                     .OrderByDescending(mi => mi.ReleaseDate)
                     .Take(count)
-                    .Select(mi => new RecentTrackDto
-                    {
-                        Id = mi.Id,
-                        Title = mi.Title,
-                        CoverArtPath = mi.CoverArt,
-                        ArtistName = mi.TrackArtists.FirstOrDefault()!.Artist.Name,
-                        LastPlayedAt = DateTime.Now
-                    })
                     .ToListAsync();
+                return items.Select(mi => new RecentTrackDto
+                {
+                    Id = mi.Id,
+                    Title = mi.Title,
+                    CoverArtPath = mi.CoverArt,
+                    ArtistName = mi.TrackArtists.FirstOrDefault()?.Artist.Name ?? string.Empty,
+                    LastPlayedAt = DateTime.Now
+                })
+                .ToList();
             }
 
-            return await _context.PlayHistories
+            // Load play histories and related artists into memory
+            var histories = await _context.PlayHistories
                 .Include(ph => ph.MediaItem)
                     .ThenInclude(mi => mi.TrackArtists)
                         .ThenInclude(ta => ta.Artist)
                 .OrderByDescending(ph => ph.PlayedAt)
-                .Select(ph => new RecentTrackDto
-                {
-                    Id = ph.MediaItem.Id,
-                    Title = ph.MediaItem.Title,
-                    CoverArtPath = ph.MediaItem.CoverArt,
-                    ArtistName = ph.MediaItem.TrackArtists.FirstOrDefault()!.Artist.Name,
-                    LastPlayedAt = ph.PlayedAt
-                })
-                .Distinct()
-                .Take(count)
                 .ToListAsync();
+            // For each media item, pick the most recent play
+            var recentHistories = histories
+                .GroupBy(ph => ph.MediaItem)
+                .Select(g => g.OrderByDescending(ph => ph.PlayedAt).First())
+                .OrderByDescending(ph => ph.PlayedAt)
+                .Take(count)
+                .ToList();
+            // Project to DTOs
+            return recentHistories.Select(ph => new RecentTrackDto
+            {
+                Id = ph.MediaItem.Id,
+                Title = ph.MediaItem.Title,
+                CoverArtPath = ph.MediaItem.CoverArt,
+                ArtistName = ph.MediaItem.TrackArtists.FirstOrDefault()?.Artist.Name ?? string.Empty,
+                LastPlayedAt = ph.PlayedAt
+            })
+            .ToList();
         }
     }
 }

@@ -1,22 +1,23 @@
-<UserControl xmlns="https://github.com/avaloniaui"
+<UserControl x:Name="Root"
+             xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d"
              x:Class="Atune.Views.HomeView"
-             xmlns:vm="clr-namespace:Atune.ViewModels"
              xmlns:views="clr-namespace:Atune.Views"
              xmlns:dto="clr-namespace:Atune.Models.Dtos"
-             x:DataType="vm:HomeViewModel"
-             vm:ViewModelLocator.AutoHookedUpViewModel="True">
-    <Grid RowDefinitions="auto,auto" ColumnDefinitions="*,*">
+             x:CompileBindings="False">
+    <Grid RowDefinitions="*,*" ColumnDefinitions="*,*">
         <!-- Top Tracks -->
         <StackPanel Grid.Row="0" Grid.Column="0">
             <TextBlock Text="Top Tracks" FontSize="16" FontWeight="Bold" Margin="5"/>
-            <ListBox ItemsSource="{Binding TopTracks}" BorderThickness="0" Margin="5">
+            <ListBox ItemsSource="{Binding TopTracks}" BorderThickness="0" Margin="5"
+                     ScrollViewer.VerticalScrollBarVisibility="Auto"
+                     VerticalAlignment="Stretch">
                 <ListBox.ItemTemplate>
                     <DataTemplate>
-                        <views:TopTrackListView/>
+                        <views:TopTrackListView PlayCommand="{Binding PlayTopTrackCommand, ElementName=Root}"/>
                     </DataTemplate>
                 </ListBox.ItemTemplate>
             </ListBox>
@@ -24,10 +25,12 @@
         <!-- Top Playlists -->
         <StackPanel Grid.Row="0" Grid.Column="1">
             <TextBlock Text="Top Playlists" FontSize="16" FontWeight="Bold" Margin="5"/>
-            <ListBox ItemsSource="{Binding TopPlaylists}" BorderThickness="0" Margin="5">
+            <ListBox ItemsSource="{Binding TopPlaylists}" BorderThickness="0" Margin="5"
+                     ScrollViewer.VerticalScrollBarVisibility="Auto"
+                     VerticalAlignment="Stretch">
                 <ListBox.ItemTemplate>
                     <DataTemplate>
-                        <views:TopPlaylistListView/>
+                        <views:TopPlaylistListView PlayCommand="{Binding PlayTopPlaylistCommand, ElementName=Root}"/>
                     </DataTemplate>
                 </ListBox.ItemTemplate>
             </ListBox>
@@ -35,10 +38,12 @@
         <!-- Top Albums -->
         <StackPanel Grid.Row="1" Grid.Column="0">
             <TextBlock Text="Top Albums" FontSize="16" FontWeight="Bold" Margin="5"/>
-            <ListBox ItemsSource="{Binding TopAlbums}" BorderThickness="0" Margin="5">
+            <ListBox ItemsSource="{Binding TopAlbums}" BorderThickness="0" Margin="5"
+                     ScrollViewer.VerticalScrollBarVisibility="Auto"
+                     VerticalAlignment="Stretch">
                 <ListBox.ItemTemplate>
                     <DataTemplate>
-                        <views:TopAlbumListView/>
+                        <views:TopAlbumListView PlayCommand="{Binding PlayTopAlbumCommand, ElementName=Root}"/>
                     </DataTemplate>
                 </ListBox.ItemTemplate>
             </ListBox>
@@ -46,10 +51,12 @@
         <!-- Recently Played -->
         <StackPanel Grid.Row="1" Grid.Column="1">
             <TextBlock Text="Recently Played" FontSize="16" FontWeight="Bold" Margin="5"/>
-            <ListBox ItemsSource="{Binding RecentTracks}" BorderThickness="0" Margin="5">
+            <ListBox ItemsSource="{Binding RecentTracks}" BorderThickness="0" Margin="5"
+                     ScrollViewer.VerticalScrollBarVisibility="Auto"
+                     VerticalAlignment="Stretch">
                 <ListBox.ItemTemplate>
                     <DataTemplate>
-                        <views:RecentlyPlayedListView/>
+                        <views:RecentlyPlayedListView PlayCommand="{Binding PlayRecentTrackCommand, ElementName=Root}"/>
                     </DataTemplate>
                 </ListBox.ItemTemplate>
             </ListBox>
