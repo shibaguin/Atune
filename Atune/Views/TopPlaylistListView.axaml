@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<UserControl x:Class="Atune.Views.TopPlaylistListView"
+             xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:dto="clr-namespace:Atune.Models.Dtos"
+             xmlns:conv="clr-namespace:Atune.Converters"
+             x:DataType="dto:TopPlaylistDto">
+  <UserControl.Resources>
+    <conv:CoverArtConverter x:Key="CoverArtConverter"/>
+  </UserControl.Resources>
+  <Grid ColumnDefinitions="Auto,*,Auto" VerticalAlignment="Center" Margin="5">
+    <Button x:Name="PlayButton"
+            Grid.Column="0"
+            Width="50" Height="50"
+            Margin="0,0,5,0"
+            Padding="0"
+            Background="Transparent"
+            BorderThickness="0"
+            Focusable="False">
+      <Grid>
+        <Image Source="{Binding CoverArtPath, Converter={StaticResource CoverArtConverter}}"
+               Stretch="UniformToFill"
+               HorizontalAlignment="Stretch"
+               VerticalAlignment="Stretch"/>
+        <Rectangle x:Name="Overlay"
+                   Fill="Black"
+                   Opacity="0"
+                   IsHitTestVisible="False"/>
+        <TextBlock x:Name="PlayIcon"
+                   Text="▶"
+                   Foreground="White"
+                   Opacity="0"
+                   HorizontalAlignment="Center"
+                   VerticalAlignment="Center"
+                   FontSize="24"/>
+      </Grid>
+    </Button>
+    <StackPanel Grid.Column="1" Spacing="2">
+      <TextBlock Text="{Binding Name}" FontWeight="Bold" FontSize="14"/>
+      <TextBlock Text="{Binding TrackCount, StringFormat='Tracks: {0}'}" FontSize="12" Foreground="Gray"/>
+    </StackPanel>
+    <TextBlock Grid.Column="2"
+               Text="{Binding PlayCount}"
+               VerticalAlignment="Center"
+               FontSize="12"
+               Margin="10,0,0,0"/>
+  </Grid>
+</UserControl> 

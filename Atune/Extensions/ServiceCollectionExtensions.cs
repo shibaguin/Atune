@@ -111,7 +111,7 @@ namespace Atune.Extensions
             // Views
             services.AddTransient<MainWindow>();
             services.AddTransient<MainView>(sp => new MainView());
-            services.AddTransient<HomeView>(sp => new HomeView(sp.GetRequiredService<HomeViewModel>()));
+            services.AddTransient<HomeView>();
             services.AddTransient<MediaView>(sp => new MediaView(
                 sp.GetRequiredService<MediaViewModel>(),
                 sp.GetRequiredService<IDbContextFactory<AppDbContext>>(),

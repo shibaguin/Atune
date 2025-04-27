@@ -5,10 +5,11 @@ namespace Atune.Views;
 
 public partial class HomeView : UserControl
 {
-    public HomeView() => InitializeComponent();
-
-    public HomeView(HomeViewModel vm) : this()
+    // DI constructor: inject HomeViewModel, set DataContext, then initialize view
+    public HomeView(HomeViewModel viewModel)
     {
-        DataContext = vm;
+        DataContext = viewModel;
+        InitializeComponent();
     }
 }
+

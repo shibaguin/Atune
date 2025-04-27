@@ -7,6 +7,8 @@ using System.Collections.ObjectModel;
 using Atune.Data.Interfaces;
 using Atune.Models.Dtos;
 using CommunityToolkit.Mvvm.Input;
+using Avalonia.Threading;
+using System.Linq;
 
 namespace Atune.ViewModels;
 
@@ -80,21 +82,45 @@ public partial class HomeViewModel : ViewModelBase
 
     public async Task LoadDataAsync()
     {
-        var tracks = await _homeRepository.GetTopTracksAsync();
-        TopTracks.Clear();
-        foreach (var t in tracks) TopTracks.Add(t);
+        try
+        {
+            _logger.LogInformation("HomeViewModel.LoadDataAsync called");
+            var tracks = await _homeRepository.GetTopTracksAsync();
+            _logger.LogInformation("HomeViewModel: Loaded TopTracks count = {Count}", tracks?.Count() ?? 0);
+            Dispatcher.UIThread.Post(() =>
+            {
+                TopTracks.Clear();
+                foreach (var t in tracks) TopTracks.Add(t);
+            });
 
-        var albums = await _homeRepository.GetTopAlbumsAsync();
-        TopAlbums.Clear();
-        foreach (var a in albums) TopAlbums.Add(a);
+            var albums = await _homeRepository.GetTopAlbumsAsync();
+            _logger.LogInformation("HomeViewModel: Loaded TopAlbums count = {Count}", albums?.Count() ?? 0);
+            Dispatcher.UIThread.Post(() =>
+            {
+                TopAlbums.Clear();
+                foreach (var a in albums) TopAlbums.Add(a);
+            });
 
-        var playlists = await _homeRepository.GetTopPlaylistsAsync();
-        TopPlaylists.Clear();
-        foreach (var p in playlists) TopPlaylists.Add(p);
+            var playlists = await _homeRepository.GetTopPlaylistsAsync();
+            _logger.LogInformation("HomeViewModel: Loaded TopPlaylists count = {Count}", playlists?.Count() ?? 0);
+            Dispatcher.UIThread.Post(() =>
+            {
+                TopPlaylists.Clear();
+                foreach (var p in playlists) TopPlaylists.Add(p);
+            });
 
-        var recents = await _homeRepository.GetRecentTracksAsync();
-        RecentTracks.Clear();
-        foreach (var r in recents) RecentTracks.Add(r);
+            var recents = await _homeRepository.GetRecentTracksAsync();
+            _logger.LogInformation("HomeViewModel: Loaded RecentTracks count = {Count}", recents?.Count() ?? 0);
+            Dispatcher.UIThread.Post(() =>
+            {
+                RecentTracks.Clear();
+                foreach (var r in recents) RecentTracks.Add(r);
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Exception in LoadDataAsync");
+        }
     }
 
     [RelayCommand]

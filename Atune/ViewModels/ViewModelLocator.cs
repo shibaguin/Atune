@@ -41,11 +41,13 @@ public class ViewModelLocator
             App.Current?.Services is IServiceProvider services)
         {
             var viewType = control.GetType();
-            var viewModelTypeName = viewType.FullName?
-                .Replace("Views", "ViewModels")
-                .Replace("View", "ViewModel");
-
-            if (string.IsNullOrEmpty(viewModelTypeName)) return;
+            var viewNamespace = viewType.Namespace;
+            if (string.IsNullOrEmpty(viewNamespace))
+                return;
+            // Replace only the .Views namespace segment
+            var viewModelNamespace = viewNamespace.Replace(".Views", ".ViewModels");
+            // Build the ViewModel type name by appending 'Model' to the view class
+            var viewModelTypeName = viewModelNamespace + "." + viewType.Name + "Model";
 
             var viewModelType = Type.GetType(viewModelTypeName)
                 ?? AppDomain.CurrentDomain.GetAssemblies()

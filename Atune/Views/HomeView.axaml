@@ -3,20 +3,56 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d"
-             d:DesignWidth="800"
-             d:DesignHeight="450"
-             xmlns:vm="clr-namespace:Atune.ViewModels"
              x:Class="Atune.Views.HomeView"
+             xmlns:vm="clr-namespace:Atune.ViewModels"
+             xmlns:views="clr-namespace:Atune.Views"
+             xmlns:dto="clr-namespace:Atune.Models.Dtos"
              x:DataType="vm:HomeViewModel"
              vm:ViewModelLocator.AutoHookedUpViewModel="True">
-    <Grid>
-        <!-- Локализованное приветствие -->
-        <!-- Localized greeting -->
-        <TextBlock Text="{DynamicResource Home_WelcomeMessage}" 
-                   HorizontalAlignment="Center"
-                   VerticalAlignment="Center"
-                   FontSize="24"
-                   Foreground="{DynamicResource TextBrush}"
-                   FontWeight="Bold" />
+    <Grid RowDefinitions="auto,auto" ColumnDefinitions="*,*">
+        <!-- Top Tracks -->
+        <StackPanel Grid.Row="0" Grid.Column="0">
+            <TextBlock Text="Top Tracks" FontSize="16" FontWeight="Bold" Margin="5"/>
+            <ListBox ItemsSource="{Binding TopTracks}" BorderThickness="0" Margin="5">
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <views:TopTrackListView/>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+        </StackPanel>
+        <!-- Top Playlists -->
+        <StackPanel Grid.Row="0" Grid.Column="1">
+            <TextBlock Text="Top Playlists" FontSize="16" FontWeight="Bold" Margin="5"/>
+            <ListBox ItemsSource="{Binding TopPlaylists}" BorderThickness="0" Margin="5">
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <views:TopPlaylistListView/>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+        </StackPanel>
+        <!-- Top Albums -->
+        <StackPanel Grid.Row="1" Grid.Column="0">
+            <TextBlock Text="Top Albums" FontSize="16" FontWeight="Bold" Margin="5"/>
+            <ListBox ItemsSource="{Binding TopAlbums}" BorderThickness="0" Margin="5">
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <views:TopAlbumListView/>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+        </StackPanel>
+        <!-- Recently Played -->
+        <StackPanel Grid.Row="1" Grid.Column="1">
+            <TextBlock Text="Recently Played" FontSize="16" FontWeight="Bold" Margin="5"/>
+            <ListBox ItemsSource="{Binding RecentTracks}" BorderThickness="0" Margin="5">
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <views:RecentlyPlayedListView/>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+        </StackPanel>
     </Grid>
 </UserControl>

@@ -4,7 +4,7 @@
                     xmlns:views="clr-namespace:Atune.Views">
     
     <DataTemplate DataType="vm:HomeViewModel">
-        <views:HomeView />
+        <views:HomeView DataContext="{Binding}" />
     </DataTemplate>
     <DataTemplate DataType="vm:MediaViewModel">
         <views:MediaView />

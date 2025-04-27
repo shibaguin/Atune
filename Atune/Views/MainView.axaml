@@ -423,6 +423,8 @@
 
         <ContentControl Content="{Binding CurrentView}"
                         HorizontalAlignment="Stretch"
-                        VerticalAlignment="Stretch"/>
+                        VerticalAlignment="Stretch"
+                        DockPanel.Dock="Top"
+                        />
     </DockPanel>
 </UserControl>
