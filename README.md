@@ -184,3 +184,83 @@ service.PlaybackPaused += (s, e) => Console.WriteLine("Playback paused");
 service.PlaybackEnded += (s, e) => Console.WriteLine("Playback ended");
 await service.Play("path/to/file.mp3");
 ```
+
+## Playback Service (IPlaybackService / PlaybackService API)
+
+`IPlaybackService` представляет высокоуровневый интерфейс для управления очередью и воспроизведением в приложении. Реализация `PlaybackService` инкапсулирует логику очереди и делегирует работу движку через `MediaPlayerService` (реализует `IPlaybackEngineService`).
+
+```csharp
+// Регистрация в DI (Program.cs)
+services.AddSingleton<IPlaybackEngineService, MediaPlayerService>();
+services.AddSingleton<IPlaybackService, PlaybackService>();
+```
+
+### Интерфейс IPlaybackService
+```csharp
+public interface IPlaybackService : IDisposable
+{
+  // Очередь
+  void ClearQueue();
+  void Enqueue(MediaItem item);
+  void Enqueue(IEnumerable<MediaItem> items);
+
+  // Управление
+  Task Play();               // воспроизвести текущий элемент очереди
+  Task Play(MediaItem item); // сразу воспроизвести указанный трек
+  Task Next();               // следующий трек
+  Task Previous();           // предыдущий трек
+  void Pause();
+  void Resume();
+  void Stop();
+
+  // Позиция и длительность
+  TimeSpan Position { get; set; }
+  TimeSpan Duration { get; }
+  int Volume { get; set; }
+
+  // События для подписки из ViewModel/UI
+  event EventHandler<MediaItem?> TrackChanged;     // когда меняется текущий трек
+  event EventHandler<bool> PlaybackStateChanged;   // play↔pause
+  event EventHandler<TimeSpan> PositionChanged;    // прогресс воспроизведения
+  event EventHandler<IReadOnlyList<MediaItem>> QueueChanged; // когда меняется очередь
+}
+```
+
+### Реализация PlaybackService
+```csharp
+public class PlaybackService : IPlaybackService
+{
+    private readonly IPlaybackEngineService _engine;
+    private readonly List<MediaItem> _queue = new();
+    private int _currentIndex;
+    private readonly DispatcherTimer _positionTimer;
+
+    public event EventHandler<MediaItem?> TrackChanged;
+    public event EventHandler<bool> PlaybackStateChanged;
+    public event EventHandler<TimeSpan> PositionChanged;
+    public event EventHandler<IReadOnlyList<MediaItem>> QueueChanged;
+
+    public PlaybackService(IPlaybackEngineService engine) { ... }
+
+    public void ClearQueue() { ... }
+    public void Enqueue(MediaItem item) { ... }
+    public void Enqueue(IEnumerable<MediaItem> items) { ... }
+    public async Task Play() { ... }
+    public Task Play(MediaItem item) { ... }
+    public async Task Next() { ... }
+    public async Task Previous() { ... }
+    public void Pause() => _engine.Pause();
+    public void Resume() => _engine.Resume();
+    public void Stop() { ... }
+
+    public TimeSpan Position { get => _engine.Position; set => _engine.Position = value; }
+    public TimeSpan Duration => _engine.Duration;
+    public int Volume { get => _engine.Volume; set => _engine.Volume = value; }
+
+    private void OnEngineStarted(...) { PlaybackStateChanged?.Invoke(this, true); }
+    private void OnEnginePaused(...)  { PlaybackStateChanged?.Invoke(this, false); }
+    public void Dispose() { ... }
+}
+```
+
+Теперь все ViewModel (Home, Media, History и т.д.) могут инжектить `IPlaybackService`, вызывать единый API для управления очередью, и подписываться на события для обновления UI.

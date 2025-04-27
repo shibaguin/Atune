@@ -7,23 +7,38 @@ namespace Atune.Services
 {
     public interface IPlaybackService : IDisposable
     {
+        // Queue management
+        void ClearQueue();
+        void Enqueue(MediaItem item);
+        void Enqueue(IEnumerable<MediaItem> items);
+
+        // Playback control
+        Task Play();
+        Task Play(MediaItem item);
+        Task Next();
+        Task Previous();
+        void Pause();
+        void Resume();
+        void Stop();
+
+        // Playback properties
+        TimeSpan Position { get; set; }
+        TimeSpan Duration { get; }
+        int Volume { get; set; }
+
+        // Events for UI/ViewModels
+        event EventHandler<MediaItem?> TrackChanged;
+        event EventHandler<bool> PlaybackStateChanged;
+        event EventHandler<TimeSpan> PositionChanged;
+        event EventHandler<IReadOnlyList<MediaItem>> QueueChanged;
+
         event EventHandler? PlaybackStarted;
         event EventHandler? PlaybackPaused;
         event EventHandler? PlaybackEnded;
 
-        void Enqueue(MediaItem track);
-        void Enqueue(IEnumerable<MediaItem> tracks);
-        void ClearQueue();
         IReadOnlyList<MediaItem> GetQueue();
 
-        Task PlayAsync();
-        Task Play(string path);
-        Task StopAsync();
-        Task NextAsync();
-        Task PreviousAsync();
-
         bool IsPlaying { get; }
-        int Volume { get; set; }
         TimeSpan CurrentTime { get; }
         MediaItem? CurrentTrack { get; }
     }
