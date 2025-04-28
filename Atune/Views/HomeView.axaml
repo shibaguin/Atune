@@ -17,6 +17,7 @@
             </Grid.RowDefinitions>
             <TextBlock Grid.Row="0" Text="Top Tracks" FontSize="16" FontWeight="Bold" Margin="5"/>
             <ListBox Grid.Row="1" ItemsSource="{Binding TopTracks}" BorderThickness="0" Margin="5"
+                     Background="Transparent"
                      ScrollViewer.VerticalScrollBarVisibility="Auto">
                 <ListBox.ItemTemplate>
                     <DataTemplate>
@@ -33,13 +34,13 @@
             </Grid.RowDefinitions>
             <TextBlock Grid.Row="0" Text="Top Playlists" FontSize="16" FontWeight="Bold" Margin="5"/>
             <ListBox Grid.Row="1" ItemsSource="{Binding TopPlaylists}" BorderThickness="0" Margin="5"
+                     Background="Transparent"
                      ScrollViewer.VerticalScrollBarVisibility="Auto">
                 <ListBox.ItemTemplate>
                     <DataTemplate>
-                        <Button Background="Transparent" BorderThickness="0"
-                                Command="{Binding OpenPlaylistCommand, ElementName=Root}" CommandParameter="{Binding .}">
-                            <views:TopPlaylistListView PlayCommand="{Binding PlayTopPlaylistCommand, ElementName=Root}"/>
-                        </Button>
+                        <views:TopPlaylistListView
+                            PlayCommand="{Binding PlayTopPlaylistCommand, ElementName=Root}"
+                            OpenCommand="{Binding OpenPlaylistCommand, ElementName=Root}" />
                     </DataTemplate>
                 </ListBox.ItemTemplate>
             </ListBox>
@@ -52,6 +53,7 @@
             </Grid.RowDefinitions>
             <TextBlock Grid.Row="0" Text="Top Albums" FontSize="16" FontWeight="Bold" Margin="5"/>
             <ListBox Grid.Row="1" ItemsSource="{Binding TopAlbums}" BorderThickness="0" Margin="5"
+                     Background="Transparent"
                      ScrollViewer.HorizontalScrollBarVisibility="Auto"
                      ScrollViewer.VerticalScrollBarVisibility="Disabled"
                      HorizontalAlignment="Stretch">
@@ -62,10 +64,9 @@
                 </ListBox.ItemsPanel>
                 <ListBox.ItemTemplate>
                     <DataTemplate>
-                        <Button Background="Transparent" BorderThickness="0"
-                                Command="{Binding OpenAlbumCommand, ElementName=Root}" CommandParameter="{Binding .}">
-                            <views:TopAlbumListView PlayCommand="{Binding PlayTopAlbumCommand, ElementName=Root}"/>
-                        </Button>
+                        <views:TopAlbumListView
+                            PlayCommand="{Binding PlayTopAlbumCommand, ElementName=Root}"
+                            OpenCommand="{Binding OpenAlbumCommand, ElementName=Root}" />
                     </DataTemplate>
                 </ListBox.ItemTemplate>
             </ListBox>
@@ -78,6 +79,7 @@
             </Grid.RowDefinitions>
             <TextBlock Grid.Row="0" Text="Recently Played" FontSize="16" FontWeight="Bold" Margin="5"/>
             <ListBox Grid.Row="1" ItemsSource="{Binding RecentTracks}" BorderThickness="0" Margin="5"
+                     Background="Transparent"
                      ScrollViewer.HorizontalScrollBarVisibility="Auto"
                      ScrollViewer.VerticalScrollBarVisibility="Disabled"
                      HorizontalAlignment="Stretch">
