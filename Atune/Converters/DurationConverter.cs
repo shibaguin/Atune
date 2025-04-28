@@ -10,13 +10,18 @@ public class DurationConverter : IValueConverter
     {
         if (value is TimeSpan timeSpan)
         {
-            // If days are present, format as dd:hh:mm:ss
+            // Если есть дни, показываем dd:hh:mm:ss
             if (timeSpan.Days > 0)
             {
-                return string.Format("{0:D2}:{1:D2}:{2:D2}:{3:D2}", timeSpan.Days, timeSpan.Hours, timeSpan.Minutes, timeSpan.Seconds);
+                return $"{timeSpan.Days:D2}:{timeSpan.Hours:D2}:{timeSpan.Minutes:D2}:{timeSpan.Seconds:D2}";
             }
-            // Otherwise format as mm:ss
-            return string.Format("{0:D2}:{1:D2}", timeSpan.Minutes, timeSpan.Seconds);
+            // Если есть часы, форматируем как h:mm:ss (без ведущего нуля в часах)
+            if (timeSpan.Hours > 0)
+            {
+                return $"{timeSpan.Hours}:{timeSpan.Minutes:D2}:{timeSpan.Seconds:D2}";
+            }
+            // Иначе mm:ss (без ведущего нуля в минутах)
+            return $"{timeSpan.Minutes}:{timeSpan.Seconds:D2}";
         }
         return string.Empty;
     }
