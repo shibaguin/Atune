@@ -21,7 +21,7 @@
                      ScrollViewer.VerticalScrollBarVisibility="Auto">
                 <ListBox.ItemTemplate>
                     <DataTemplate>
-                        <views:TopTrackListView PlayCommand="{Binding PlayTopTrackCommand, ElementName=Root}"/>
+                        <views:TopTrackListView PlayCommand="{Binding DataContext.PlayTopTrackCommand, ElementName=Root}"/>
                     </DataTemplate>
                 </ListBox.ItemTemplate>
             </ListBox>
@@ -39,8 +39,8 @@
                 <ListBox.ItemTemplate>
                     <DataTemplate>
                         <views:TopPlaylistListView
-                            PlayCommand="{Binding PlayTopPlaylistCommand, ElementName=Root}"
-                            OpenCommand="{Binding OpenPlaylistCommand, ElementName=Root}" />
+                            PlayCommand="{Binding DataContext.PlayTopPlaylistCommand, ElementName=Root}"
+                            OpenCommand="{Binding DataContext.OpenPlaylistCommand, ElementName=Root}" />
                     </DataTemplate>
                 </ListBox.ItemTemplate>
             </ListBox>
@@ -65,8 +65,8 @@
                 <ListBox.ItemTemplate>
                     <DataTemplate>
                         <views:TopAlbumListView
-                            PlayCommand="{Binding PlayTopAlbumCommand, ElementName=Root}"
-                            OpenCommand="{Binding OpenAlbumCommand, ElementName=Root}" />
+                            PlayCommand="{Binding DataContext.PlayTopAlbumCommand, ElementName=Root}"
+                            OpenCommand="{Binding DataContext.OpenAlbumCommand, ElementName=Root}" />
                     </DataTemplate>
                 </ListBox.ItemTemplate>
             </ListBox>
@@ -90,7 +90,7 @@
                 </ListBox.ItemsPanel>
                 <ListBox.ItemTemplate>
                     <DataTemplate>
-                        <views:RecentlyPlayedListView PlayCommand="{Binding PlayRecentTrackCommand, ElementName=Root}"/>
+                        <views:RecentlyPlayedListView PlayCommand="{Binding DataContext.PlayRecentTrackCommand, ElementName=Root}"/>
                     </DataTemplate>
                 </ListBox.ItemTemplate>
             </ListBox>
