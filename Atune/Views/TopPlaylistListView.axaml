@@ -35,10 +35,17 @@
                    FontSize="24"/>
       </Grid>
     </Button>
-    <StackPanel Grid.Column="1" Spacing="2">
-      <TextBlock Text="{Binding Name}" FontWeight="Bold" FontSize="14"/>
-      <TextBlock Text="{Binding TrackCount, StringFormat='Tracks: {0}'}" FontSize="12" Foreground="Gray"/>
-    </StackPanel>
+    <Button x:Name="OpenButton"
+            Grid.Column="1"
+            Background="Transparent"
+            BorderThickness="0"
+            HorizontalAlignment="Stretch"
+            Focusable="False">
+      <StackPanel Spacing="2">
+        <TextBlock Text="{Binding Name}" FontWeight="Bold" FontSize="14"/>
+        <TextBlock Text="{Binding TrackCount, StringFormat='Tracks: {0}'}" FontSize="12" Foreground="Gray"/>
+      </StackPanel>
+    </Button>
     <TextBlock Grid.Column="2"
                Text="{Binding PlayCount}"
                VerticalAlignment="Center"

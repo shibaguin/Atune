@@ -47,5 +47,10 @@ namespace Atune.Services
 
         // Current media path (engine provider)
         string? CurrentPath { get; }
+
+        /// <summary>
+        /// Starts playback at the specified index in the current queue.
+        /// </summary>
+        Task PlayAtIndex(int index);
     }
 }

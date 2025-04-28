@@ -13,11 +13,19 @@ namespace Atune.Views
         // Command to play this album
         public static readonly StyledProperty<ICommand?> PlayCommandProperty =
             AvaloniaProperty.Register<TopAlbumListView, ICommand?>(nameof(PlayCommand));
+        // Command to open album details
+        public static readonly StyledProperty<ICommand?> OpenCommandProperty =
+            AvaloniaProperty.Register<TopAlbumListView, ICommand?>(nameof(OpenCommand));
 
         public ICommand? PlayCommand
         {
             get => GetValue(PlayCommandProperty);
             set => SetValue(PlayCommandProperty, value);
+        }
+        public ICommand? OpenCommand
+        {
+            get => GetValue(OpenCommandProperty);
+            set => SetValue(OpenCommandProperty, value);
         }
 
         public TopAlbumListView()
@@ -27,6 +35,7 @@ namespace Atune.Views
             var playBtn = this.FindControl<Button>("PlayButton");
             var overlay = this.FindControl<Rectangle>("Overlay");
             var playIcon = this.FindControl<TextBlock>("PlayIcon");
+            var openBtn = this.FindControl<Button>("OpenButton");
 
             if (playBtn != null)
             {
@@ -49,6 +58,14 @@ namespace Atune.Views
                         playIcon.Opacity = 0;
                     };
                 }
+            }
+            if (openBtn != null)
+            {
+                openBtn.Click += (_, __) =>
+                {
+                    if (DataContext is TopAlbumDto dto)
+                        OpenCommand?.Execute(dto);
+                };
             }
         }
     }

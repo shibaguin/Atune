@@ -227,9 +227,8 @@ public partial class MediaViewModel : ObservableObject, IDisposable
         PlayNextInQueueCommand = new AsyncRelayCommand(_playbackService.Next);
         PlayPreviousInQueueCommand = new AsyncRelayCommand(_playbackService.Previous);
         StopCommand = new RelayCommand(_playbackService.Stop);
-        PlayCommand = new AsyncRelayCommand<MediaItem>(item => _playbackService.Play(item));
-        // Initialize track and album queue commands
-        PlayTrackCommand = new AsyncRelayCommand<MediaItem>(item => _playbackService.Play(item));
+        // Initialize queue-based playback commands
+        PlayTrackCommand = new AsyncRelayCommand<MediaItem>(PlayTrack);
         PlayAlbumCommand = new AsyncRelayCommand<AlbumInfo?>(PlayAlbum);
         PlayAllTracksCommand = new AsyncRelayCommand(PlayAllTracks);
 
@@ -953,47 +952,34 @@ public partial class MediaViewModel : ObservableObject, IDisposable
         }
     }
 
-    // New method: play next item from the queue
-    private async Task PlayNextInQueue()
-    {
-        if (PlaybackQueue.Count == 0) return;
-        if (_currentQueueIndex < PlaybackQueue.Count - 1)
-            _currentQueueIndex++;
-        else
-            _currentQueueIndex = 0;
-        await PlayMediaItem(PlaybackQueue[_currentQueueIndex]);
-    }
-
-    // New method: enqueue all tracks and play
+    // Enqueue all tracks into the playback service and play from the first
     private async Task PlayAllTracks()
     {
-        _currentQueueIndex = -1;
-        PlaybackQueue.Clear();
+        _playbackService.ClearQueue();
         foreach (var item in MediaItems)
-            PlaybackQueue.Add(item);
-        await PlayNextInQueue();
+            _playbackService.Enqueue(item);
+        await _playbackService.PlayAtIndex(0);
     }
 
-    // New method: enqueue album tracks and play
+    // Enqueue all tracks from the given album and play from the first
     private async Task PlayAlbum(AlbumInfo? album)
     {
         if (album == null) return;
-        _currentQueueIndex = -1;
-        PlaybackQueue.Clear();
+        _playbackService.ClearQueue();
         foreach (var item in album.Tracks)
-            PlaybackQueue.Add(item);
-        await PlayNextInQueue();
+            _playbackService.Enqueue(item);
+        await _playbackService.PlayAtIndex(0);
     }
 
-    // Add PlayPreviousInQueue implementation
-    private async Task PlayPreviousInQueue()
+    // Play a single track by building the full queue and starting at its index
+    private async Task PlayTrack(MediaItem? mediaItem)
     {
-        if (PlaybackQueue.Count == 0) return;
-        if (_currentQueueIndex > 0)
-            _currentQueueIndex--;
-        else
-            _currentQueueIndex = PlaybackQueue.Count - 1;
-        await PlayMediaItem(PlaybackQueue[_currentQueueIndex]);
+        if (mediaItem == null) return;
+        _playbackService.ClearQueue();
+        for (int i = 0; i < MediaItems.Count; i++)
+            _playbackService.Enqueue(MediaItems[i]);
+        var selectedIndex = MediaItems.IndexOf(mediaItem);
+        await _playbackService.PlayAtIndex(selectedIndex);
     }
 
     public void Dispose()

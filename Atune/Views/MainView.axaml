@@ -322,8 +322,6 @@
                     x:Name="ProgressBarBackground"
                     Height="8"
                     Background="{DynamicResource BarBackground}"
-                    PointerPressed="ProgressBarBackground_PointerPressed"
-                    PointerMoved="ProgressBarBackground_PointerMoved"
                     VerticalAlignment="Center"
                     HorizontalAlignment="Stretch">
                 <Rectangle x:Name="ProgressBarFill"

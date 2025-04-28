@@ -144,10 +144,19 @@ public partial class MainViewModel : ViewModelBase
         _localizationService.PropertyChanged += LocalizationService_PropertyChanged;
 
         // Subscribe to playback service events
-        _playbackService.TrackChanged        += (_, item) => CurrentMediaItem = item;
+        _playbackService.TrackChanged += (_, item) =>
+        {
+            CurrentMediaItem = item;
+            // Update total duration when track changes
+            Duration = _playbackService.Duration;
+        };
         _playbackService.PlaybackStateChanged += (_, playing) => IsPlaying = playing;
-        _playbackService.PositionChanged     += (_, pos) => CurrentPosition = pos;
-        _playbackService.QueueChanged        += (_, queue) => Duration = _playbackService.Duration;
+        _playbackService.PositionChanged += (_, pos) =>
+        {
+            CurrentPosition = pos;
+            // Refresh duration in case metadata loaded or track changed
+            Duration = _playbackService.Duration;
+        };
     }
 
     private void LocalizationService_PropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -563,18 +572,26 @@ public partial class MainViewModel : ViewModelBase
 
     partial void OnCurrentPositionChanged(TimeSpan value)
     {
-        // ??????? ???????? ?? IsPlaying, ????????? ????????? ??????? ??????
-        if (_playbackService != null
-            && Math.Abs((_playbackService.Position - value).TotalSeconds) > 0.5)
+        if (_playbackService == null)
+            return;
+        // Clamp the new position to the track duration
+        var target = value;
+        if (Duration.TotalSeconds > 0 && value.TotalSeconds > Duration.TotalSeconds)
+        {
+            target = Duration;
+        }
+        // Only update engine if difference is significant
+        if (Math.Abs((_playbackService.Position - target).TotalSeconds) > 0.5)
         {
             try
             {
-                _playbackService.Position = value;
-                // ?? ?????? ???????? ??????? ??? ?????? ?????????
+                _playbackService.Position = target;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error setting media position");
+                // Reflect clamped position in UI
+                CurrentPosition = target;
             }
         }
     }

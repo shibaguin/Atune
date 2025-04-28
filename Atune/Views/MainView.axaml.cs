@@ -78,15 +78,34 @@ public partial class MainView : UserControl
 
     private void OnProgressBarPointer(object? sender, PointerEventArgs e)
     {
-        if (_progressBarBackground == null || DataContext is not MainViewModel vm)
-            return;
-        var props = e.GetCurrentPoint(_progressBarBackground).Properties;
-        if (props.IsLeftButtonPressed || e is PointerPressedEventArgs)
+        try
         {
-            var pos = e.GetPosition(_progressBarBackground);
-            double ratio = pos.X / _progressBarBackground.Bounds.Width;
-            var newTime = TimeSpan.FromSeconds(Math.Clamp(ratio, 0, 1) * vm.Duration.TotalSeconds);
-            vm.CurrentPosition = newTime;
+            if (_progressBarBackground == null || _progressBarFill == null || DataContext is not MainViewModel vm)
+                return;
+            var currentPoint = e.GetCurrentPoint(_progressBarBackground);
+            var props = currentPoint.Properties;
+            // Compute position ratio for UI
+            var pos = currentPoint.Position;
+            double width = _progressBarBackground.Bounds.Width;
+            if (width <= 0)
+                return;
+            double ratio = Math.Clamp(pos.X / width, 0, 1);
+            // Handle pointer press: perform seek only if a track is loaded
+            if (e is PointerPressedEventArgs && vm.CurrentMediaItem != null)
+            {
+                var newTime = TimeSpan.FromSeconds(ratio * vm.Duration.TotalSeconds);
+                vm.CurrentPosition = newTime;
+            }
+            // Handle drag move: update UI fill only
+            else if (props.IsLeftButtonPressed)
+            {
+                _progressBarFill.Width = ratio * width;
+            }
+        }
+        catch (Exception ex)
+        {
+            // Prevent crashes due to pointer handling errors
+            System.Diagnostics.Debug.WriteLine($"Error in progress bar pointer handler: {ex}");
         }
     }
 

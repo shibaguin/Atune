@@ -95,6 +95,19 @@ namespace Atune.Services
             return Play();
         }
 
+        /// <summary>
+        /// Starts playback at the specified index in the current queue.
+        /// </summary>
+        public async Task PlayAtIndex(int index)
+        {
+            if (_queue.Count == 0)
+                return;
+            if (index < 0 || index >= _queue.Count)
+                index = 0;
+            _currentIndex = index;
+            await Play();
+        }
+
         public async Task Next()
         {
             if (_queue.Count == 0)

@@ -10,6 +10,11 @@ using CommunityToolkit.Mvvm.Input;
 using Avalonia.Threading;
 using System.Linq;
 using Atune.Services;
+using System.Collections.Generic;
+using Atune.Views;
+using Atune.ViewModels;
+using Avalonia.Controls;
+using Atune.Models;
 
 namespace Atune.ViewModels;
 
@@ -140,13 +145,17 @@ public partial class HomeViewModel : ViewModelBase
     private async Task PlayTopTrack(TopTrackDto dto)
     {
         _playbackService.ClearQueue();
-        var tracks = await _homeRepository.GetTopTracksAsync() ?? Enumerable.Empty<TopTrackDto>();
-        foreach (var t in tracks)
+        var trackDtos = (await _homeRepository.GetTopTracksAsync())?.ToList() ?? new List<TopTrackDto>();
+        for (int i = 0; i < trackDtos.Count; i++)
         {
+            var t = trackDtos[i];
             var media = await _mediaRepository.GetByIdAsync(t.Id);
-            if (media != null) _playbackService.Enqueue(media);
+            if (media != null)
+                _playbackService.Enqueue(media);
         }
-        await _playbackService.Play();
+        // Find index of selected track
+        var selectedIndex = trackDtos.FindIndex(t => t.Id == dto.Id);
+        await _playbackService.PlayAtIndex(selectedIndex);
     }
 
     [RelayCommand]
@@ -171,8 +180,47 @@ public partial class HomeViewModel : ViewModelBase
     private async Task PlayRecentTrack(RecentTrackDto dto)
     {
         _playbackService.ClearQueue();
-        var media = await _mediaRepository.GetByIdAsync(dto.Id);
-        if (media != null) _playbackService.Enqueue(media);
-        await _playbackService.Play();
+        // Enqueue all recent tracks
+        var recentDtos = (await _homeRepository.GetRecentTracksAsync())?.ToList() ?? new List<RecentTrackDto>();
+        foreach (var r in recentDtos)
+        {
+            var item = await _mediaRepository.GetByIdAsync(r.Id);
+            if (item != null)
+                _playbackService.Enqueue(item);
+        }
+        // Play the selected recent track at correct position
+        var selectedIndex = recentDtos.FindIndex(r => r.Id == dto.Id);
+        await _playbackService.PlayAtIndex(selectedIndex);
+    }
+
+    [RelayCommand]
+    private async Task OpenAlbum(TopAlbumDto dto)
+    {
+        // Load full album tracks and navigate to AlbumView
+        var tracks = (await _albumRepository.GetSongsForAlbumAsync(dto.Id)).ToList();
+        var albumInfo = new AlbumInfo(dto.Title, dto.ArtistName, dto.Year, tracks);
+        var albumView = new AlbumView { DataContext = new AlbumViewModel(albumInfo) };
+        if (Avalonia.Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop &&
+            desktop.MainWindow?.DataContext is MainViewModel mainVm)
+        {
+            mainVm.SelectedSection = MainViewModel.SectionType.Media;
+            mainVm.CurrentView = albumView;
+            mainVm.HeaderText = dto.Title;
+        }
+    }
+
+    [RelayCommand]
+    private void OpenPlaylist(TopPlaylistDto dto)
+    {
+        // Navigate to PlaylistView for selected playlist
+        var playlist = new Playlist { Id = dto.Id, Name = dto.Name };
+        var playlistView = new PlaylistView { DataContext = new PlaylistViewModel(playlist) };
+        if (Avalonia.Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop &&
+            desktop.MainWindow?.DataContext is MainViewModel mainVm)
+        {
+            mainVm.SelectedSection = MainViewModel.SectionType.Media;
+            mainVm.CurrentView = playlistView;
+            mainVm.HeaderText = dto.Name;
+        }
     }
 }
