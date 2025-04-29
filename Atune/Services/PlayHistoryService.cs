@@ -7,11 +7,11 @@ using Atune.Models;
 using Microsoft.Extensions.Logging;
 using System.Linq;
 using Serilog;
+using Microsoft.Extensions.DependencyInjection;
 
 public class PlayHistoryService : IDisposable
 {
-    private readonly IPlayHistoryRepository _historyRepository;
-    private readonly IUnitOfWork _unitOfWork;
+    private readonly IServiceScopeFactory _scopeFactory;
     private readonly MediaPlayerService _playbackService;
     private readonly Guid _sessionId;
     private readonly string _deviceId;
@@ -20,14 +20,11 @@ public class PlayHistoryService : IDisposable
     private readonly ILogger<PlayHistoryService> _logger;
 
     public PlayHistoryService(
-        IPlayHistoryRepository historyRepository,
-        IUnitOfWork unitOfWork,
+        IServiceScopeFactory scopeFactory,
         MediaPlayerService playbackService,
         ILogger<PlayHistoryService> logger)
     {
-        Log.Information("[PlayHistoryService] Initialized with SessionId={SessionId}", _sessionId);
-        _historyRepository = historyRepository;
-        _unitOfWork = unitOfWork;
+        _scopeFactory = scopeFactory;
         _playbackService = playbackService;
         _logger = logger;
 
@@ -61,10 +58,12 @@ public class PlayHistoryService : IDisposable
             if (string.IsNullOrEmpty(path))
                 return;
 
-            // Lookup media item by path
-            var allMedia = await _unitOfWork.Media.GetAllAsync();
-            var mediaItem = allMedia.FirstOrDefault(m =>
-                string.Equals(m.Path, path, StringComparison.OrdinalIgnoreCase));
+            // Lookup media item by path with a new scope
+            using var scope = _scopeFactory.CreateScope();
+            var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+            var historyRepository = scope.ServiceProvider.GetRequiredService<IPlayHistoryRepository>();
+            var mediaItem = (await unitOfWork.Media.GetAllAsync())
+                .FirstOrDefault(m => string.Equals(m.Path, path, StringComparison.OrdinalIgnoreCase));
             if (mediaItem == null)
             {
                 Log.Warning("[PlayHistoryService] No MediaItem found for path={Path}", path);
@@ -90,8 +89,8 @@ public class PlayHistoryService : IDisposable
 
             Log.Information("[PlayHistoryService] Saving entry: MediaItemId={MediaItemId}, Duration={Duration}", entry.MediaItemId, entry.DurationSeconds);
             _logger.LogInformation("Saving history entry: MediaItemId={MediaItemId}, Duration={Duration}s, PercentPlayed={PercentPlayed}%", entry.MediaItemId, entry.DurationSeconds, entry.PercentPlayed);
-            await _historyRepository.AddAsync(entry);
-            await _unitOfWork.CommitAsync();
+            await historyRepository.AddAsync(entry);
+            await unitOfWork.CommitAsync();
             Log.Information("[PlayHistoryService] Entry committed to database");
             _logger.LogInformation("Play history entry committed successfully");
         }
