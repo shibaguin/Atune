@@ -56,5 +56,8 @@
     <PackageVersion Include="Z440.ATL.Core" Version="6.15.0" />
     <PackageVersion Include="Avalonia.Build.Tasks" Version="11.2.3" />
     <PackageVersion Include="VideoLAN.LibVLC.Android" Version="3.5.3" />
+    <!-- AutoMapper for object mapping -->
+    <PackageVersion Include="AutoMapper" Version="12.0.1" />
+    <PackageVersion Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="12.0.1" />
   </ItemGroup>
 </Project>

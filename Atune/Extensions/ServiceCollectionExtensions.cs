@@ -18,6 +18,9 @@ using Atune.Services;
 using Atune.ViewModels;
 using Atune.Views;
 using Atune.Plugins;
+using AutoMapper;
+using Atune.Services.Interfaces;
+using Atune.Extensions;
 
 namespace Atune.Extensions
 {
@@ -100,12 +103,18 @@ namespace Atune.Extensions
             services.AddSingleton<IPlayPlaylistService, PlayPlaylistService>();
             services.AddSingleton<IPlayArtistService, PlayArtistService>();
 
+            // AutoMapper: регистрация профилей
+            services.AddAutoMapper(typeof(MappingProfile).Assembly);
+
+            // Сервисный слой: HomeService
+            services.AddScoped<IHomeService, HomeService>();
+
             // ViewModels
             services.AddTransient<MainViewModel>();
             services.AddTransient<HomeViewModel>(sp => new HomeViewModel(
                 sp.GetRequiredService<IMemoryCache>(),
                 sp.GetRequiredService<ILogger<HomeViewModel>>(),
-                sp.GetRequiredService<IHomeRepository>(),
+                sp.GetRequiredService<IHomeService>(),
                 sp.GetRequiredService<IPlaybackService>(),
                 sp.GetRequiredService<IMediaRepository>(),
                 sp.GetRequiredService<IPlaylistRepository>(),

@@ -15,6 +15,7 @@ using Atune.Views;
 using Atune.ViewModels;
 using Avalonia.Controls;
 using Atune.Models;
+using Atune.Services.Interfaces;
 
 namespace Atune.ViewModels;
 
@@ -22,7 +23,7 @@ public partial class HomeViewModel : ViewModelBase
 {
     private readonly IMemoryCache _cache;
     private readonly ILogger<HomeViewModel> _logger;
-    private readonly IHomeRepository _homeRepository;
+    private readonly IHomeService _homeService;
     private readonly IPlaybackService _playbackService;
     private readonly IMediaRepository _mediaRepository;
     private readonly IPlaylistRepository _playlistRepository;
@@ -39,15 +40,15 @@ public partial class HomeViewModel : ViewModelBase
     public HomeViewModel(
         IMemoryCache cache,
         ILogger<HomeViewModel> logger,
-        IHomeRepository homeRepository,
+        IHomeService homeService,
         IPlaybackService playbackService,
         IMediaRepository mediaRepository,
         IPlaylistRepository playlistRepository,
         IAlbumRepository albumRepository)
     {
-        _homeRepository = homeRepository;
         _cache = cache;
         _logger = logger;
+        _homeService = homeService;
         _playbackService = playbackService;
         _mediaRepository = mediaRepository;
         _playlistRepository = playlistRepository;
@@ -103,7 +104,7 @@ public partial class HomeViewModel : ViewModelBase
         try
         {
             _logger.LogInformation("HomeViewModel.LoadDataAsync called");
-            var tracks = await _homeRepository.GetTopTracksAsync() ?? Enumerable.Empty<TopTrackDto>();
+            var tracks = await _homeService.GetTopTracksAsync() ?? Enumerable.Empty<TopTrackDto>();
             _logger.LogInformation("HomeViewModel: Loaded TopTracks count = {Count}", tracks.Count());
             Dispatcher.UIThread.Post(() =>
             {
@@ -111,15 +112,21 @@ public partial class HomeViewModel : ViewModelBase
                 foreach (var t in tracks) TopTracks.Add(t);
             });
 
-            var albums = await _homeRepository.GetTopAlbumsAsync() ?? Enumerable.Empty<TopAlbumDto>();
+            var albums = (await _homeService.GetTopAlbumsAsync()) ?? Enumerable.Empty<TopAlbumDto>();
             _logger.LogInformation("HomeViewModel: Loaded TopAlbums count = {Count}", albums.Count());
+            // Логируем детали полученных DTO для отладки дублирования
+            foreach (var a in albums)
+            {
+                _logger.LogInformation("HomeViewModel: TopAlbum DTO - Id:{Id}, Title:'{Title}', Tracks:{TrackCount}, Plays:{PlayCount}", a.Id, a.Title, a.TrackCount, a.PlayCount);
+            }
             Dispatcher.UIThread.Post(() =>
             {
                 TopAlbums.Clear();
-                foreach (var a in albums) TopAlbums.Add(a);
+                foreach (var a in albums)
+                    TopAlbums.Add(a);
             });
 
-            var playlists = await _homeRepository.GetTopPlaylistsAsync() ?? Enumerable.Empty<TopPlaylistDto>();
+            var playlists = await _homeService.GetTopPlaylistsAsync() ?? Enumerable.Empty<TopPlaylistDto>();
             _logger.LogInformation("HomeViewModel: Loaded TopPlaylists count = {Count}", playlists.Count());
             Dispatcher.UIThread.Post(() =>
             {
@@ -127,7 +134,7 @@ public partial class HomeViewModel : ViewModelBase
                 foreach (var p in playlists) TopPlaylists.Add(p);
             });
 
-            var recents = await _homeRepository.GetRecentTracksAsync() ?? Enumerable.Empty<RecentTrackDto>();
+            var recents = await _homeService.GetRecentTracksAsync() ?? Enumerable.Empty<RecentTrackDto>();
             _logger.LogInformation("HomeViewModel: Loaded RecentTracks count = {Count}", recents.Count());
             Dispatcher.UIThread.Post(() =>
             {
@@ -145,7 +152,7 @@ public partial class HomeViewModel : ViewModelBase
     private async Task PlayTopTrack(TopTrackDto dto)
     {
         _playbackService.ClearQueue();
-        var trackDtos = (await _homeRepository.GetTopTracksAsync())?.ToList() ?? new List<TopTrackDto>();
+        var trackDtos = (await _homeService.GetTopTracksAsync())?.ToList() ?? new List<TopTrackDto>();
         for (int i = 0; i < trackDtos.Count; i++)
         {
             var t = trackDtos[i];
@@ -162,8 +169,17 @@ public partial class HomeViewModel : ViewModelBase
     private async Task PlayTopAlbum(TopAlbumDto dto)
     {
         _playbackService.ClearQueue();
-        var items = await _albumRepository.GetSongsForAlbumAsync(dto.Id);
-        foreach (var item in items) _playbackService.Enqueue(item);
+        // Загружаем треки для всех связанных альбомов
+        var allItems = new List<MediaItem>();
+        foreach (var albumId in dto.AlbumIds)
+        {
+            var albumItems = await _albumRepository.GetSongsForAlbumAsync(albumId);
+            allItems.AddRange(albumItems);
+        }
+        // Убираем возможные дубликаты треков по Id
+        var distinctItems = allItems.GroupBy(i => i.Id).Select(g => g.First());
+        foreach (var item in distinctItems)
+            _playbackService.Enqueue(item);
         await _playbackService.Play();
     }
 
@@ -181,7 +197,7 @@ public partial class HomeViewModel : ViewModelBase
     {
         _playbackService.ClearQueue();
         // Enqueue all recent tracks
-        var recentDtos = (await _homeRepository.GetRecentTracksAsync())?.ToList() ?? new List<RecentTrackDto>();
+        var recentDtos = (await _homeService.GetRecentTracksAsync())?.ToList() ?? new List<RecentTrackDto>();
         foreach (var r in recentDtos)
         {
             var item = await _mediaRepository.GetByIdAsync(r.Id);
@@ -196,9 +212,16 @@ public partial class HomeViewModel : ViewModelBase
     [RelayCommand]
     private async Task OpenAlbum(TopAlbumDto dto)
     {
-        // Load full album tracks and navigate to AlbumView
-        var tracks = (await _albumRepository.GetSongsForAlbumAsync(dto.Id)).ToList();
-        var albumInfo = new AlbumInfo(dto.Title, dto.ArtistName, dto.Year, tracks);
+        // Загружаем все треки по всем связанным идентификаторам альбомов
+        var tracksList = new List<MediaItem>();
+        foreach (var albumId in dto.AlbumIds)
+        {
+            var albumTracks = await _albumRepository.GetSongsForAlbumAsync(albumId);
+            tracksList.AddRange(albumTracks);
+        }
+        // Убираем дубликаты
+        var distinctTracks = tracksList.GroupBy(t => t.Id).Select(g => g.First()).ToList();
+        var albumInfo = new AlbumInfo(dto.Title, dto.ArtistName, dto.Year, distinctTracks);
         var albumView = new AlbumView { DataContext = new AlbumViewModel(albumInfo) };
         if (Avalonia.Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop &&
             desktop.MainWindow?.DataContext is MainViewModel mainVm)

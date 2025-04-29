@@ -5,6 +5,8 @@ using Avalonia.Interactivity;
 using Avalonia.Controls.Shapes;
 using System.Windows.Input;
 using Atune.Models.Dtos;
+using Microsoft.Extensions.DependencyInjection;
+using System.Linq;
 
 namespace Atune.Views
 {

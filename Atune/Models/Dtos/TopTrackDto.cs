@@ -10,5 +10,6 @@ namespace Atune.Models.Dtos
         public string ArtistName { get; set; } = string.Empty;
         public TimeSpan Duration { get; set; }
         public int PlayCount { get; set; }
+        public int TrackCount { get; set; }
     }
 } 

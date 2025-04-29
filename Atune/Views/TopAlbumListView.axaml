@@ -42,16 +42,10 @@
             HorizontalAlignment="Stretch"
             Focusable="False">
       <StackPanel Spacing="2">
-        <TextBlock Text="{Binding Title}" FontWeight="Bold" FontSize="14"/>
-        <TextBlock FontSize="12" Foreground="Gray">
-          <TextBlock.Inlines>
-            <Run Text="{Binding ArtistName}" />
-            <Run Text=" • " />
-            <Run Text="{Binding Year}" />
-            <Run Text=" • " />
-            <Run Text="{Binding TrackCount, StringFormat='Tracks: {0}'}" />
-          </TextBlock.Inlines>
-        </TextBlock>
+        <TextBlock Text="{Binding Title, Mode=OneWay}" FontWeight="Bold" FontSize="14"/>
+        <TextBlock Text="{Binding ArtistName, Mode=OneWay}" FontSize="12" Foreground="Gray"/>
+        <TextBlock Text="{Binding Year, Mode=OneWay, StringFormat='Year: {0}'}" FontSize="12" Foreground="Gray"/>
+        <TextBlock Text="{Binding TrackCount, Mode=OneWay, StringFormat='Tracks: {0}'}" FontSize="12" Foreground="Gray"/>
       </StackPanel>
     </Button>
     <TextBlock Grid.Column="2"

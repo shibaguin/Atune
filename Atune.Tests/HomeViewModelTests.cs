@@ -20,18 +20,26 @@ namespace Atune.Tests
             // Arrange
             var cache = new MemoryCache(new MemoryCacheOptions());
             var logger = NullLogger<HomeViewModel>.Instance;
-            var repoMock = new Mock<IHomeRepository>();
-            // stub repository to return empty lists
-            repoMock.Setup(r => r.GetTopTracksAsync(It.IsAny<int>())).ReturnsAsync(new List<TopTrackDto>());
-            repoMock.Setup(r => r.GetTopAlbumsAsync(It.IsAny<int>())).ReturnsAsync(new List<TopAlbumDto>());
-            repoMock.Setup(r => r.GetTopPlaylistsAsync(It.IsAny<int>())).ReturnsAsync(new List<TopPlaylistDto>());
-            repoMock.Setup(r => r.GetRecentTracksAsync(It.IsAny<int>())).ReturnsAsync(new List<RecentTrackDto>());
+            var homeServiceMock = new Mock<IHomeService>();
+            homeServiceMock.Setup(s => s.GetTopTracksAsync(It.IsAny<int>())).ReturnsAsync(new List<TopTrackDto>());
+            homeServiceMock.Setup(s => s.GetTopAlbumsAsync(It.IsAny<int>())).ReturnsAsync(new List<TopAlbumDto>());
+            homeServiceMock.Setup(s => s.GetTopPlaylistsAsync(It.IsAny<int>())).ReturnsAsync(new List<TopPlaylistDto>());
+            homeServiceMock.Setup(s => s.GetRecentTracksAsync(It.IsAny<int>())).ReturnsAsync(new List<RecentTrackDto>());
+            var playbackMock = new Mock<IPlaybackService>();
+            var mediaRepoMock = new Mock<IMediaRepository>();
+            var playlistRepoMock = new Mock<IPlaylistRepository>();
+            var albumRepoMock = new Mock<IAlbumRepository>();
             // Act
-            var viewModel = new HomeViewModel(cache, logger, repoMock.Object);
+            var viewModel = new HomeViewModel(
+                cache,
+                logger,
+                homeServiceMock.Object,
+                playbackMock.Object,
+                mediaRepoMock.Object,
+                playlistRepoMock.Object,
+                albumRepoMock.Object);
             
             // Assert
-            // Assert – сообщение по умолчанию из конструктора ожидается как "Welcome to Atune!"
-            // Assert – the default message from the constructor is expected as "Welcome to Atune!"
             Assert.Equal("Welcome to Atune!", viewModel.WelcomeMessage);
         }
         

@@ -26,6 +26,9 @@ namespace Atune.Data.Repositories
         {
             return await _context.MediaItems
                 .Where(m => m.AlbumId == albumId)
+                .Include(m => m.Album)
+                .Include(m => m.TrackArtists)
+                    .ThenInclude(ta => ta.Artist)
                 .ToListAsync();
         }
 

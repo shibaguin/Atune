@@ -8,11 +8,17 @@ namespace Atune.Data.Repositories
     using Atune.Data.Interfaces;
     using Atune.Models.Dtos;
     using Microsoft.EntityFrameworkCore;
+    using AutoMapper;
 
     public class HomeRepository : IHomeRepository
     {
         private readonly AppDbContext _context;
-        public HomeRepository(AppDbContext context) => _context = context;
+        private readonly AutoMapper.IMapper _mapper;
+        public HomeRepository(AppDbContext context, AutoMapper.IMapper mapper)
+        {
+            _context = context;
+            _mapper = mapper;
+        }
 
         public async Task<IEnumerable<TopTrackDto>> GetTopTracksAsync(int count = 5)
         {
@@ -57,60 +63,60 @@ namespace Atune.Data.Repositories
                 .OrderByDescending(dto => dto.PlayCount)
                 .Take(count)
                 .ToList();
+            // Корректируем TrackCount: получаем точное число через запрос к БД
+            foreach (var dto in topTracks)
+            {
+                dto.TrackCount = await _context.PlaylistMediaItems.CountAsync(pmi => pmi.MediaItemId == dto.Id);
+            }
             return topTracks;
         }
 
         public async Task<IEnumerable<TopAlbumDto>> GetTopAlbumsAsync(int count = 5)
         {
-            // Load play histories with related albums and artist information into memory
-            var histories = await _context.PlayHistories
-                .Include(ph => ph.MediaItem)
-                    .ThenInclude(mi => mi.Album)
-                        .ThenInclude(al => al.AlbumArtists)
-                            .ThenInclude(aa => aa.Artist)
-                .Include(ph => ph.MediaItem)
-                    .ThenInclude(mi => mi.Album)
-                        .ThenInclude(al => al.Tracks)
-                .ToListAsync();
-            // If no play history exists, fallback to first albums
-            if (!histories.Any())
-            {
-                var albums = await _context.Albums
-                    .Include(a => a.AlbumArtists)
-                        .ThenInclude(aa => aa.Artist)
-                    .Include(a => a.Tracks)
-                    .OrderBy(a => a.Title)
-                    .Take(count)
-                    .ToListAsync();
-                return albums.Select(a => new TopAlbumDto
+            // Загружаем все альбомы из БД с подсчетом количества треков и воспроизведений
+            var dtos = await _context.Albums
+                .Select(a => new TopAlbumDto
                 {
                     Id = a.Id,
                     Title = a.Title,
                     CoverArtPath = a.CoverArtPath,
-                    ArtistName = a.AlbumArtists.FirstOrDefault()?.Artist.Name ?? string.Empty,
-                    Year = (uint)a.Year,
+                    ArtistName = a.Tracks
+                        .SelectMany(mi => mi.TrackArtists)
+                        .Select(ta => ta.Artist.Name)
+                        .FirstOrDefault() ?? string.Empty,
+                    Year = a.Year != 0
+                        ? (uint)a.Year
+                        : (uint)a.Tracks.Select(mi => mi.Year).FirstOrDefault(),
                     TrackCount = a.Tracks.Count,
-                    PlayCount = 0
+                    PlayCount = _context.PlayHistories.Count(ph => ph.MediaItem.AlbumId == a.Id)
                 })
-                .ToList();
+                .ToListAsync();
+
+            // Заполняем AlbumIds для каждого dto
+            foreach (var dto in dtos)
+            {
+                dto.AlbumIds.Add(dto.Id);
             }
-            // Group in memory and project to DTOs
-            var topAlbums = histories
-                .GroupBy(ph => ph.MediaItem.Album)
-                .Select(g => new TopAlbumDto
+
+            // Устраняем дубли альбомов и суммируем TrackCount и PlayCount
+            var result = dtos
+                .GroupBy(d => new { d.Title, d.ArtistName, d.Year })
+                .Select(g =>
                 {
-                    Id = g.Key.Id,
-                    Title = g.Key.Title,
-                    CoverArtPath = g.Key.CoverArtPath,
-                    ArtistName = g.Key.AlbumArtists.FirstOrDefault()?.Artist.Name ?? string.Empty,
-                    Year = (uint)g.Key.Year,
-                    TrackCount = g.Key.Tracks.Count,
-                    PlayCount = g.Count()
+                    var list = g.ToList();
+                    var first = list.First();
+                    first.TrackCount = list.Sum(x => x.TrackCount);
+                    first.PlayCount = list.Sum(x => x.PlayCount);
+                    // Объединяем все идентификаторы альбомов для загрузки всех треков
+                    first.AlbumIds = list.Select(x => x.Id).ToList();
+                    return first;
                 })
-                .OrderByDescending(dto => dto.PlayCount)
+                .OrderByDescending(d => d.PlayCount)
+                .ThenBy(d => d.Title)
                 .Take(count)
                 .ToList();
-            return topAlbums;
+
+            return result;
         }
 
         public async Task<IEnumerable<TopPlaylistDto>> GetTopPlaylistsAsync(int count = 5)
@@ -158,6 +164,11 @@ namespace Atune.Data.Repositories
                 .OrderByDescending(dto => dto.PlayCount)
                 .Take(count)
                 .ToList();
+            // Корректируем TrackCount: получаем точное число через запрос к БД
+            foreach (var dto in topPlaylists)
+            {
+                dto.TrackCount = await _context.PlaylistMediaItems.CountAsync(pmi => pmi.PlaylistId == dto.Id);
+            }
             return topPlaylists;
         }
 

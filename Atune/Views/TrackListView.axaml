@@ -9,6 +9,7 @@
   <UserControl.Resources>
     <converters:AllArtistsConverter x:Key="AllArtistsConverter"/>
     <converters:CoverArtConverter x:Key="CoverArtConverter"/>
+    <converters:DurationConverter x:Key="DurationConverter"/>
   </UserControl.Resources>
   <Grid ColumnDefinitions="Auto,*,Auto,Auto" VerticalAlignment="Center">
     <!-- Cover art with overlay play button -->
@@ -25,6 +26,7 @@
       <TextBlock Text="{Binding TrackArtists, Converter={StaticResource AllArtistsConverter}}" FontSize="12" Foreground="Gray"/>
       <TextBlock Text="{Binding Album.Title}" FontSize="12" Foreground="Gray"/>
       <TextBlock Text="{Binding Year}" FontSize="12" Foreground="Gray"/>
+      <TextBlock Text="{Binding Duration, Converter={StaticResource DurationConverter}}" FontSize="12" Foreground="Gray"/>
     </StackPanel>
     <!-- Playlist menu -->
     <Button x:Name="PlaylistMenuButton" Grid.Column="2" Background="Transparent" BorderThickness="0" Focusable="False">
