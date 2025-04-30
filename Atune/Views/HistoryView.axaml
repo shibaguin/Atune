@@ -15,41 +15,44 @@
         <conv:DateTimeOffsetToDateTimeConverter x:Key="DateTimeConverter"/>
         <conv:DurationConverter x:Key="DurationConverter"/>
     </UserControl.Resources>
-    <Grid Margin="16">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-        </Grid.RowDefinitions>
-        <TextBlock Text="{DynamicResource History_Header}"
-                   FontSize="24"
-                   FontWeight="Bold"
-                   Grid.Row="0"
-                   Margin="0,0,0,12"/>
-
-        <StackPanel Orientation="Horizontal" Spacing="8" Grid.Row="1" Margin="0,0,0,12">
-            <TextBlock Text="{DynamicResource History_GroupBy}" VerticalAlignment="Center"/>
-            <ComboBox ItemsSource="{Binding RangeOptions}" SelectedIndex="{Binding SelectedRangeIndex, Mode=TwoWay}" Width="160"/>
-        </StackPanel>
-
-        <StackPanel Orientation="Vertical" Spacing="6" Grid.Row="2">
-            <TextBlock Text="{Binding TotalPlaysLabelText}" FontSize="14"/>
-            <TextBlock Text="{Binding PlaybackTimeLabelText}" FontSize="14"/>
-        </StackPanel>
-        <!-- LiveChartsCore CartesianChart -->
-        <lvc:CartesianChart Grid.Row="3"
-                            Series="{Binding Series}"
-                            XAxes="{Binding XAxes}"
-                            YAxes="{Binding YAxes}"
-                            LegendPosition="Top"
-                            ZoomMode="X"
-                            AnimationsSpeed="00:00:00.500"
-                            Margin="0,8,0,32"
-                            Padding="0,0,0,16">
-            <lvc:CartesianChart.LegendTextPaint>
-                <lcp:SolidColorPaint Color="#BEBEBE" />
-            </lvc:CartesianChart.LegendTextPaint>
-        </lvc:CartesianChart>
-    </Grid>
+    <TabControl Margin="16" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch">
+        <TabItem>
+            <TabItem.Header>
+                <TextBlock Text="{DynamicResource History_Tab_RecentlyPlayed}"/>
+            </TabItem.Header>
+            <TextBlock Text="{DynamicResource History_ViewContent}" Margin="16" TextWrapping="Wrap"/>
+        </TabItem>
+        <TabItem>
+            <TabItem.Header>
+                <TextBlock Text="{DynamicResource History_Tab_Chart}"/>
+            </TabItem.Header>
+            <Grid Margin="0,8,0,0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,0,0,12" Grid.Row="0">
+                    <TextBlock Text="{DynamicResource History_GroupBy}" VerticalAlignment="Center"/>
+                    <ComboBox ItemsSource="{Binding RangeOptions}" SelectedIndex="{Binding SelectedRangeIndex, Mode=TwoWay}" Width="160"/>
+                </StackPanel>
+                <StackPanel Orientation="Vertical" Spacing="6" Grid.Row="1">
+                    <TextBlock Text="{Binding TotalPlaysLabelText}" FontSize="14"/>
+                    <TextBlock Text="{Binding PlaybackTimeLabelText}" FontSize="14"/>
+                </StackPanel>
+                <lvc:CartesianChart Grid.Row="2" Series="{Binding Series}"
+                                    XAxes="{Binding XAxes}"
+                                    YAxes="{Binding YAxes}"
+                                    LegendPosition="Top"
+                                    ZoomMode="X"
+                                    AnimationsSpeed="00:00:00.500"
+                                    Margin="0,8,0,0"
+                                    Padding="0,0,0,16">
+                    <lvc:CartesianChart.LegendTextPaint>
+                        <lcp:SolidColorPaint Color="#BEBEBE" />
+                    </lvc:CartesianChart.LegendTextPaint>
+                </lvc:CartesianChart>
+            </Grid>
+        </TabItem>
+    </TabControl>
 </UserControl>

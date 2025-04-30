@@ -255,4 +255,10 @@
   <data name="History_PlaybackTimeLabel" xml:space="preserve">
     <value>Playback time:</value>
   </data>
+  <data name="History_Tab_RecentlyPlayed" xml:space="preserve">
+    <value>Recently played</value>
+  </data>
+  <data name="History_Tab_Chart" xml:space="preserve">
+    <value>Chart</value>
+  </data>
 </root> 
