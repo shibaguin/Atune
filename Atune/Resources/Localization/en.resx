@@ -196,4 +196,63 @@
   <data name="Artist_PlayAll" xml:space="preserve">
     <value>Play All</value>
   </data>
+  <!-- History View -->
+  <data name="History_Header" xml:space="preserve">
+    <value>Listening History</value>
+  </data>
+  <data name="History_FromLabel" xml:space="preserve">
+    <value>From:</value>
+  </data>
+  <data name="History_ToLabel" xml:space="preserve">
+    <value>To:</value>
+  </data>
+  <data name="History_GroupBy" xml:space="preserve">
+    <value>Group by:</value>
+  </data>
+  <data name="History_RangeLast24Hours" xml:space="preserve">
+    <value>Last 24 hours</value>
+  </data>
+  <data name="History_RangeLast3Days" xml:space="preserve">
+    <value>Last 3 days</value>
+  </data>
+  <data name="History_RangeLastWeek" xml:space="preserve">
+    <value>Last week</value>
+  </data>
+  <data name="History_RangeLastMonth" xml:space="preserve">
+    <value>Last month</value>
+  </data>
+  <data name="History_RangeLastQuarter" xml:space="preserve">
+    <value>Last quarter</value>
+  </data>
+  <data name="History_RangeLastYear" xml:space="preserve">
+    <value>Last year</value>
+  </data>
+  <data name="History_Refresh" xml:space="preserve">
+    <value>Refresh</value>
+  </data>
+  <data name="History_TotalPlaysLabel" xml:space="preserve">
+    <value>Total Plays: </value>
+  </data>
+  <data name="History_FirstPlayedLabel" xml:space="preserve">
+    <value>First Played: </value>
+  </data>
+  <data name="History_LastPlayedLabel" xml:space="preserve">
+    <value>Last Played: </value>
+  </data>
+  <data name="History_AverageDurationLabel" xml:space="preserve">
+    <value>Average Duration: </value>
+  </data>
+  <data name="History_SeriesPlays" xml:space="preserve">
+    <value>Number of plays</value>
+  </data>
+  <data name="History_AxisDate" xml:space="preserve">
+    <value>Date</value>
+  </data>
+  <data name="History_AxisPlays" xml:space="preserve">
+    <value>Plays</value>
+  </data>
+  <!-- Playback time for history -->
+  <data name="History_PlaybackTimeLabel" xml:space="preserve">
+    <value>Playback time:</value>
+  </data>
 </root> 

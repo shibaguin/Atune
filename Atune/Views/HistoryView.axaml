@@ -4,6 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:conv="clr-namespace:Atune.Converters"
              xmlns:lvc="clr-namespace:LiveChartsCore.SkiaSharpView.Avalonia;assembly=LiveChartsCore.SkiaSharpView.Avalonia"
+             xmlns:lcp="clr-namespace:LiveChartsCore.SkiaSharpView.Painting;assembly=LiveChartsCore.SkiaSharpView"
              mc:Ignorable="d"
              d:DesignWidth="800"
              d:DesignHeight="450"
@@ -12,52 +13,43 @@
              x:DataType="vm:HistoryViewModel">
     <UserControl.Resources>
         <conv:DateTimeOffsetToDateTimeConverter x:Key="DateTimeConverter"/>
+        <conv:DurationConverter x:Key="DurationConverter"/>
     </UserControl.Resources>
     <Grid Margin="16">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="200"/>
+            <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
-        <TextBlock Text="Listening History"
+        <TextBlock Text="{DynamicResource History_Header}"
                    FontSize="24"
                    FontWeight="Bold"
                    Grid.Row="0"
                    Margin="0,0,0,12"/>
 
-        <StackPanel Orientation="Horizontal"
-                    Spacing="8"
-                    Grid.Row="1"
-                    Margin="0,0,0,12">
-            <TextBlock Text="From:" VerticalAlignment="Center"/>
-            <DatePicker SelectedDate="{Binding FromDate, Converter={StaticResource DateTimeConverter}, Mode=TwoWay, StringFormat='yyyy-MM-dd'}"
-                        Width="300"
-                        FontSize="14" />
-            <TextBlock Text="To:" VerticalAlignment="Center"/>
-            <DatePicker SelectedDate="{Binding ToDate, Converter={StaticResource DateTimeConverter}, Mode=TwoWay, StringFormat='yyyy-MM-dd'}"
-                        Width="300"
-                        FontSize="14" />
-            <Button Content="Refresh"
-                    Command="{Binding LoadStatsCommand}"
-                    Width="80" />
+        <StackPanel Orientation="Horizontal" Spacing="8" Grid.Row="1" Margin="0,0,0,12">
+            <TextBlock Text="{DynamicResource History_GroupBy}" VerticalAlignment="Center"/>
+            <ComboBox ItemsSource="{Binding RangeOptions}" SelectedIndex="{Binding SelectedRangeIndex, Mode=TwoWay}" Width="160"/>
         </StackPanel>
 
-        <StackPanel Orientation="Vertical"
-                    Spacing="6"
-                    Grid.Row="2">
-            <TextBlock Text="{Binding TotalPlays, StringFormat=Total Plays: {0}}"/>
-            <TextBlock Text="{Binding FirstPlayDate, StringFormat=First Played: {0:yyyy-MM-dd HH:mm}}"/>
-            <TextBlock Text="{Binding LastPlayDate, StringFormat=Last Played: {0:yyyy-MM-dd HH:mm}}"/>
-            <TextBlock Text="{Binding AverageDuration, StringFormat=Average Duration: {0:mm\\:ss}}"/>
+        <StackPanel Orientation="Vertical" Spacing="6" Grid.Row="2">
+            <TextBlock Text="{Binding TotalPlaysLabelText}" FontSize="14"/>
+            <TextBlock Text="{Binding PlaybackTimeLabelText}" FontSize="14"/>
         </StackPanel>
         <!-- LiveChartsCore CartesianChart -->
         <lvc:CartesianChart Grid.Row="3"
-                            Height="200"
                             Series="{Binding Series}"
                             XAxes="{Binding XAxes}"
                             YAxes="{Binding YAxes}"
                             LegendPosition="Top"
-                            ZoomMode="X" />
+                            ZoomMode="X"
+                            AnimationsSpeed="00:00:00.500"
+                            Margin="0,8,0,32"
+                            Padding="0,0,0,16">
+            <lvc:CartesianChart.LegendTextPaint>
+                <lcp:SolidColorPaint Color="#BEBEBE" />
+            </lvc:CartesianChart.LegendTextPaint>
+        </lvc:CartesianChart>
     </Grid>
 </UserControl>

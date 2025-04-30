@@ -191,4 +191,63 @@
   <data name="Artist_PlayAll" xml:space="preserve">
     <value>Воспроизвести всё</value>
   </data>
+  <!-- History View -->
+  <data name="History_Header" xml:space="preserve">
+    <value>История прослушиваний</value>
+  </data>
+  <data name="History_FromLabel" xml:space="preserve">
+    <value>С:</value>
+  </data>
+  <data name="History_ToLabel" xml:space="preserve">
+    <value>По:</value>
+  </data>
+  <data name="History_GroupBy" xml:space="preserve">
+    <value>Группировать по:</value>
+  </data>
+  <data name="History_RangeLast24Hours" xml:space="preserve">
+    <value>Последние 24 часа</value>
+  </data>
+  <data name="History_RangeLast3Days" xml:space="preserve">
+    <value>Последние 3 дня</value>
+  </data>
+  <data name="History_RangeLastWeek" xml:space="preserve">
+    <value>Последняя неделя</value>
+  </data>
+  <data name="History_RangeLastMonth" xml:space="preserve">
+    <value>Последний месяц</value>
+  </data>
+  <data name="History_RangeLastQuarter" xml:space="preserve">
+    <value>Последний квартал</value>
+  </data>
+  <data name="History_RangeLastYear" xml:space="preserve">
+    <value>Последний год</value>
+  </data>
+  <data name="History_Refresh" xml:space="preserve">
+    <value>Обновить</value>
+  </data>
+  <data name="History_TotalPlaysLabel" xml:space="preserve">
+    <value>Всего воспроизведений: </value>
+  </data>
+  <data name="History_FirstPlayedLabel" xml:space="preserve">
+    <value>Первая воспроизвед.: </value>
+  </data>
+  <data name="History_LastPlayedLabel" xml:space="preserve">
+    <value>Последняя воспроизвед.: </value>
+  </data>
+  <data name="History_AverageDurationLabel" xml:space="preserve">
+    <value>Средняя длительность: </value>
+  </data>
+  <data name="History_SeriesPlays" xml:space="preserve">
+    <value>Количество прослушиваний</value>
+  </data>
+  <data name="History_AxisDate" xml:space="preserve">
+    <value>Дата</value>
+  </data>
+  <data name="History_AxisPlays" xml:space="preserve">
+    <value>Прослушивания</value>
+  </data>
+  <!-- Playback time for history -->
+  <data name="History_PlaybackTimeLabel" xml:space="preserve">
+    <value>Время воспроизведения:</value>
+  </data>
 </root> 

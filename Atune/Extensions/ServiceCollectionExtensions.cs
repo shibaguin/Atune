@@ -120,7 +120,10 @@ namespace Atune.Extensions
                 sp.GetRequiredService<IPlaylistRepository>(),
                 sp.GetRequiredService<IAlbumRepository>()));
             services.AddTransient<MediaViewModel>();
-            services.AddTransient<HistoryViewModel>();
+            services.AddTransient<HistoryViewModel>(sp => new HistoryViewModel(
+                sp.GetRequiredService<IMemoryCache>(),
+                sp.GetRequiredService<IUnitOfWork>(),
+                sp.GetRequiredService<LocalizationService>()));
             services.AddTransient<SettingsViewModel>();
             services.AddScoped<SearchViewModel>();
 
