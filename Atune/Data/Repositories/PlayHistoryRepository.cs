@@ -18,7 +18,11 @@ public class PlayHistoryRepository(AppDbContext context) : IPlayHistoryRepositor
 
     public async Task<IEnumerable<PlayHistory>> GetAllAsync()
     {
-        return await _context.PlayHistories.ToListAsync();
+        return await _context.PlayHistories
+            .Include(ph => ph.MediaItem)
+                .ThenInclude(mi => mi.TrackArtists)
+                    .ThenInclude(ta => ta.Artist)
+            .ToListAsync();
     }
 
     public async Task AddAsync(PlayHistory entity)

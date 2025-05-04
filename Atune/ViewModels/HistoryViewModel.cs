@@ -18,6 +18,10 @@ using Avalonia.Styling;
 using Avalonia.Media;
 using Atune.Converters;
 using System.Globalization;
+using System.Collections.ObjectModel;
+using Atune.Models.Dtos;
+using Atune.Models;
+using Atune.Services;
 
 namespace Atune.ViewModels;
 
@@ -25,6 +29,8 @@ public partial class HistoryViewModel : ViewModelBase
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly LocalizationService _localizationService;
+    private readonly IPlaybackService _playbackService;
+    private readonly IMediaRepository _mediaRepository;
 
     // Chart data for LiveChartsCore
     [ObservableProperty]
@@ -44,10 +50,12 @@ public partial class HistoryViewModel : ViewModelBase
     public string TotalPlaysLabelText => $"{_localizationService["History_TotalPlaysLabel"]}{TotalPlays}";
     public string PlaybackTimeLabelText => $"{_localizationService["History_PlaybackTimeLabel"]}{(string)_durationConverter.Convert(AverageDuration, typeof(string), null, CultureInfo.CurrentCulture)}";
 
-    public HistoryViewModel(IMemoryCache cache, IUnitOfWork unitOfWork, LocalizationService localizationService)
+    public HistoryViewModel(IMemoryCache cache, IUnitOfWork unitOfWork, LocalizationService localizationService, IPlaybackService playbackService, IMediaRepository mediaRepository)
     {
         _unitOfWork = unitOfWork;
         _localizationService = localizationService;
+        _playbackService = playbackService;
+        _mediaRepository = mediaRepository;
         // Обновляем при смене языка
         _localizationService.PropertyChanged += async (s, e) => await LoadStatsAsync();
         FromDate = DateTime.UtcNow.Date.AddDays(-7);
@@ -68,6 +76,8 @@ public partial class HistoryViewModel : ViewModelBase
 
         LoadStatsCommand = new AsyncRelayCommand(LoadStatsAsync);
         _ = LoadStatsAsync();
+        LoadRecentTracksCommand = new AsyncRelayCommand(LoadRecentTracksAsync);
+        _ = LoadRecentTracksAsync();
     }
 
     [ObservableProperty]
@@ -265,5 +275,61 @@ public partial class HistoryViewModel : ViewModelBase
     partial void OnAverageDurationChanged(TimeSpan value)
     {
         OnPropertyChanged(nameof(PlaybackTimeLabelText));
+    }
+
+    [ObservableProperty]
+    private ObservableCollection<RecentTrackDto> _recentTracks = new();
+
+    [ObservableProperty]
+    private List<string> _sortOptions = new List<string> { "Сначала новые", "Сначала старые" };
+
+    [ObservableProperty]
+    private int _selectedSortIndex = 0;
+
+    public IAsyncRelayCommand LoadRecentTracksCommand { get; }
+
+    partial void OnSelectedSortIndexChanged(int value)
+    {
+        _ = LoadRecentTracksAsync();
+    }
+
+    private async Task LoadRecentTracksAsync()
+    {
+        var histories = await _unitOfWork.PlayHistory.GetAllAsync();
+        var sorted = _selectedSortIndex == 0
+            ? histories.OrderByDescending(h => h.PlayedAt)
+            : histories.OrderBy(h => h.PlayedAt);
+        var dtos = sorted.Select(ph => new RecentTrackDto
+        {
+            Id = ph.MediaItem.Id,
+            Title = ph.MediaItem.Title,
+            CoverArtPath = ph.MediaItem.CoverArt,
+            ArtistName = ph.MediaItem.TrackArtists.FirstOrDefault()?.Artist.Name ?? string.Empty,
+            LastPlayedAt = ph.PlayedAt
+        });
+        RecentTracks.Clear();
+        foreach (var dto in dtos)
+            RecentTracks.Add(dto);
+    }
+
+    [RelayCommand]
+    private async Task PlayRecentTrack(RecentTrackDto dto)
+    {
+        _playbackService.ClearQueue();
+        var orders = _selectedSortIndex == 0
+            ? RecentTracks.OrderByDescending(r => r.LastPlayedAt)
+            : RecentTracks.OrderBy(r => r.LastPlayedAt);
+        var orderedList = orders.ToList();
+        var mediaItems = new List<MediaItem>();
+        foreach (var r in orderedList)
+        {
+            var media = await _mediaRepository.GetByIdAsync(r.Id);
+            if (media != null)
+                mediaItems.Add(media);
+        }
+        foreach (var m in mediaItems)
+            _playbackService.Enqueue(m);
+        var index = orderedList.FindIndex(r => r.Id == dto.Id);
+        await _playbackService.PlayAtIndex(index);
     }
 }

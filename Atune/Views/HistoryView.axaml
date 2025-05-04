@@ -5,11 +5,13 @@
              xmlns:conv="clr-namespace:Atune.Converters"
              xmlns:lvc="clr-namespace:LiveChartsCore.SkiaSharpView.Avalonia;assembly=LiveChartsCore.SkiaSharpView.Avalonia"
              xmlns:lcp="clr-namespace:LiveChartsCore.SkiaSharpView.Painting;assembly=LiveChartsCore.SkiaSharpView"
+             xmlns:views="clr-namespace:Atune.Views"
              mc:Ignorable="d"
              d:DesignWidth="800"
              d:DesignHeight="450"
              xmlns:vm="clr-namespace:Atune.ViewModels"
              x:Class="Atune.Views.HistoryView"
+             x:Name="HistoryRoot"
              x:DataType="vm:HistoryViewModel">
     <UserControl.Resources>
         <conv:DateTimeOffsetToDateTimeConverter x:Key="DateTimeConverter"/>
@@ -20,7 +22,31 @@
             <TabItem.Header>
                 <TextBlock Text="{DynamicResource History_Tab_RecentlyPlayed}"/>
             </TabItem.Header>
-            <TextBlock Text="{DynamicResource History_ViewContent}" Margin="16" TextWrapping="Wrap"/>
+            <Grid Margin="16">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <StackPanel Orientation="Horizontal" Spacing="8" Grid.Row="0">
+                    <TextBlock Text="Сортировка:" VerticalAlignment="Center"/>
+                    <ComboBox ItemsSource="{Binding SortOptions}" SelectedIndex="{Binding SelectedSortIndex, Mode=TwoWay}" Width="150"/>
+                </StackPanel>
+                <ListBox Grid.Row="2" ItemsSource="{Binding RecentTracks}" BorderThickness="0"
+                         ScrollViewer.VerticalScrollBarVisibility="Auto"
+                         HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+                    <ListBox.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <VirtualizingStackPanel/>
+                        </ItemsPanelTemplate>
+                    </ListBox.ItemsPanel>
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <views:RecentlyPlayedListView PlayCommand="{Binding PlayRecentTrackCommand, ElementName=HistoryRoot}"/>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </Grid>
         </TabItem>
         <TabItem>
             <TabItem.Header>

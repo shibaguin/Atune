@@ -123,7 +123,9 @@ namespace Atune.Extensions
             services.AddTransient<HistoryViewModel>(sp => new HistoryViewModel(
                 sp.GetRequiredService<IMemoryCache>(),
                 sp.GetRequiredService<IUnitOfWork>(),
-                sp.GetRequiredService<LocalizationService>()));
+                sp.GetRequiredService<LocalizationService>(),
+                sp.GetRequiredService<IPlaybackService>(),
+                sp.GetRequiredService<IMediaRepository>()));
             services.AddTransient<SettingsViewModel>();
             services.AddScoped<SearchViewModel>();
 

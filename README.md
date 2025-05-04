@@ -2,6 +2,10 @@
 
 Atune is a modern cross-platform audio player developed using .NET and AvaloniaUI. The project is designed to work in environments such as Linux, Windows, and Android, providing an intuitive and responsive interface for managing and listening to your media library.
 
+## License
+
+This project is licensed under the GNU General Public License v3.0. See the [LICENSE](LICENSE) file for details.
+
 ## Features
 
 - **Crossplatform:** Equal support for Linux, Windows and Android.

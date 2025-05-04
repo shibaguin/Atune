@@ -157,7 +157,7 @@
                    HorizontalAlignment="Right"
                    Margin="0 5 10 5"
                    IsVisible="{Binding CurrentPageIsMedia}">
-            <Button Content="Добавить музыку" 
+            <Button Content="{DynamicResource Media_AddMusic}" 
                     Command="{Binding GoMediaCommand}"
                     Padding="10 5"/>
         </StackPanel>
@@ -200,7 +200,7 @@
                         <Border Background="{DynamicResource BackgroundBrush}" Padding="8">
                             <StackPanel Spacing="4">
                                 <TextBox Width="200"
-                                         Watermark="Type to search…"
+                                         Watermark="{DynamicResource Search_Watermark}"
                                          Text="{Binding Search.Query, UpdateSourceTrigger=PropertyChanged}">
                                     <TextBox.KeyBindings>
                                         <KeyBinding Gesture="Enter" Command="{Binding Search.SearchCommand}" />
@@ -417,7 +417,7 @@
                             Maximum="100" 
                             Width="150" 
                             Value="{Binding Volume, Mode=TwoWay}"
-                            ToolTip.Tip="Громкость"/>
+                            ToolTip.Tip="{DynamicResource Settings_SoundTitle}"/>
                 </StackPanel>
             </Grid>
         </Grid>

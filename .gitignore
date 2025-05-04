@@ -14,8 +14,6 @@
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
 
-# User-added files
-
 # Scripts
 Release.sh
 MigrationsRebuild.sh
@@ -25,6 +23,9 @@ Atune.Plugins/
 
 # Cursor
 .cursor/
+
+# VS Code
+.vscode/
 
 # Github
 # .github/
