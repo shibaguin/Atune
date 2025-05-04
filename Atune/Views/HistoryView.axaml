@@ -17,12 +17,12 @@
         <conv:DateTimeOffsetToDateTimeConverter x:Key="DateTimeConverter"/>
         <conv:DurationConverter x:Key="DurationConverter"/>
     </UserControl.Resources>
-    <TabControl Margin="16" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch">
+    <TabControl HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch">
         <TabItem>
             <TabItem.Header>
                 <TextBlock Text="{DynamicResource History_Tab_RecentlyPlayed}"/>
             </TabItem.Header>
-            <Grid Margin="16">
+            <Grid Margin="10">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
@@ -32,9 +32,18 @@
                     <TextBlock Text="Сортировка:" VerticalAlignment="Center"/>
                     <ComboBox ItemsSource="{Binding SortOptions}" SelectedIndex="{Binding SelectedSortIndex, Mode=TwoWay}" Width="150"/>
                 </StackPanel>
-                <ListBox Grid.Row="2" ItemsSource="{Binding RecentTracks}" BorderThickness="0"
+                <ListBox Grid.Row="2" ItemsSource="{Binding RecentTracks}"
+                         Background="Transparent"
+                         Margin="5"
+                         BorderThickness="0"
                          ScrollViewer.VerticalScrollBarVisibility="Auto"
                          HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+                    <ListBox.Styles>
+                        <Style Selector="ListBoxItem">
+                            <Setter Property="Background" Value="Transparent"/>
+                            <Setter Property="BorderThickness" Value="0"/>
+                        </Style>
+                    </ListBox.Styles>
                     <ListBox.ItemsPanel>
                         <ItemsPanelTemplate>
                             <VirtualizingStackPanel/>

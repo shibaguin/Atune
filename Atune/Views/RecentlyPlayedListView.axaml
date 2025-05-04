@@ -4,11 +4,11 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:dto="clr-namespace:Atune.Models.Dtos"
              xmlns:converters="clr-namespace:Atune.Converters"
-             x:DataType="dto:RecentTrackDto">
+             x:DataType="dto:RecentTrackDto" Background="Transparent">
   <UserControl.Resources>
     <converters:CoverArtConverter x:Key="CoverArtConverter"/>
   </UserControl.Resources>
-  <Grid ColumnDefinitions="Auto,*,Auto" VerticalAlignment="Center" Margin="5">
+  <Grid ColumnDefinitions="Auto,*,Auto" VerticalAlignment="Center">
     <Button x:Name="PlayButton" Grid.Column="0" MinWidth="50" MinHeight="50" MaxWidth="50" MaxHeight="50" Margin="0,0,5,0"
             Padding="0" Background="Transparent" BorderThickness="0" Focusable="False">
       <Grid>
