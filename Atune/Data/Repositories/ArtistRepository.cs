@@ -17,10 +17,14 @@ namespace Atune.Data.Repositories
             if (string.IsNullOrWhiteSpace(name))
                 return string.Empty;
 
+            // Приводим к нижнему регистру для регистронезависимого сравнения
+            var normalized = name.ToLowerInvariant();
+
             // Заменяем различные варианты разделителей на стандартный
-            var normalized = name.Replace("-", "/")
+            normalized = normalized.Replace("-", "/")
                                .Replace("\\", "/")
                                .Replace("&", " and ")
+                               .Replace("the ", "") // Удаляем артикль "the" в начале
                                .Trim();
 
             // Удаляем множественные пробелы
@@ -70,6 +74,11 @@ namespace Atune.Data.Repositories
             return artists
                 .Where(a => NormalizeArtistName(a.Name).Contains(normalizedQuery, System.StringComparison.CurrentCultureIgnoreCase))
                 .Take(limit);
+        }
+
+        public async Task AddAsync(Artist artist)
+        {
+            await _context.Artists.AddAsync(artist);
         }
     }
 }

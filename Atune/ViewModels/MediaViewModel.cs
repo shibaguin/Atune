@@ -548,16 +548,16 @@ public partial class MediaViewModel : ObservableObject, IDisposable
         {
             return existingArtist;
         }
-        return new Artist { Name = artistName };
+
+        var newArtist = new Artist { Name = artistName };
+        await _unitOfWork.Artists.AddAsync(newArtist);
+        await _unitOfWork.CommitAsync();
+        return newArtist;
     }
 
     // Обновлённый метод для создания MediaItem с учётом метаданных и списка артистов
-    private async Task<MediaItem> CreateMediaItemFromPathAsync(string path)
+    private async Task<string?> ExtractAndSaveCoverArtAsync(string path, (string Artist, string Album, uint Year, string Genre, TimeSpan Duration) tagInfo)
     {
-        var tagInfo = GetDesktopTagInfo(path); // Existing metadata parsing
-
-        // Extract embedded cover art via TagLibSharp
-        string coverArtPath = string.Empty;
         try
         {
             var tfile = TagLib.File.Create(path);
@@ -572,9 +572,25 @@ public partial class MediaViewModel : ObservableObject, IDisposable
                 Directory.CreateDirectory(coversDir);
                 var fileName = Guid.NewGuid().ToString() + ext;
                 var fullPath = Path.Combine(coversDir, fileName);
-                System.IO.File.WriteAllBytes(fullPath, data);
-                coverArtPath = fullPath;
+                await System.IO.File.WriteAllBytesAsync(fullPath, data);
+                return fullPath;
             }
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogError($"Error extracting cover art from {path}", ex);
+        }
+        return null;
+    }
+
+    private async Task<MediaItem> CreateMediaItemFromPathAsync(string path)
+    {
+        var tagInfo = GetDesktopTagInfo(path);
+
+        string? coverArtPath = null;
+        try
+        {
+            coverArtPath = await ExtractAndSaveCoverArtAsync(path, tagInfo);
         }
         catch (Exception ex)
         {
@@ -584,7 +600,28 @@ public partial class MediaViewModel : ObservableObject, IDisposable
         // Проверяем существование альбома
         var albumTitle = tagInfo.Album ?? "Unknown Album";
         var existingAlbum = await _unitOfWork.Albums.GetByTitleAsync(albumTitle);
-        var album = existingAlbum ?? new Album { Title = albumTitle, CoverArtPath = coverArtPath };
+        
+        Album album;
+        if (existingAlbum != null)
+        {
+            album = existingAlbum;
+            // Обновляем обложку только если она отсутствует
+            if (string.IsNullOrEmpty(existingAlbum.CoverArtPath) && !string.IsNullOrEmpty(coverArtPath))
+            {
+                existingAlbum.CoverArtPath = coverArtPath;
+                await _unitOfWork.CommitAsync();
+            }
+        }
+        else
+        {
+            album = new Album 
+            { 
+                Title = albumTitle,
+                CoverArtPath = coverArtPath 
+            };
+            await _unitOfWork.Albums.AddAsync(album);
+            await _unitOfWork.CommitAsync();
+        }
 
         var artists = ParseArtists(tagInfo.Artist);
         var trackArtists = new List<TrackArtist>();
@@ -607,6 +644,7 @@ public partial class MediaViewModel : ObservableObject, IDisposable
         {
             CoverArt = coverArtPath
         };
+
         return mediaItem;
     }
 
@@ -620,7 +658,6 @@ public partial class MediaViewModel : ObservableObject, IDisposable
         try
         {
             IsBusy = true;
-            // Получаем StorageProvider из верхнего уровня приложения
             var storageProvider = Application.Current?.ApplicationLifetime?.TryGetTopLevel()?.StorageProvider;
             if (storageProvider == null)
             {
@@ -680,6 +717,18 @@ public partial class MediaViewModel : ObservableObject, IDisposable
                                 Task.Delay(10).Wait();
                             }
                         }
+                    });
+
+                    // Сохраняем изменения в базе данных
+                    await _unitOfWork.CommitAsync();
+
+                    // Обновляем UI
+                    await Dispatcher.UIThread.InvokeAsync(() =>
+                    {
+                        UpdateAlbums();
+                        SortAlbums();
+                        UpdateArtists();
+                        SortArtists();
                     });
                 });
             }

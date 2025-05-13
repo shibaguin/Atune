@@ -17,11 +17,15 @@ namespace Atune.Data.Repositories
             if (string.IsNullOrWhiteSpace(title))
                 return string.Empty;
 
+            // Приводим к нижнему регистру для регистронезависимого сравнения
+            var normalized = title.ToLowerInvariant();
+
             // Заменяем различные варианты разделителей на стандартный
-            var normalized = title.Replace("-", " ")
+            normalized = normalized.Replace("-", " ")
                                .Replace("\\", " ")
                                .Replace("/", " ")
                                .Replace("&", " and ")
+                               .Replace("the ", "") // Удаляем артикль "the" в начале
                                .Trim();
 
             // Удаляем множественные пробелы
@@ -78,6 +82,11 @@ namespace Atune.Data.Repositories
             return await _context.Albums
                 .Where(a => a.AlbumArtists.Any(aa => aa.ArtistId == artistId))
                 .ToListAsync();
+        }
+
+        public async Task AddAsync(Album album)
+        {
+            await _context.Albums.AddAsync(album);
         }
     }
 }
