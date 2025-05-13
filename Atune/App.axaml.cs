@@ -119,6 +119,67 @@ public partial class App : Application
                 // Disable Avalonia DataAnnotations validation plugin
                 AvaloniaValidationDisabler.Disable();
                 var mainWindow = Services!.GetRequiredService<MainWindow>();
+                var windowSettingsService = Services!.GetRequiredService<WindowSettingsService>();
+                var settings = windowSettingsService.GetCurrentSettings();
+
+                // Применяем сохраненные настройки окна
+                if (settings.IsMaximized)
+                {
+                    mainWindow.WindowState = WindowState.Maximized;
+                }
+                else
+                {
+                    mainWindow.Position = new PixelPoint((int)settings.X, (int)settings.Y);
+                    mainWindow.Width = settings.Width;
+                    mainWindow.Height = settings.Height;
+                }
+
+                // Сохраняем изменения положения окна
+                mainWindow.PositionChanged += (s, e) =>
+                {
+                    if (mainWindow.WindowState != WindowState.Maximized)
+                    {
+                        settings.X = mainWindow.Position.X;
+                        settings.Y = mainWindow.Position.Y;
+                        windowSettingsService.SaveSettingsAsync(settings).ConfigureAwait(false);
+                    }
+                };
+
+                // Сохраняем изменения размера окна
+                mainWindow.SizeChanged += (s, e) =>
+                {
+                    if (mainWindow.WindowState != WindowState.Maximized)
+                    {
+                        settings.Width = mainWindow.Width;
+                        settings.Height = mainWindow.Height;
+                        windowSettingsService.SaveSettingsAsync(settings).ConfigureAwait(false);
+                    }
+                };
+
+                // Сохраняем состояние максимизации
+                mainWindow.PropertyChanged += (s, e) =>
+                {
+                    if (e.Property == Window.WindowStateProperty)
+                    {
+                        settings.IsMaximized = mainWindow.WindowState == WindowState.Maximized;
+                        windowSettingsService.SaveSettingsAsync(settings).ConfigureAwait(false);
+                    }
+                };
+
+                // Сохраняем состояние при закрытии
+                mainWindow.Closing += async (s, e) =>
+                {
+                    if (mainWindow.WindowState != WindowState.Maximized)
+                    {
+                        settings.X = mainWindow.Position.X;
+                        settings.Y = mainWindow.Position.Y;
+                        settings.Width = mainWindow.Width;
+                        settings.Height = mainWindow.Height;
+                    }
+                    settings.IsMaximized = mainWindow.WindowState == WindowState.Maximized;
+                    await windowSettingsService.SaveSettingsAsync(settings);
+                };
+
                 // Toggle play/pause on Spacebar for desktop
                 mainWindow.AddHandler(InputElement.KeyDownEvent,
                     new EventHandler<KeyEventArgs>((sender, args) =>

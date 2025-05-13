@@ -23,6 +23,7 @@ using Atune.ViewModels;
 using System.Threading;
 using Avalonia.Media;
 using Atune.Converters;
+using Atune.Services;
 namespace Atune.ViewModels;
 public partial class MainViewModel : ViewModelBase
 {
@@ -80,6 +81,7 @@ public partial class MainViewModel : ViewModelBase
     private bool _isInitializing = true; // skip saves during initial load
 
     private readonly ISettingsService _settingsService;
+    private readonly WindowSettingsService _windowSettingsService;
     private readonly Dictionary<SectionType, Control> _views;
     private readonly Func<Type, ViewModelBase> _viewModelFactory;
     private readonly Func<Type, Control> _viewFactory;
@@ -107,6 +109,7 @@ public partial class MainViewModel : ViewModelBase
 
     public MainViewModel(
         ISettingsService settingsService,
+        WindowSettingsService windowSettingsService,
         Func<Type, ViewModelBase> viewModelFactory,
         Func<Type, Control> viewFactory,
         INavigationKeywordProvider keywordProvider,
@@ -118,6 +121,7 @@ public partial class MainViewModel : ViewModelBase
     {
         _searchViewModel = searchViewModel;
         _settingsService = settingsService ?? throw new ArgumentNullException(nameof(settingsService));
+        _windowSettingsService = windowSettingsService ?? throw new ArgumentNullException(nameof(windowSettingsService));
         _viewModelFactory = viewModelFactory ?? throw new ArgumentNullException(nameof(viewModelFactory));
         _viewFactory = viewFactory ?? throw new ArgumentNullException(nameof(viewFactory));
         _keywordProvider = keywordProvider ?? throw new ArgumentNullException(nameof(keywordProvider));
@@ -137,8 +141,12 @@ public partial class MainViewModel : ViewModelBase
             [SectionType.Settings] = _viewFactory(typeof(SettingsView))
         };
 
-        CurrentView = _views[SectionType.Home];
-        HeaderText = _localizationService["Nav_Home"];
+        // Загружаем сохраненную страницу
+        var settings = _windowSettingsService.GetCurrentSettings();
+        var savedSection = Enum.TryParse<SectionType>(settings.CurrentPage, out var section) ? section : SectionType.Home;
+        SelectedSection = savedSection;
+        CurrentView = _views[savedSection];
+        HeaderText = GetHeaderTextForSection(savedSection);
 
         // Subscribe to localization change event.
         _localizationService.PropertyChanged += LocalizationService_PropertyChanged;
@@ -157,6 +165,34 @@ public partial class MainViewModel : ViewModelBase
             // Refresh duration in case metadata loaded or track changed
             Duration = _playbackService.Duration;
         };
+    }
+
+    private string GetHeaderTextForSection(SectionType section) => section switch
+    {
+        SectionType.Home => _localizationService["Nav_Home"],
+        SectionType.Media => _localizationService["Nav_Media"],
+        SectionType.History => _localizationService["Nav_History"],
+        SectionType.Settings => _localizationService["Nav_Settings"],
+        _ => "Atune"
+    };
+
+    private void OnSelectedSectionChanged(string? value)
+    {
+        if (string.IsNullOrEmpty(value)) return;
+
+        CurrentView = value switch
+        {
+            "Home" => new HomeView(),
+            "Media" => new MediaView(),
+            "History" => new HistoryView(),
+            "Settings" => new SettingsView(),
+            _ => new HomeView()
+        };
+
+        // Сохраняем текущую страницу
+        var settings = _windowSettingsService.GetCurrentSettings();
+        settings.CurrentPage = value;
+        _windowSettingsService.SaveSettingsAsync(settings).ConfigureAwait(false);
     }
 
     private void LocalizationService_PropertyChanged(object? sender, PropertyChangedEventArgs e)

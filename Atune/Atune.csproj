@@ -8,6 +8,8 @@
     <PublishTrimmed>false</PublishTrimmed>
     <IsTrimmable>false</IsTrimmable>
     <TrimMode>copyused</TrimMode>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <JsonSerializerEnableSourceGeneration>true</JsonSerializerEnableSourceGeneration>
   </PropertyGroup>
   
   <ItemGroup>

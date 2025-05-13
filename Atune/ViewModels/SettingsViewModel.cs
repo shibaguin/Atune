@@ -7,6 +7,7 @@ using ThemeVariant = Atune.Models.ThemeVariant;
 using System.Collections.Generic;
 using System.Timers;
 using System.Threading.Tasks;
+using System;
 
 namespace Atune.ViewModels;
 
@@ -30,7 +31,7 @@ public partial class SettingsViewModel : ViewModelBase
 
     // Новое поле для таймера debounce
     // New field for debounce timer
-    private Timer? _autoSaveTimer;
+    private System.Timers.Timer? _autoSaveTimer;
 
     public SettingsViewModel(ISettingsService settingsService,
                              IInterfaceSettingsService interfaceSettingsService,
@@ -126,7 +127,7 @@ public partial class SettingsViewModel : ViewModelBase
             _autoSaveTimer.Dispose();
             _autoSaveTimer = null;
         }
-        _autoSaveTimer = new Timer(500)  // задержка 500 мс / delay 500 ms
+        _autoSaveTimer = new System.Timers.Timer(500)  // задержка 500 мс / delay 500 ms
         {
             AutoReset = false
         };

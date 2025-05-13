@@ -84,6 +84,7 @@ namespace Atune.Extensions
             services.AddSingleton<IInterfaceSettingsService, InterfaceSettingsService>();
             services.AddSingleton<ILoggerService, LoggerService>();
             services.AddSingleton<LocalizationService>();
+            services.AddSingleton<WindowSettingsService>();
 
             // File and media services
             services.AddTransient<MediaDatabaseService>();
@@ -110,7 +111,17 @@ namespace Atune.Extensions
             services.AddScoped<IHomeService, HomeService>();
 
             // ViewModels
-            services.AddTransient<MainViewModel>();
+            services.AddTransient<MainViewModel>(sp => new MainViewModel(
+                sp.GetRequiredService<ISettingsService>(),
+                sp.GetRequiredService<WindowSettingsService>(),
+                sp.GetRequiredService<Func<Type, ViewModelBase>>(),
+                sp.GetRequiredService<Func<Type, Control>>(),
+                sp.GetRequiredService<INavigationKeywordProvider>(),
+                sp.GetRequiredService<LocalizationService>(),
+                sp.GetRequiredService<IPlaybackService>(),
+                sp.GetRequiredService<ILogger<MainViewModel>>(),
+                sp.GetRequiredService<ICoverArtService>(),
+                sp.GetRequiredService<SearchViewModel>()));
             services.AddTransient<HomeViewModel>(sp => new HomeViewModel(
                 sp.GetRequiredService<IMemoryCache>(),
                 sp.GetRequiredService<ILogger<HomeViewModel>>(),
