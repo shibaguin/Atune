@@ -3,6 +3,7 @@ using System.IO;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
+using System.Timers;
 using Avalonia;
 using Avalonia.Platform;
 using Serilog;
@@ -29,6 +30,8 @@ public class WindowSettingsService
 {
     private readonly string _settingsPath;
     private WindowSettings _currentSettings;
+    private readonly System.Timers.Timer _saveTimer;
+    private bool _isDirty;
 
     public WindowSettingsService()
     {
@@ -39,6 +42,20 @@ public class WindowSettingsService
         Directory.CreateDirectory(appDataPath);
         _settingsPath = Path.Combine(appDataPath, "window_settings.json");
         _currentSettings = LoadSettings();
+
+        // Инициализируем таймер для отложенного сохранения
+        _saveTimer = new System.Timers.Timer(1000) // 1 секунда задержки
+        {
+            AutoReset = false
+        };
+        _saveTimer.Elapsed += async (s, e) =>
+        {
+            if (_isDirty)
+            {
+                await SaveSettingsInternalAsync(_currentSettings);
+                _isDirty = false;
+            }
+        };
     }
 
     public WindowSettings GetCurrentSettings()
@@ -80,9 +97,16 @@ public class WindowSettingsService
 
     public async Task SaveSettingsAsync(WindowSettings settings)
     {
+        _currentSettings = settings;
+        _isDirty = true;
+        _saveTimer.Stop();
+        _saveTimer.Start();
+    }
+
+    private async Task SaveSettingsInternalAsync(WindowSettings settings)
+    {
         try
         {
-            _currentSettings = settings;
             var json = JsonSerializer.Serialize(settings, WindowSettingsJsonContext.Default.WindowSettings);
             await File.WriteAllTextAsync(_settingsPath, json);
             Log.Information("Window settings saved successfully: {@Settings}", settings);
@@ -92,4 +116,4 @@ public class WindowSettingsService
             Log.Error(ex, "Error saving window settings");
         }
     }
-} 
+}

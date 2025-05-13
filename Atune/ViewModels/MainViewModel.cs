@@ -180,19 +180,16 @@ public partial class MainViewModel : ViewModelBase
     {
         if (string.IsNullOrEmpty(value)) return;
 
-        CurrentView = value switch
+        if (Enum.TryParse<SectionType>(value, out var section) && _views.TryGetValue(section, out var view))
         {
-            "Home" => new HomeView(),
-            "Media" => new MediaView(),
-            "History" => new HistoryView(),
-            "Settings" => new SettingsView(),
-            _ => new HomeView()
-        };
+            CurrentView = view;
+            HeaderText = GetHeaderTextForSection(section);
 
-        // Сохраняем текущую страницу
-        var settings = _windowSettingsService.GetCurrentSettings();
-        settings.CurrentPage = value;
-        _windowSettingsService.SaveSettingsAsync(settings).ConfigureAwait(false);
+            // Сохраняем текущую страницу
+            var settings = _windowSettingsService.GetCurrentSettings();
+            settings.CurrentPage = value;
+            _windowSettingsService.SaveSettingsAsync(settings).ConfigureAwait(false);
+        }
     }
 
     private void LocalizationService_PropertyChanged(object? sender, PropertyChangedEventArgs e)

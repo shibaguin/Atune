@@ -25,6 +25,8 @@ public class SettingsService : ISettingsService
     private readonly IPlatformPathService _platformPathService;
     // The settings file path is now stored in an instance
     private readonly string _settingsPath;
+    private readonly string _windowSettingsPath;
+    private WindowSettings _windowSettings;
 
     private readonly ILoggerService _logger;
 
@@ -76,8 +78,13 @@ public class SettingsService : ISettingsService
         // Initialize the path to the settings file through our service
         // Инициализируйте путь к файлу настроек через наш сервис
         _settingsPath = _platformPathService.GetSettingsPath();
+        _windowSettingsPath = Path.Combine(
+            Path.GetDirectoryName(_settingsPath)!,
+            "window_settings.json"
+        );
 
         _logger = logger;
+        _windowSettings = LoadWindowSettings();
     }
 
     public void SaveSettings(AppSettings settings)
@@ -301,5 +308,68 @@ public class SettingsService : ISettingsService
         {
             _fileLockAsync.Release();
         }
+    }
+
+    public WindowSettings GetWindowSettings()
+    {
+        if (_cache.TryGetValue("WindowSettings", out WindowSettings? cachedSettings) && cachedSettings != null)
+        {
+            return cachedSettings;
+        }
+        return _windowSettings;
+    }
+
+    public async Task SaveWindowSettingsAsync(WindowSettings settings)
+    {
+        await _fileLockAsync.WaitAsync();
+        try
+        {
+            _windowSettings = settings;
+            _cache.Set("WindowSettings", settings, _cacheOptions);
+
+            var json = JsonSerializer.Serialize(settings, WindowSettingsJsonContext.Default.WindowSettings);
+            await File.WriteAllTextAsync(_windowSettingsPath, json);
+            _logger.LogInformation("Window settings saved successfully");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError("Error saving window settings", ex);
+            throw new SettingsException("Failed to save window settings", ex);
+        }
+        finally
+        {
+            _fileLockAsync.Release();
+        }
+    }
+
+    private WindowSettings LoadWindowSettings()
+    {
+        try
+        {
+            if (File.Exists(_windowSettingsPath))
+            {
+                var json = File.ReadAllText(_windowSettingsPath);
+                var settings = JsonSerializer.Deserialize<WindowSettings>(json, WindowSettingsJsonContext.Default.WindowSettings);
+                if (settings != null)
+                {
+                    _cache.Set("WindowSettings", settings, _cacheOptions);
+                    return settings;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError("Error loading window settings", ex);
+        }
+
+        return new WindowSettings
+        {
+            X = 100,
+            Y = 100,
+            Width = 1280,
+            Height = 720,
+            IsMaximized = false,
+            CurrentPage = "Home"
+        };
     }
 }

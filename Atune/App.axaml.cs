@@ -1,4 +1,5 @@
 using Avalonia;
+using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Avalonia.Interactivity;
@@ -6,6 +7,7 @@ using Avalonia.Input;
 using Avalonia.Platform;
 using Avalonia.Styling;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Serilog;
@@ -19,7 +21,7 @@ using ThemeVariant = Atune.Models.ThemeVariant;
 using Atune.ViewModels;
 using Atune.Views;
 using Atune.Services;
-using Avalonia.Controls;
+using Atune.Services.Interfaces;
 
 namespace Atune;
 
@@ -119,8 +121,8 @@ public partial class App : Application
                 // Disable Avalonia DataAnnotations validation plugin
                 AvaloniaValidationDisabler.Disable();
                 var mainWindow = Services!.GetRequiredService<MainWindow>();
-                var windowSettingsService = Services!.GetRequiredService<WindowSettingsService>();
-                var settings = windowSettingsService.GetCurrentSettings();
+                var windowSettingsService = Services!.GetRequiredService<ISettingsService>();
+                var settings = windowSettingsService.GetWindowSettings();
 
                 // Применяем сохраненные настройки окна
                 if (settings.IsMaximized)
@@ -141,7 +143,7 @@ public partial class App : Application
                     {
                         settings.X = mainWindow.Position.X;
                         settings.Y = mainWindow.Position.Y;
-                        windowSettingsService.SaveSettingsAsync(settings).ConfigureAwait(false);
+                        windowSettingsService.SaveWindowSettingsAsync(settings).ConfigureAwait(false);
                     }
                 };
 
@@ -152,7 +154,7 @@ public partial class App : Application
                     {
                         settings.Width = mainWindow.Width;
                         settings.Height = mainWindow.Height;
-                        windowSettingsService.SaveSettingsAsync(settings).ConfigureAwait(false);
+                        windowSettingsService.SaveWindowSettingsAsync(settings).ConfigureAwait(false);
                     }
                 };
 
@@ -162,7 +164,7 @@ public partial class App : Application
                     if (e.Property == Window.WindowStateProperty)
                     {
                         settings.IsMaximized = mainWindow.WindowState == WindowState.Maximized;
-                        windowSettingsService.SaveSettingsAsync(settings).ConfigureAwait(false);
+                        windowSettingsService.SaveWindowSettingsAsync(settings).ConfigureAwait(false);
                     }
                 };
 
@@ -177,7 +179,7 @@ public partial class App : Application
                         settings.Height = mainWindow.Height;
                     }
                     settings.IsMaximized = mainWindow.WindowState == WindowState.Maximized;
-                    await windowSettingsService.SaveSettingsAsync(settings);
+                    await windowSettingsService.SaveWindowSettingsAsync(settings);
                 };
 
                 // Toggle play/pause on Spacebar for desktop
