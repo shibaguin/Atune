@@ -119,6 +119,20 @@ public partial class MediaView : UserControl
                     if (!Directory.Exists(destFolder))
                         Directory.CreateDirectory(destFolder);
                     var destPath = Path.Combine(destFolder, file.Name);
+                    
+                    // Проверяем, существует ли уже файл с таким именем
+                    if (File.Exists(destPath))
+                    {
+                        var fileNameWithoutExt = Path.GetFileNameWithoutExtension(file.Name);
+                        var extension = Path.GetExtension(file.Name);
+                        var counter = 1;
+                        while (File.Exists(destPath))
+                        {
+                            destPath = Path.Combine(destFolder, $"{fileNameWithoutExt}_{counter}{extension}");
+                            counter++;
+                        }
+                    }
+
                     using (var sourceStream = await file.OpenReadAsync())
                     using (var destStream = File.Create(destPath))
                     {
@@ -132,6 +146,15 @@ public partial class MediaView : UserControl
                 else
                 {
                     realPath = file.Path.LocalPath;
+                    // Проверяем корректность пути для текущей ОС
+                    if (OperatingSystem.IsWindows())
+                    {
+                        realPath = realPath.Replace("/", "\\");
+                    }
+                    else
+                    {
+                        realPath = realPath.Replace("\\", "/");
+                    }
                 }
 
                 _logger?.LogInformation($"{logHeader} Processing file: {realPath}");

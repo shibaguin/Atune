@@ -91,7 +91,16 @@ namespace Atune.Services
                 if (!Uri.IsWellFormedUriString(path, UriKind.Absolute))
                 {
                     var fullPath = Path.GetFullPath(path);
-                    mediaUri = new Uri($"file:///{fullPath.Replace('\\', '/')}");
+                    if (OperatingSystem.IsWindows())
+                    {
+                        // На Windows используем специальный формат для локальных файлов
+                        mediaUri = new Uri($"file:///{fullPath.Replace("\\", "/")}");
+                    }
+                    else
+                    {
+                        // На Unix-системах и Android используем стандартный формат
+                        mediaUri = new Uri($"file://{fullPath}");
+                    }
                 }
                 else
                 {

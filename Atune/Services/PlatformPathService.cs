@@ -1,6 +1,9 @@
 using System;
 using System.IO;
 using System.Collections.Generic;
+#if ANDROID
+using Android.OS;
+#endif
 
 namespace Atune.Services
 {
@@ -37,7 +40,7 @@ namespace Atune.Services
             return _configPath ?? string.Empty;
         }
 
-        public string GetSettingsPath(string fileName = "settings.ini")
+        public string GetSettingsPath(string fileName)
         {
             string key = "settings_" + fileName;
             if (_pathCache.TryGetValue(key, out string? cachedPath))
@@ -46,14 +49,35 @@ namespace Atune.Services
             string path;
             if (OperatingSystem.IsAndroid())
             {
+                var baseDir = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+                if (string.IsNullOrEmpty(baseDir))
+                {
+#if ANDROID
+                    baseDir = Environment.GetExternalStoragePublicDirectory(Environment.DirectoryDocuments)?.AbsolutePath;
+#endif
+                }
+                path = Path.Combine(baseDir ?? string.Empty, "Atune", fileName);
+            }
+            else if (OperatingSystem.IsWindows())
+            {
                 path = Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) ?? string.Empty,
+                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                    "Atune",
                     fileName);
             }
-            else
+            else // Linux и другие Unix-системы
             {
-                path = Path.Combine(_basePath, "Atune", fileName);
+                var homeDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+                path = Path.Combine(homeDir, ".config", "Atune", fileName);
             }
+
+            // Создаем директорию, если она не существует
+            var directory = Path.GetDirectoryName(path);
+            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+            {
+                Directory.CreateDirectory(directory);
+            }
+
             _pathCache[key] = path;
             return path;
         }
@@ -67,14 +91,36 @@ namespace Atune.Services
             string path;
             if (OperatingSystem.IsAndroid())
             {
+                var baseDir = Environment.GetFolderPath(Environment.SpecialFolder.Personal);
+                if (string.IsNullOrEmpty(baseDir))
+                {
+#if ANDROID
+                    baseDir = Environment.GetExternalStoragePublicDirectory(Environment.DirectoryDocuments)?.AbsolutePath;
+#endif
+                }
+                path = Path.Combine(baseDir ?? string.Empty, databaseFileName);
+            }
+            else if (OperatingSystem.IsWindows())
+            {
                 path = Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.Personal) ?? string.Empty,
+                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                    "Atune",
+                    "Data",
                     databaseFileName);
             }
-            else
+            else // Linux и другие Unix-системы
             {
-                path = Path.Combine(_basePath, "Atune", "Data", databaseFileName);
+                var homeDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+                path = Path.Combine(homeDir, ".local", "share", "Atune", databaseFileName);
             }
+
+            // Создаем директорию, если она не существует
+            var directory = Path.GetDirectoryName(path);
+            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+            {
+                Directory.CreateDirectory(directory);
+            }
+
             _pathCache[key] = path;
             return path;
         }
@@ -83,15 +129,27 @@ namespace Atune.Services
         {
             if (OperatingSystem.IsAndroid())
             {
-                return Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) ?? string.Empty,
-                    "AtunePlugins");
+                var baseDir = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+                if (string.IsNullOrEmpty(baseDir))
+                {
+#if ANDROID
+                    baseDir = Environment.GetExternalStoragePublicDirectory(Environment.DirectoryDocuments)?.AbsolutePath;
+#endif
+                }
+                return Path.Combine(baseDir ?? string.Empty, "AtunePlugins");
             }
-
-            return Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) ?? string.Empty,
-                "Atune",
-                "Plugins");
+            else if (OperatingSystem.IsWindows())
+            {
+                return Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                    "Atune",
+                    "Plugins");
+            }
+            else // Linux и другие Unix-системы
+            {
+                var homeDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+                return Path.Combine(homeDir, ".local", "share", "Atune", "plugins");
+            }
         }
 
         // Returns the directory where cover art files are stored
