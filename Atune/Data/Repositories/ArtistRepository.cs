@@ -12,6 +12,26 @@ namespace Atune.Data.Repositories
     {
         private readonly AppDbContext _context = context;
 
+        private static string NormalizeArtistName(string name)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+                return string.Empty;
+
+            // Заменяем различные варианты разделителей на стандартный
+            var normalized = name.Replace("-", "/")
+                               .Replace("\\", "/")
+                               .Replace("&", " and ")
+                               .Trim();
+
+            // Удаляем множественные пробелы
+            while (normalized.Contains("  "))
+            {
+                normalized = normalized.Replace("  ", " ");
+            }
+
+            return normalized;
+        }
+
         public async Task<IEnumerable<Artist>> GetAllArtistsAsync()
         {
             return await _context.Artists.ToListAsync();
@@ -22,15 +42,11 @@ namespace Atune.Data.Repositories
             return await _context.Artists.FindAsync(artistId);
         }
 
-        public async Task<IEnumerable<Artist>> SearchArtistsAsync(string query, int limit = 50)
+        public async Task<Artist?> GetByNameAsync(string name)
         {
-            if (string.IsNullOrWhiteSpace(query))
-                return Enumerable.Empty<Artist>();
-            var normalized = query.ToLowerInvariant();
-            return await _context.Artists
-                .Where(a => a.Name.Contains(normalized, System.StringComparison.CurrentCultureIgnoreCase))
-                .Take(limit)
-                .ToListAsync();
+            var normalizedName = NormalizeArtistName(name);
+            var artists = await _context.Artists.ToListAsync();
+            return artists.FirstOrDefault(a => NormalizeArtistName(a.Name) == normalizedName);
         }
 
         public async Task<IEnumerable<MediaItem>> GetSongsForArtistAsync(int artistId)
@@ -42,6 +58,18 @@ namespace Atune.Data.Repositories
                     .ThenInclude(ta => ta.Artist)
                 .Where(m => m.TrackArtists.Any(ta => ta.ArtistId == artistId))
                 .ToListAsync();
+        }
+
+        public async Task<IEnumerable<Artist>> SearchArtistsAsync(string query, int limit = 50)
+        {
+            if (string.IsNullOrWhiteSpace(query))
+                return Enumerable.Empty<Artist>();
+            
+            var normalizedQuery = NormalizeArtistName(query);
+            var artists = await _context.Artists.ToListAsync();
+            return artists
+                .Where(a => NormalizeArtistName(a.Name).Contains(normalizedQuery, System.StringComparison.CurrentCultureIgnoreCase))
+                .Take(limit);
         }
     }
 }

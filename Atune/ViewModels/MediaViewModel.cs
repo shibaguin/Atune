@@ -540,8 +540,19 @@ public partial class MediaViewModel : ObservableObject, IDisposable
                 .ToList();
     }
 
+    // Новый метод для получения существующего исполнителя или создания нового
+    private async Task<Artist> GetOrCreateArtistAsync(string artistName)
+    {
+        var existingArtist = await _unitOfWork.Artists.GetByNameAsync(artistName);
+        if (existingArtist != null)
+        {
+            return existingArtist;
+        }
+        return new Artist { Name = artistName };
+    }
+
     // Обновлённый метод для создания MediaItem с учётом метаданных и списка артистов
-    private MediaItem CreateMediaItemFromPath(string path)
+    private async Task<MediaItem> CreateMediaItemFromPathAsync(string path)
     {
         var tagInfo = GetDesktopTagInfo(path); // Existing metadata parsing
 
@@ -570,15 +581,23 @@ public partial class MediaViewModel : ObservableObject, IDisposable
             _logger?.LogError($"Error extracting embedded cover art for file {path}", ex);
         }
 
+        // Проверяем существование альбома
+        var albumTitle = tagInfo.Album ?? "Unknown Album";
+        var existingAlbum = await _unitOfWork.Albums.GetByTitleAsync(albumTitle);
+        var album = existingAlbum ?? new Album { Title = albumTitle, CoverArtPath = coverArtPath };
+
         var artists = ParseArtists(tagInfo.Artist);
-        var trackArtists = artists.Select(artistName => new TrackArtist
+        var trackArtists = new List<TrackArtist>();
+        
+        foreach (var artistName in artists)
         {
-            Artist = new Artist { Name = artistName }
-        }).ToList();
+            var artist = await GetOrCreateArtistAsync(artistName);
+            trackArtists.Add(new TrackArtist { Artist = artist });
+        }
 
         var mediaItem = new MediaItem(
             title: Path.GetFileNameWithoutExtension(path),
-            album: new Album { Title = tagInfo.Album ?? "Unknown Album", CoverArtPath = coverArtPath },
+            album: album,
             year: tagInfo.Year,
             genre: tagInfo.Genre ?? "Unknown Genre",
             path: path,
@@ -641,35 +660,28 @@ public partial class MediaViewModel : ObservableObject, IDisposable
             {
                 await Task.Run(async () =>
                 {
-                    var newItems = newPaths.Select(path => CreateMediaItemFromPath(path)).ToList();
+                    var newItems = new List<MediaItem>();
+                    foreach (var path in newPaths)
+                    {
+                        var item = await CreateMediaItemFromPathAsync(path);
+                        newItems.Add(item);
+                    }
 
                     await _unitOfWork.Media.BulkInsertAsync(newItems, batch =>
                     {
-                        _ = Dispatcher.UIThread.InvokeAsync(async () =>
+                        var count = 0;
+                        var subBatch = 10;
+                        foreach (var item in batch)
                         {
-                            int count = 0;
-                            const int subBatch = 50;
-                            foreach (var item in batch)
+                            MediaItems.Insert(0, item);
+                            count++;
+                            if (count % subBatch == 0)
                             {
-                                MediaItems.Insert(0, item);
-                                count++;
-                                if (count % subBatch == 0)
-                                    await Task.Delay(10);
+                                Task.Delay(10).Wait();
                             }
-                            OnPropertyChanged(nameof(MediaItems));
-                        }, Avalonia.Threading.DispatcherPriority.Background);
+                        }
                     });
-
-                    await _unitOfWork.CommitAsync();
-
-                    _ = Dispatcher.UIThread.InvokeAsync(() =>
-                    {
-                        UpdateAlbums();
-                        SortAlbums();
-                    }, Avalonia.Threading.DispatcherPriority.Background);
                 });
-                // Refresh all tracks and albums after insert
-                await RefreshMedia();
             }
         }
         finally

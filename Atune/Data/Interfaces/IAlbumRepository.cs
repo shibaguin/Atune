@@ -8,6 +8,7 @@ namespace Atune.Data.Interfaces
     {
         Task<IEnumerable<Album>> GetAllAlbumsAsync();
         Task<Album?> GetAlbumByIdAsync(int albumId);
+        Task<Album?> GetByTitleAsync(string title);
         Task<IEnumerable<MediaItem>> GetSongsForAlbumAsync(int albumId);
         Task<IEnumerable<Album>> SearchAlbumsAsync(string query, int limit = 50);
         Task<IEnumerable<Album>> GetAlbumsForArtistAsync(int artistId);

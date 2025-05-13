@@ -12,6 +12,27 @@ namespace Atune.Data.Repositories
     {
         private readonly AppDbContext _context = context;
 
+        private static string NormalizeAlbumTitle(string title)
+        {
+            if (string.IsNullOrWhiteSpace(title))
+                return string.Empty;
+
+            // Заменяем различные варианты разделителей на стандартный
+            var normalized = title.Replace("-", " ")
+                               .Replace("\\", " ")
+                               .Replace("/", " ")
+                               .Replace("&", " and ")
+                               .Trim();
+
+            // Удаляем множественные пробелы
+            while (normalized.Contains("  "))
+            {
+                normalized = normalized.Replace("  ", " ");
+            }
+
+            return normalized;
+        }
+
         public async Task<IEnumerable<Album>> GetAllAlbumsAsync()
         {
             return await _context.Albums.ToListAsync();
@@ -20,6 +41,13 @@ namespace Atune.Data.Repositories
         public async Task<Album?> GetAlbumByIdAsync(int albumId)
         {
             return await _context.Albums.FindAsync(albumId);
+        }
+
+        public async Task<Album?> GetByTitleAsync(string title)
+        {
+            var normalizedTitle = NormalizeAlbumTitle(title);
+            var albums = await _context.Albums.ToListAsync();
+            return albums.FirstOrDefault(a => NormalizeAlbumTitle(a.Title) == normalizedTitle);
         }
 
         public async Task<IEnumerable<MediaItem>> GetSongsForAlbumAsync(int albumId)
@@ -34,8 +62,12 @@ namespace Atune.Data.Repositories
 
         public async Task<IEnumerable<Album>> SearchAlbumsAsync(string query, int limit = 50)
         {
+            if (string.IsNullOrWhiteSpace(query))
+                return Enumerable.Empty<Album>();
+
+            var normalizedQuery = NormalizeAlbumTitle(query);
             return await _context.Albums
-                .Where(a => a.Title.Contains(query))
+                .Where(a => NormalizeAlbumTitle(a.Title).Contains(normalizedQuery, System.StringComparison.CurrentCultureIgnoreCase))
                 .Take(limit)
                 .ToListAsync();
         }

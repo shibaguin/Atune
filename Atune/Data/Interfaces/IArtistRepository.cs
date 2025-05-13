@@ -8,7 +8,8 @@ namespace Atune.Data.Interfaces
     {
         Task<IEnumerable<Artist>> GetAllArtistsAsync();
         Task<Artist?> GetArtistByIdAsync(int artistId);
-        Task<IEnumerable<Artist>> SearchArtistsAsync(string query, int limit = 50);
+        Task<Artist?> GetByNameAsync(string name);
         Task<IEnumerable<MediaItem>> GetSongsForArtistAsync(int artistId);
+        Task<IEnumerable<Artist>> SearchArtistsAsync(string query, int limit = 50);
     }
 }
