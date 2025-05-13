@@ -7,6 +7,7 @@ using System.Timers;
 using Avalonia;
 using Avalonia.Platform;
 using Serilog;
+using Atune.ViewModels;
 
 namespace Atune.Services;
 
@@ -67,15 +68,33 @@ public class WindowSettingsService
     {
         try
         {
+            Log.Information("Attempting to load window settings from {Path}", _settingsPath);
             if (File.Exists(_settingsPath))
             {
                 var json = File.ReadAllText(_settingsPath);
+                Log.Information("Read JSON from file: {Json}", json);
                 var settings = JsonSerializer.Deserialize<WindowSettings>(json, WindowSettingsJsonContext.Default.WindowSettings);
                 if (settings != null)
                 {
-                    Log.Information("Window settings loaded successfully: {@Settings}", settings);
-                    return settings;
+                    // Проверяем валидность настроек
+                    if (IsValidSettings(settings))
+                    {
+                        Log.Information("Window settings loaded successfully: {@Settings}", settings);
+                        return settings;
+                    }
+                    else
+                    {
+                        Log.Warning("Invalid window settings detected, using defaults");
+                    }
                 }
+                else
+                {
+                    Log.Warning("Deserialized settings are null");
+                }
+            }
+            else
+            {
+                Log.Warning("Settings file does not exist at {Path}", _settingsPath);
             }
         }
         catch (Exception ex)
@@ -95,12 +114,42 @@ public class WindowSettingsService
         };
     }
 
+    private bool IsValidSettings(WindowSettings settings)
+    {
+        if (settings == null) return false;
+
+        // Проверяем, что CurrentPage соответствует одному из допустимых значений
+        if (!Enum.TryParse<MainViewModel.SectionType>(settings.CurrentPage, out _))
+        {
+            Log.Warning("Invalid CurrentPage value: {Page}", settings.CurrentPage);
+            return false;
+        }
+
+        // Проверяем, что размеры окна в разумных пределах
+        if (settings.Width < 800 || settings.Width > 3840 || settings.Height < 600 || settings.Height > 2160)
+        {
+            Log.Warning("Invalid window dimensions: {Width}x{Height}", settings.Width, settings.Height);
+            return false;
+        }
+
+        return true;
+    }
+
     public async Task SaveSettingsAsync(WindowSettings settings)
     {
         _currentSettings = settings;
         _isDirty = true;
         _saveTimer.Stop();
         _saveTimer.Start();
+    }
+
+    public async Task ForceSaveSettingsAsync()
+    {
+        if (_isDirty)
+        {
+            await SaveSettingsInternalAsync(_currentSettings);
+            _isDirty = false;
+        }
     }
 
     private async Task SaveSettingsInternalAsync(WindowSettings settings)

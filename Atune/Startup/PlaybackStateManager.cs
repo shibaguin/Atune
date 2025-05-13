@@ -94,7 +94,6 @@ namespace Atune.Startup
                 if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop
                     && desktop.MainWindow?.DataContext is MainViewModel mainVm)
                 {
-                    mainVm.GoMediaCommand.Execute(null);
                     var mediaVm = mainVm.MediaViewModelInstance;
                     if (mediaVm == null) return;
 

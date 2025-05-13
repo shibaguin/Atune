@@ -9,5 +9,5 @@ public class WindowSettings
     public double Width { get; set; }
     public double Height { get; set; }
     public bool IsMaximized { get; set; }
-    public string CurrentPage { get; set; } = "MediaView";
+    public string CurrentPage { get; set; } = "Home";
 }

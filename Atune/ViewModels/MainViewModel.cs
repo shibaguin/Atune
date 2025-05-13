@@ -143,7 +143,9 @@ public partial class MainViewModel : ViewModelBase
 
         // Загружаем сохраненную страницу
         var settings = _windowSettingsService.GetCurrentSettings();
+        _logger.LogInformation("Loading saved page: {Page}", settings.CurrentPage);
         var savedSection = Enum.TryParse<SectionType>(settings.CurrentPage, out var section) ? section : SectionType.Home;
+        _logger.LogInformation("Parsed section: {Section}", savedSection);
         SelectedSection = savedSection;
         CurrentView = _views[savedSection];
         HeaderText = GetHeaderTextForSection(savedSection);
@@ -176,18 +178,16 @@ public partial class MainViewModel : ViewModelBase
         _ => "Atune"
     };
 
-    private void OnSelectedSectionChanged(string? value)
+    partial void OnSelectedSectionChanged(SectionType value)
     {
-        if (string.IsNullOrEmpty(value)) return;
-
-        if (Enum.TryParse<SectionType>(value, out var section) && _views.TryGetValue(section, out var view))
+        if (_views.TryGetValue(value, out var view))
         {
             CurrentView = view;
-            HeaderText = GetHeaderTextForSection(section);
+            HeaderText = GetHeaderTextForSection(value);
 
             // Сохраняем текущую страницу
             var settings = _windowSettingsService.GetCurrentSettings();
-            settings.CurrentPage = value;
+            settings.CurrentPage = value.ToString();
             _windowSettingsService.SaveSettingsAsync(settings).ConfigureAwait(false);
         }
     }
@@ -227,31 +227,24 @@ public partial class MainViewModel : ViewModelBase
     private void GoHome()
     {
         SelectedSection = SectionType.Home;
-        HeaderText = _localizationService["Nav_Home"];
-        CurrentView = _views[SectionType.Home];
     }
 
     [RelayCommand]
     private void GoMedia()
     {
         SelectedSection = SectionType.Media;
-        HeaderText = _localizationService["Nav_Media"];
-        CurrentView = _views[SectionType.Media];
     }
 
     [RelayCommand]
     private void GoHistory()
     {
         SelectedSection = SectionType.History;
-        HeaderText = _localizationService["Nav_History"];
-        CurrentView = _views[SectionType.History];
     }
+
     [RelayCommand]
     private void GoSettings()
     {
         SelectedSection = SectionType.Settings;
-        CurrentView = _views[SectionType.Settings];
-        HeaderText = _localizationService["Nav_Settings"];
     }
 
     [RelayCommand]

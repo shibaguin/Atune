@@ -121,8 +121,8 @@ public partial class App : Application
                 // Disable Avalonia DataAnnotations validation plugin
                 AvaloniaValidationDisabler.Disable();
                 var mainWindow = Services!.GetRequiredService<MainWindow>();
-                var windowSettingsService = Services!.GetRequiredService<ISettingsService>();
-                var settings = windowSettingsService.GetWindowSettings();
+                var windowSettingsService = Services!.GetRequiredService<WindowSettingsService>();
+                var settings = windowSettingsService.GetCurrentSettings();
 
                 // Применяем сохраненные настройки окна
                 if (settings.IsMaximized)
@@ -143,7 +143,7 @@ public partial class App : Application
                     {
                         settings.X = mainWindow.Position.X;
                         settings.Y = mainWindow.Position.Y;
-                        windowSettingsService.SaveWindowSettingsAsync(settings).ConfigureAwait(false);
+                        windowSettingsService.SaveSettingsAsync(settings).ConfigureAwait(false);
                     }
                 };
 
@@ -154,7 +154,7 @@ public partial class App : Application
                     {
                         settings.Width = mainWindow.Width;
                         settings.Height = mainWindow.Height;
-                        windowSettingsService.SaveWindowSettingsAsync(settings).ConfigureAwait(false);
+                        windowSettingsService.SaveSettingsAsync(settings).ConfigureAwait(false);
                     }
                 };
 
@@ -164,7 +164,7 @@ public partial class App : Application
                     if (e.Property == Window.WindowStateProperty)
                     {
                         settings.IsMaximized = mainWindow.WindowState == WindowState.Maximized;
-                        windowSettingsService.SaveWindowSettingsAsync(settings).ConfigureAwait(false);
+                        windowSettingsService.SaveSettingsAsync(settings).ConfigureAwait(false);
                     }
                 };
 
@@ -179,7 +179,7 @@ public partial class App : Application
                         settings.Height = mainWindow.Height;
                     }
                     settings.IsMaximized = mainWindow.WindowState == WindowState.Maximized;
-                    await windowSettingsService.SaveWindowSettingsAsync(settings);
+                    await windowSettingsService.ForceSaveSettingsAsync();
                 };
 
                 // Toggle play/pause on Spacebar for desktop
