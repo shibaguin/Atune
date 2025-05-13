@@ -39,8 +39,11 @@ namespace Atune.Services
             _engine.PlaybackStarted += (_, __) => PlaybackStarted?.Invoke(this, EventArgs.Empty);
             _engine.PlaybackPaused  += OnEnginePaused;
             _engine.PlaybackPaused  += (_, __) => PlaybackPaused?.Invoke(this, EventArgs.Empty);
-            _engine.PlaybackEnded   += async (_, __) => await Next();
-            _engine.PlaybackEnded   += (_, __) => PlaybackEnded?.Invoke(this, EventArgs.Empty);
+            _engine.PlaybackEnded   += async (_, __) => 
+            {
+                PlaybackEnded?.Invoke(this, EventArgs.Empty);
+                await Next();
+            };
 
             _positionTimer = new DispatcherTimer
             {
@@ -160,7 +163,11 @@ namespace Atune.Services
             _positionTimer.Stop();
             _engine.PlaybackStarted -= OnEngineStarted;
             _engine.PlaybackPaused  -= OnEnginePaused;
-            _engine.PlaybackEnded   -= async (_, __) => await Next();
+            _engine.PlaybackEnded   -= async (_, __) => 
+            {
+                PlaybackEnded?.Invoke(this, EventArgs.Empty);
+                await Next();
+            };
             _engine.Dispose();
         }
     }

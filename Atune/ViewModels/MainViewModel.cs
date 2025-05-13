@@ -486,11 +486,10 @@ public partial class MainViewModel : ViewModelBase
         }
     }
 
-    private void OnPlaybackEnded(object? sender, EventArgs e)
+    private async void OnPlaybackEnded(object? sender, EventArgs e)
     {
         IsPlaying = false;
-        // ?????????????? ??????? ? ?????????? ?????
-        ExecuteNextCommand();
+        await ExecuteNextCommand();
     }
 
     private void OnPlaybackStarted(object? sender, EventArgs e)

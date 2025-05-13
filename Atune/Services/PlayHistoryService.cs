@@ -45,54 +45,57 @@ public class PlayHistoryService : IDisposable
         _logger.LogInformation("PlaybackEnded event received");
         try
         {
-            // Get the raw playback path and normalize to local file path
-            var rawPath = _playbackService.CurrentPath ?? string.Empty;
-            var path = rawPath;
-            if (rawPath.StartsWith("file://", StringComparison.OrdinalIgnoreCase))
+            await Task.Run(async () =>
             {
-                try { path = new Uri(rawPath).LocalPath; }
-                catch { /* leave rawPath if URI parsing fails */ }
-            }
-            Log.Information("[PlayHistoryService] Playback finished for path={Path}", rawPath);
-            _logger.LogInformation("Playback finished for path: {Path}", path);
-            if (string.IsNullOrEmpty(path))
-                return;
+                // Get the raw playback path and normalize to local file path
+                var rawPath = _playbackService.CurrentPath ?? string.Empty;
+                var path = rawPath;
+                if (rawPath.StartsWith("file://", StringComparison.OrdinalIgnoreCase))
+                {
+                    try { path = new Uri(rawPath).LocalPath; }
+                    catch { /* leave rawPath if URI parsing fails */ }
+                }
+                Log.Information("[PlayHistoryService] Playback finished for path={Path}", rawPath);
+                _logger.LogInformation("Playback finished for path: {Path}", path);
+                if (string.IsNullOrEmpty(path))
+                    return;
 
-            // Lookup media item by path with a new scope
-            using var scope = _scopeFactory.CreateScope();
-            var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
-            var historyRepository = scope.ServiceProvider.GetRequiredService<IPlayHistoryRepository>();
-            var mediaItem = (await unitOfWork.Media.GetAllAsync())
-                .FirstOrDefault(m => string.Equals(m.Path, path, StringComparison.OrdinalIgnoreCase));
-            if (mediaItem == null)
-            {
-                Log.Warning("[PlayHistoryService] No MediaItem found for path={Path}", path);
-                _logger.LogWarning("No MediaItem found for path: {Path}", path);
-                return;
-            }
-            var durationSeconds = (int)_playbackService.Position.TotalSeconds;
-            var totalSeconds = _playbackService.Duration.TotalSeconds;
+                // Lookup media item by path with a new scope
+                using var scope = _scopeFactory.CreateScope();
+                var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+                var historyRepository = scope.ServiceProvider.GetRequiredService<IPlayHistoryRepository>();
+                var mediaItem = (await unitOfWork.Media.GetAllAsync())
+                    .FirstOrDefault(m => string.Equals(m.Path, path, StringComparison.OrdinalIgnoreCase));
+                if (mediaItem == null)
+                {
+                    Log.Warning("[PlayHistoryService] No MediaItem found for path={Path}", path);
+                    _logger.LogWarning("No MediaItem found for path: {Path}", path);
+                    return;
+                }
+                var durationSeconds = (int)_playbackService.Position.TotalSeconds;
+                var totalSeconds = _playbackService.Duration.TotalSeconds;
 
-            var entry = new PlayHistory
-            {
-                MediaItemId = mediaItem.Id,
-                PlayedAt = DateTime.UtcNow,
-                DurationSeconds = durationSeconds,
-                SessionId = _sessionId,
-                DeviceId = _deviceId,
-                PercentPlayed = totalSeconds > 0
-                    ? durationSeconds / totalSeconds * 100.0
-                    : 0.0,
-                AppVersion = _appVersion,
-                OS = _os
-            };
+                var entry = new PlayHistory
+                {
+                    MediaItemId = mediaItem.Id,
+                    PlayedAt = DateTime.UtcNow,
+                    DurationSeconds = durationSeconds,
+                    SessionId = _sessionId,
+                    DeviceId = _deviceId,
+                    PercentPlayed = totalSeconds > 0
+                        ? durationSeconds / totalSeconds * 100.0
+                        : 0.0,
+                    AppVersion = _appVersion,
+                    OS = _os
+                };
 
-            Log.Information("[PlayHistoryService] Saving entry: MediaItemId={MediaItemId}, Duration={Duration}", entry.MediaItemId, entry.DurationSeconds);
-            _logger.LogInformation("Saving history entry: MediaItemId={MediaItemId}, Duration={Duration}s, PercentPlayed={PercentPlayed}%", entry.MediaItemId, entry.DurationSeconds, entry.PercentPlayed);
-            await historyRepository.AddAsync(entry);
-            await unitOfWork.CommitAsync();
-            Log.Information("[PlayHistoryService] Entry committed to database");
-            _logger.LogInformation("Play history entry committed successfully");
+                Log.Information("[PlayHistoryService] Saving entry: MediaItemId={MediaItemId}, Duration={Duration}", entry.MediaItemId, entry.DurationSeconds);
+                _logger.LogInformation("Saving history entry: MediaItemId={MediaItemId}, Duration={Duration}s, PercentPlayed={PercentPlayed}%", entry.MediaItemId, entry.DurationSeconds, entry.PercentPlayed);
+                await historyRepository.AddAsync(entry);
+                await unitOfWork.CommitAsync();
+                Log.Information("[PlayHistoryService] Entry committed to database");
+                _logger.LogInformation("Play history entry committed successfully");
+            });
         }
         catch (Exception ex)
         {
