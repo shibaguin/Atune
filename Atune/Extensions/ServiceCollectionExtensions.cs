@@ -121,7 +121,8 @@ namespace Atune.Extensions
                 sp.GetRequiredService<IPlaybackService>(),
                 sp.GetRequiredService<ILogger<MainViewModel>>(),
                 sp.GetRequiredService<ICoverArtService>(),
-                sp.GetRequiredService<SearchViewModel>()));
+                sp.GetRequiredService<SearchViewModel>(),
+                sp.GetRequiredService<IMediaRepository>()));
             services.AddTransient<HomeViewModel>(sp => new HomeViewModel(
                 sp.GetRequiredService<IMemoryCache>(),
                 sp.GetRequiredService<ILogger<HomeViewModel>>(),
@@ -136,7 +137,8 @@ namespace Atune.Extensions
                 sp.GetRequiredService<IUnitOfWork>(),
                 sp.GetRequiredService<LocalizationService>(),
                 sp.GetRequiredService<IPlaybackService>(),
-                sp.GetRequiredService<IMediaRepository>()));
+                sp.GetRequiredService<IMediaRepository>(),
+                sp.GetRequiredService<ILogger<HistoryViewModel>>()));
             services.AddTransient<SettingsViewModel>();
             services.AddScoped<SearchViewModel>();
 

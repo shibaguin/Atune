@@ -4,7 +4,6 @@ using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Atune.Views;
-using Atune.Services;
 using Avalonia.Controls;
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
@@ -23,7 +22,9 @@ using Atune.ViewModels;
 using System.Threading;
 using Avalonia.Media;
 using Atune.Converters;
+using Atune.Services.Interfaces;
 using Atune.Services;
+using Atune.Data.Interfaces;
 namespace Atune.ViewModels;
 public partial class MainViewModel : ViewModelBase
 {
@@ -91,6 +92,7 @@ public partial class MainViewModel : ViewModelBase
     private readonly ILogger<MainViewModel> _logger;
     private readonly ICoverArtService _coverArtService;
     private readonly SearchViewModel _searchViewModel;
+    private readonly IMediaRepository _mediaRepository;
     public SearchViewModel Search => _searchViewModel;
 
     // Expose the MediaViewModel instance for saving and restoring playback state
@@ -117,7 +119,8 @@ public partial class MainViewModel : ViewModelBase
         IPlaybackService playbackService,
         ILogger<MainViewModel> logger,
         ICoverArtService coverArtService,
-        SearchViewModel searchViewModel)
+        SearchViewModel searchViewModel,
+        IMediaRepository mediaRepository)
     {
         _searchViewModel = searchViewModel;
         _settingsService = settingsService ?? throw new ArgumentNullException(nameof(settingsService));
@@ -128,7 +131,7 @@ public partial class MainViewModel : ViewModelBase
         _localizationService = localizationService ?? throw new ArgumentNullException(nameof(localizationService));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _coverArtService = coverArtService ?? throw new ArgumentNullException(nameof(coverArtService));
-
+        _mediaRepository = mediaRepository ?? throw new ArgumentNullException(nameof(mediaRepository));
         _playbackService = playbackService ?? throw new ArgumentNullException(nameof(playbackService));
         LoadInitialSettings();
         _isInitializing = false;
@@ -167,6 +170,9 @@ public partial class MainViewModel : ViewModelBase
             // Refresh duration in case metadata loaded or track changed
             Duration = _playbackService.Duration;
         };
+
+        // Обновляем при смене языка
+        _localizationService.PropertyChanged += async (s, e) => await LoadStatsAsync();
     }
 
     private string GetHeaderTextForSection(SectionType section) => section switch
@@ -627,7 +633,7 @@ public partial class MainViewModel : ViewModelBase
     {
         try
         {
-            await _playbackService.Play(new MediaItem(title: string.Empty, album: null, year: 0, genre: string.Empty, path: path, duration: TimeSpan.Zero, trackArtists: null));
+            await _playbackService.Play(new MediaItem(title: string.Empty, album: new Album { Title = "Unknown Album" }, year: 0, genre: string.Empty, path: path, duration: TimeSpan.Zero, trackArtists: new List<TrackArtist>()));
         }
         catch (Exception ex)
         {
@@ -672,43 +678,19 @@ public partial class MainViewModel : ViewModelBase
 
     // Command to play from specific track within album
     [RelayCommand]
-    private async Task PlayAlbumFromTrack(MediaItem track)
+    private void PlayAlbumFromTrack(MediaItem? track)
     {
-        // Capture album context before switching to Media view
-        AlbumViewModel? albumVm = null;
-        if (CurrentView is AlbumView av && av.DataContext is AlbumViewModel aVm)
-            albumVm = aVm;
-
-        if (_views.TryGetValue(SectionType.Media, out var view) && view.DataContext is MediaViewModel mediaVm)
+        if (track == null) return;
+        var album = track.Album;
+        if (album != null)
         {
-            // Clear existing queue
-            mediaVm.ClearQueueCommand.Execute(null);
-            // Replace enqueue logic to add entire album and set starting track position
-            if (albumVm != null)
-            {
-                var tracks = albumVm.Album.Tracks;
-                int startIndex = tracks.IndexOf(track);
-                foreach (var t in tracks)
-                    mediaVm.AddToQueueCommand.Execute(t);
-                mediaVm.SetQueuePositionCommand.Execute(startIndex);
-            }
-            else if (CurrentView is MediaView)
-            {
-                var tracks = mediaVm.MediaItems;
-                int startIndex = tracks.IndexOf(track);
-                if (startIndex < 0) startIndex = 0;
-                foreach (var t in tracks)
-                    mediaVm.AddToQueueCommand.Execute(t);
-                mediaVm.SetQueuePositionCommand.Execute(startIndex);
-            }
-            else
-            {
-                mediaVm.AddToQueueCommand.Execute(track);
-                mediaVm.SetQueuePositionCommand.Execute(0);
-            }
-
-            // Start playback of the first enqueued track
-            await mediaVm.PlayNextInQueueCommand.ExecuteAsync(null);
+            var albumInfo = new AlbumInfo(
+                albumTitle: album.Title,
+                artistName: track.TrackArtists.FirstOrDefault()?.Artist?.Name ?? "Unknown Artist",
+                year: (uint)album.Year,
+                tracks: new List<MediaItem> { track }
+            );
+            PlayAlbum(albumInfo);
         }
     }
 
@@ -720,5 +702,12 @@ public partial class MainViewModel : ViewModelBase
         SelectedSection = SectionType.Media;
         CurrentView = playlistControl;
         HeaderText = playlist.Name;
+    }
+
+    [RelayCommand]
+    private Task LoadStatsAsync()
+    {
+        // Implementation of LoadStatsAsync method
+        return Task.CompletedTask;
     }
 }

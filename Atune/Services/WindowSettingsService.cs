@@ -137,10 +137,8 @@ public class WindowSettingsService
 
     public async Task SaveSettingsAsync(WindowSettings settings)
     {
-        _currentSettings = settings;
-        _isDirty = true;
-        _saveTimer.Stop();
-        _saveTimer.Start();
+        var json = JsonSerializer.Serialize(settings);
+        await File.WriteAllTextAsync(_settingsPath, json);
     }
 
     public async Task ForceSaveSettingsAsync()

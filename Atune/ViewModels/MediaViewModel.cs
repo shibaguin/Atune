@@ -247,6 +247,8 @@ public partial class MediaViewModel : ObservableObject, IDisposable
         CreatePlaylistCommand = new AsyncRelayCommand(CreatePlaylistAsync);
         OpenPlaylistCommand = new AsyncRelayCommand<Playlist?>(OpenPlaylistAsync);
         AddToPlaylistCommand = new AsyncRelayCommand<Playlist?>(AddToPlaylistAsync);
+
+        PlayCommand = new AsyncRelayCommand<MediaItem>(Play);
     }
 
     private async Task<List<MediaItem>> LoadFromDatabaseAsync()
@@ -639,10 +641,10 @@ public partial class MediaViewModel : ObservableObject, IDisposable
             genre: tagInfo.Genre ?? "Unknown Genre",
             path: path,
             duration: tagInfo.Duration,
-            trackArtists: trackArtists
+            trackArtists: trackArtists ?? new List<TrackArtist>()
         )
         {
-            CoverArt = coverArtPath
+            CoverArt = coverArtPath ?? string.Empty
         };
 
         return mediaItem;
@@ -1036,11 +1038,7 @@ public partial class MediaViewModel : ObservableObject, IDisposable
     private async Task PlayTrack(MediaItem? mediaItem)
     {
         if (mediaItem == null) return;
-        _playbackService.ClearQueue();
-        for (int i = 0; i < MediaItems.Count; i++)
-            _playbackService.Enqueue(MediaItems[i]);
-        var selectedIndex = MediaItems.IndexOf(mediaItem);
-        await _playbackService.PlayAtIndex(selectedIndex);
+        await _playbackService.Play(mediaItem);
     }
 
     public void Dispose()
@@ -1276,6 +1274,14 @@ public partial class MediaViewModel : ObservableObject, IDisposable
             int currentIndex = MediaItems.IndexOf(SelectedMediaItem);
             int nextIndex = (currentIndex + 1) % MediaItems.Count;
             await PlayMediaItem(MediaItems[nextIndex]);
+        }
+    }
+
+    private async Task Play(MediaItem? item)
+    {
+        if (item != null)
+        {
+            await _playbackService.Play(item);
         }
     }
 }

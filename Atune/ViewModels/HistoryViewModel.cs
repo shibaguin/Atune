@@ -22,23 +22,24 @@ using System.Collections.ObjectModel;
 using Atune.Models.Dtos;
 using Atune.Models;
 using Atune.Services;
+using Microsoft.Extensions.Logging;
 
 namespace Atune.ViewModels;
 
 public partial class HistoryViewModel : ViewModelBase
 {
+    private readonly IMemoryCache _memoryCache;
     private readonly IUnitOfWork _unitOfWork;
     private readonly LocalizationService _localizationService;
     private readonly IPlaybackService _playbackService;
     private readonly IMediaRepository _mediaRepository;
+    private readonly ILogger<HistoryViewModel> _logger;
 
     // Chart data for LiveChartsCore
     [ObservableProperty]
     private ISeries[] _series;
-    [ObservableProperty]
-    private Axis[] _xAxes;
-    [ObservableProperty]
-    private Axis[] _yAxes;
+    public Axis[] XAxes { get; set; }
+    public Axis[] YAxes { get; set; }
     [ObservableProperty]
     private List<string> _rangeOptions;
     [ObservableProperty]
@@ -48,14 +49,29 @@ public partial class HistoryViewModel : ViewModelBase
     private readonly DurationConverter _durationConverter = new DurationConverter();
     // Computed text properties combining localization labels with values
     public string TotalPlaysLabelText => $"{_localizationService["History_TotalPlaysLabel"]}{TotalPlays}";
-    public string PlaybackTimeLabelText => $"{_localizationService["History_PlaybackTimeLabel"]}{(string)_durationConverter.Convert(AverageDuration, typeof(string), null, CultureInfo.CurrentCulture)}";
+    public string PlaybackTimeLabelText => $"{_localizationService["History_PlaybackTimeLabel"]}{(_durationConverter.Convert(AverageDuration, typeof(string), null, CultureInfo.CurrentCulture) as string ?? string.Empty)}";
 
-    public HistoryViewModel(IMemoryCache cache, IUnitOfWork unitOfWork, LocalizationService localizationService, IPlaybackService playbackService, IMediaRepository mediaRepository)
+    public HistoryViewModel(
+        IMemoryCache memoryCache,
+        IUnitOfWork unitOfWork,
+        LocalizationService localizationService,
+        IPlaybackService playbackService,
+        IMediaRepository mediaRepository,
+        ILogger<HistoryViewModel> logger)
     {
+        ArgumentNullException.ThrowIfNull(memoryCache);
+        ArgumentNullException.ThrowIfNull(unitOfWork);
+        ArgumentNullException.ThrowIfNull(localizationService);
+        ArgumentNullException.ThrowIfNull(playbackService);
+        ArgumentNullException.ThrowIfNull(mediaRepository);
+        ArgumentNullException.ThrowIfNull(logger);
+
+        _memoryCache = memoryCache;
         _unitOfWork = unitOfWork;
         _localizationService = localizationService;
         _playbackService = playbackService;
         _mediaRepository = mediaRepository;
+        _logger = logger;
         // Обновляем при смене языка
         _localizationService.PropertyChanged += async (s, e) => await LoadStatsAsync();
         FromDate = DateTime.UtcNow.Date.AddDays(-7);
@@ -78,6 +94,25 @@ public partial class HistoryViewModel : ViewModelBase
         _ = LoadStatsAsync();
         LoadRecentTracksCommand = new AsyncRelayCommand(LoadRecentTracksAsync);
         _ = LoadRecentTracksAsync();
+
+        XAxes = new[]
+        {
+            new Axis
+            {
+                Name = _localizationService["History_AxisDate"],
+                LabelsRotation = 0,
+                Labels = Array.Empty<string>()
+            }
+        };
+        YAxes = new[]
+        {
+            new Axis
+            {
+                Name = _localizationService["History_AxisPlays"],
+                LabelsRotation = 0,
+                Labels = Array.Empty<string>()
+            }
+        };
     }
 
     [ObservableProperty]
@@ -229,11 +264,9 @@ public partial class HistoryViewModel : ViewModelBase
                     Name = _localizationService["History_AxisDate"],
                     NamePaint = new SolidColorPaint(new SKColor(180, 180, 180)),
                     LabelsPaint = new SolidColorPaint(new SKColor(180, 180, 180)),
-                    // ограничиваем область и шаг оси по времени
                     MinLimit = points.First().DateTime.Ticks,
                     MaxLimit = points.Last().DateTime.Ticks,
                     MinStep = stepDays * TimeSpan.TicksPerDay,
-                    // конвертация ticks в DateTime
                     Labeler = val =>
                     {
                         if (double.IsNaN(val) || double.IsInfinity(val)) return string.Empty;
@@ -248,6 +281,7 @@ public partial class HistoryViewModel : ViewModelBase
                     },
                 }
             };
+
             // Настраиваем ось Y: стандартная конфигурация
             YAxes = new[]
             {
@@ -258,6 +292,15 @@ public partial class HistoryViewModel : ViewModelBase
                     LabelsPaint = new SolidColorPaint(new SKColor(200, 200, 200))
                 }
             };
+
+            if (_playbackService != null)
+            {
+                var duration = _playbackService.Duration;
+                if (duration != AverageDuration)
+                {
+                    AverageDuration = duration;
+                }
+            }
         }
         finally
         {
@@ -284,7 +327,7 @@ public partial class HistoryViewModel : ViewModelBase
     private List<string> _sortOptions = new List<string> { "Сначала новые", "Сначала старые" };
 
     [ObservableProperty]
-    private int _selectedSortIndex = 0;
+    private int _selectedSortIndex;
 
     public IAsyncRelayCommand LoadRecentTracksCommand { get; }
 
@@ -295,28 +338,33 @@ public partial class HistoryViewModel : ViewModelBase
 
     private async Task LoadRecentTracksAsync()
     {
-        var histories = await _unitOfWork.PlayHistory.GetAllAsync();
-        var sorted = _selectedSortIndex == 0
-            ? histories.OrderByDescending(h => h.PlayedAt)
-            : histories.OrderBy(h => h.PlayedAt);
-        var dtos = sorted.Select(ph => new RecentTrackDto
+        try
         {
-            Id = ph.MediaItem.Id,
-            Title = ph.MediaItem.Title,
-            CoverArtPath = ph.MediaItem.CoverArt,
-            ArtistName = ph.MediaItem.TrackArtists.FirstOrDefault()?.Artist.Name ?? string.Empty,
-            LastPlayedAt = ph.PlayedAt
-        });
-        RecentTracks.Clear();
-        foreach (var dto in dtos)
-            RecentTracks.Add(dto);
+            var all = await _unitOfWork.PlayHistory.GetAllAsync();
+            IEnumerable<PlayHistory> sorted = SelectedSortIndex == 0
+                ? all.OrderByDescending(h => h.PlayedAt)
+                : all.OrderBy(h => h.PlayedAt);
+            var dtos = sorted.Select(ph => new RecentTrackDto
+            {
+                Id = ph.MediaItem.Id,
+                Title = ph.MediaItem.Title,
+                CoverArtPath = ph.MediaItem.CoverArt,
+                ArtistName = ph.MediaItem.TrackArtists.FirstOrDefault()?.Artist.Name ?? string.Empty,
+                LastPlayedAt = ph.PlayedAt
+            }).ToList();
+            RecentTracks = new ObservableCollection<RecentTrackDto>(dtos);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error loading recent tracks");
+        }
     }
 
     [RelayCommand]
     private async Task PlayRecentTrack(RecentTrackDto dto)
     {
         _playbackService.ClearQueue();
-        var orders = _selectedSortIndex == 0
+        var orders = SelectedSortIndex == 0
             ? RecentTracks.OrderByDescending(r => r.LastPlayedAt)
             : RecentTracks.OrderBy(r => r.LastPlayedAt);
         var orderedList = orders.ToList();

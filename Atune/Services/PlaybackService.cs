@@ -19,10 +19,10 @@ namespace Atune.Services
         private MediaItem? _currentTrack;
         private readonly DispatcherTimer _positionTimer;
 
-        public event EventHandler<MediaItem?> TrackChanged;
-        public event EventHandler<bool> PlaybackStateChanged;
-        public event EventHandler<TimeSpan> PositionChanged;
-        public event EventHandler<IReadOnlyList<MediaItem>> QueueChanged;
+        public event EventHandler<MediaItem?> TrackChanged = (s, e) => { };
+        public event EventHandler<bool> PlaybackStateChanged = (s, e) => { };
+        public event EventHandler<TimeSpan> PositionChanged = (s, e) => { };
+        public event EventHandler<IReadOnlyList<MediaItem>> QueueChanged = (s, e) => { };
 
         // Legacy interface members
         public IReadOnlyList<MediaItem> GetQueue() => _queue.AsReadOnly();
