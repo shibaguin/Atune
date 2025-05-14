@@ -119,7 +119,7 @@ public partial class MediaView : UserControl
                     if (!Directory.Exists(destFolder))
                         Directory.CreateDirectory(destFolder);
                     var destPath = Path.Combine(destFolder, file.Name);
-                    
+
                     // Проверяем, существует ли уже файл с таким именем
                     if (File.Exists(destPath))
                     {

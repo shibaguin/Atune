@@ -169,13 +169,13 @@ namespace Atune.Startup
                             {
                                 // Устанавливаем позицию в очереди
                                 await playbackService.PlayAtIndex(stateIndex);
-                                
+
                                 // Даем время на инициализацию воспроизведения
                                 await Task.Delay(500);
-                                
+
                                 // Сначала устанавливаем позицию воспроизведения
                                 playbackService.Position = TimeSpan.FromSeconds(statePos);
-                                
+
                                 // Если трек был на паузе, ставим на паузу
                                 if (wasPaused)
                                 {

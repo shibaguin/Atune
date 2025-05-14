@@ -68,7 +68,7 @@ namespace Atune.Data.Repositories
         {
             if (string.IsNullOrWhiteSpace(query))
                 return Enumerable.Empty<Artist>();
-            
+
             var normalizedQuery = NormalizeArtistName(query);
             var artists = await _context.Artists.ToListAsync();
             return artists

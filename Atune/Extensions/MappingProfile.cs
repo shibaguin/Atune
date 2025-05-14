@@ -22,4 +22,4 @@ namespace Atune.Extensions
                 .ForMember(dest => dest.PlayCount, opt => opt.Ignore());
         }
     }
-} 
+}

@@ -602,7 +602,7 @@ public partial class MediaViewModel : ObservableObject, IDisposable
         // Проверяем существование альбома
         var albumTitle = tagInfo.Album ?? "Unknown Album";
         var existingAlbum = await _unitOfWork.Albums.GetByTitleAsync(albumTitle);
-        
+
         Album album;
         if (existingAlbum != null)
         {
@@ -616,10 +616,10 @@ public partial class MediaViewModel : ObservableObject, IDisposable
         }
         else
         {
-            album = new Album 
-            { 
+            album = new Album
+            {
                 Title = albumTitle,
-                CoverArtPath = coverArtPath 
+                CoverArtPath = coverArtPath
             };
             await _unitOfWork.Albums.AddAsync(album);
             await _unitOfWork.CommitAsync();
@@ -627,7 +627,7 @@ public partial class MediaViewModel : ObservableObject, IDisposable
 
         var artists = ParseArtists(tagInfo.Artist);
         var trackArtists = new List<TrackArtist>();
-        
+
         foreach (var artistName in artists)
         {
             var artist = await GetOrCreateArtistAsync(artistName);

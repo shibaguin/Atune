@@ -10,4 +10,4 @@ namespace Atune.Models.Dtos
         public string ArtistName { get; set; } = string.Empty;
         public DateTime LastPlayedAt { get; set; }
     }
-} 
+}

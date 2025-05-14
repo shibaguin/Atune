@@ -31,4 +31,4 @@ public class DurationConverter : IValueConverter
         // Not implemented
         return null;
     }
-} 
+}

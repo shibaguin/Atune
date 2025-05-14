@@ -37,9 +37,9 @@ namespace Atune.Services
             // Subscribe engine events
             _engine.PlaybackStarted += OnEngineStarted;
             _engine.PlaybackStarted += (_, __) => PlaybackStarted?.Invoke(this, EventArgs.Empty);
-            _engine.PlaybackPaused  += OnEnginePaused;
-            _engine.PlaybackPaused  += (_, __) => PlaybackPaused?.Invoke(this, EventArgs.Empty);
-            _engine.PlaybackEnded   += async (_, __) => 
+            _engine.PlaybackPaused += OnEnginePaused;
+            _engine.PlaybackPaused += (_, __) => PlaybackPaused?.Invoke(this, EventArgs.Empty);
+            _engine.PlaybackEnded += async (_, __) =>
             {
                 PlaybackEnded?.Invoke(this, EventArgs.Empty);
                 await Next();
@@ -162,8 +162,8 @@ namespace Atune.Services
         {
             _positionTimer.Stop();
             _engine.PlaybackStarted -= OnEngineStarted;
-            _engine.PlaybackPaused  -= OnEnginePaused;
-            _engine.PlaybackEnded   -= async (_, __) => 
+            _engine.PlaybackPaused -= OnEnginePaused;
+            _engine.PlaybackEnded -= async (_, __) =>
             {
                 PlaybackEnded?.Invoke(this, EventArgs.Empty);
                 await Next();
@@ -171,4 +171,4 @@ namespace Atune.Services
             _engine.Dispose();
         }
     }
-} 
+}

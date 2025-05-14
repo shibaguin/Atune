@@ -26,4 +26,4 @@ namespace Atune.Services
         public Task<IEnumerable<RecentTrackDto>> GetRecentTracksAsync(int count = 5) =>
             _homeRepository.GetRecentTracksAsync(count);
     }
-} 
+}

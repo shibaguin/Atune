@@ -11,4 +11,4 @@ namespace Atune.Services.Interfaces
         Task<IEnumerable<TopPlaylistDto>> GetTopPlaylistsAsync(int count = 5);
         Task<IEnumerable<RecentTrackDto>> GetRecentTracksAsync(int count = 5);
     }
-} 
+}

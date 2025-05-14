@@ -12,4 +12,4 @@ namespace Atune.Models.Dtos
         public int PlayCount { get; set; }
         public int TrackCount { get; set; }
     }
-} 
+}
