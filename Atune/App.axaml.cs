@@ -186,9 +186,10 @@ public partial class App : Application
                 mainWindow.AddHandler(InputElement.KeyDownEvent,
                     new EventHandler<KeyEventArgs>((sender, args) =>
                     {
-                        if (args.Key == Key.Space && args.Source is not TextBox && mainWindow.DataContext is MainViewModel vm)
+                        if (args.Key == Key.Space && args.Source is not TextBox && mainWindow.DataContext is MainViewModel vm && args.KeyModifiers == KeyModifiers.None)
                         {
                             vm.TogglePlayPauseCommand.Execute(null);
+                            args.Handled = true;
                         }
                     }),
                     RoutingStrategies.Tunnel,
