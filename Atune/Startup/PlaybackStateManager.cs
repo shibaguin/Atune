@@ -36,6 +36,7 @@ namespace Atune.Startup
                     if (currentIndex < 0 && mediaVm.CurrentQueueIndex >= 0)
                         currentIndex = mediaVm.CurrentQueueIndex;
                     double position = playbackService?.Position.TotalSeconds ?? 0;
+                    bool isPaused = !(playbackService?.IsPlaying ?? false);
 
                     var filePath = platformPathService.GetSettingsPath("playbackstate.txt");
                     Log.Information("Saving playback state to {Path}", filePath);
@@ -51,6 +52,7 @@ namespace Atune.Startup
                     }
                     writer.WriteLine($"__INDEX__:{currentIndex}");
                     writer.WriteLine($"__POSITION__:{position.ToString(System.Globalization.CultureInfo.InvariantCulture)}");
+                    writer.WriteLine($"__PAUSED__:{isPaused}");
 
                     Log.Information("Playback state saved, exists={Exists}", File.Exists(filePath));
                 }
@@ -66,7 +68,8 @@ namespace Atune.Startup
             try
             {
                 var platformPathService = services.GetService<IPlatformPathService>();
-                if (platformPathService == null) return;
+                var playbackService = services.GetService<IPlaybackService>();
+                if (platformPathService == null || playbackService == null) return;
 
                 var filePath = platformPathService.GetSettingsPath("playbackstate.txt");
                 Log.Information("Restoring playback state from {Path}", filePath);
@@ -80,6 +83,7 @@ namespace Atune.Startup
                 var queuePaths = new System.Collections.Generic.List<string>();
                 int stateIndex = -1;
                 double statePos = 0;
+                bool wasPaused = false;
 
                 foreach (var raw in lines)
                 {
@@ -87,6 +91,8 @@ namespace Atune.Startup
                         int.TryParse(raw["__INDEX__:".Length..], out stateIndex);
                     else if (raw.StartsWith("__POSITION__:"))
                         double.TryParse(raw["__POSITION__:".Length..], System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out statePos);
+                    else if (raw.StartsWith("__PAUSED__:"))
+                        bool.TryParse(raw["__PAUSED__:".Length..], out wasPaused);
                     else
                         queuePaths.Add(raw.Replace("\\|", "|"));
                 }
@@ -97,30 +103,34 @@ namespace Atune.Startup
                     var mediaVm = mainVm.MediaViewModelInstance;
                     if (mediaVm == null) return;
 
-                    mediaVm.ClearQueueCommand.Execute(null);
+                    // Очищаем текущую очередь
+                    playbackService.ClearQueue();
+
+                    // Восстанавливаем очередь
                     foreach (var path in queuePaths)
                     {
                         var item = mediaVm.MediaItems.FirstOrDefault(mi => mi.Path == path);
                         if (item != null)
-                            mediaVm.AddToQueueCommand.Execute(item);
+                            playbackService.Enqueue(item);
                     }
 
-                    if (stateIndex >= 0 && stateIndex < mediaVm.PlaybackQueue.Count)
-                        mediaVm.SetQueuePositionCommand.Execute(stateIndex + 1);
-
-                    // Restore via playback engine interface
-                    var engine = services.GetService<Atune.Services.IPlaybackEngineService>();
-                    if (engine != null && stateIndex >= 0 && stateIndex < mediaVm.PlaybackQueue.Count)
+                    // Если есть активный трек, восстанавливаем его воспроизведение
+                    if (stateIndex >= 0 && stateIndex < queuePaths.Count)
                     {
-                        var item = mediaVm.PlaybackQueue[stateIndex];
-                        // Play via MediaViewModel command for proper integration
-                        await mediaVm.PlayTrackCommand.ExecuteAsync(item);
-                        // Allow time for PlaybackStarted to fire and UI to update
-                        await Task.Delay(200);
-                        // Pause and seek to saved position
-                        engine.Pause();
-                        engine.Position = TimeSpan.FromSeconds(statePos);
-                        // No further UI updates required; events handled by MainViewModel
+                        // Устанавливаем позицию в очереди
+                        await playbackService.PlayAtIndex(stateIndex);
+                        
+                        // Даем время на инициализацию воспроизведения
+                        await Task.Delay(500);
+                        
+                        // Сначала устанавливаем позицию воспроизведения
+                        playbackService.Position = TimeSpan.FromSeconds(statePos);
+                        
+                        // Если трек был на паузе, ставим на паузу
+                        if (wasPaused)
+                        {
+                            playbackService.Pause();
+                        }
                     }
                 }
             }
