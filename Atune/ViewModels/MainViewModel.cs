@@ -524,9 +524,9 @@ public partial class MainViewModel : ViewModelBase
         await ExecuteNextCommand();
     }
 
-    private void OnPlaybackStarted(object? sender, EventArgs e)
+    private async void OnPlaybackStarted(object? sender, EventArgs e)
     {
-        Dispatcher.UIThread.InvokeAsync(() =>
+        await Dispatcher.UIThread.InvokeAsync(() =>
         {
             if (_playbackService == null)
                 return;
