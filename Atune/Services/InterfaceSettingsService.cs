@@ -17,6 +17,13 @@ namespace Atune.Services
         private const double DefaultBarPadding = 8;
         private const double DefaultNavigationDividerHeight = DefaultBarHeight; // По умолчанию равно BarHeight
 
+        // Добавляем значения по умолчанию для размеров и положения окна
+        private const double DefaultWindowWidth = 1280;
+        private const double DefaultWindowHeight = 720;
+        private const double DefaultWindowX = 100;
+        private const double DefaultWindowY = 100;
+        private const string DefaultCurrentPage = "Home";
+
         private readonly string _iniFilePath;
         private readonly ILoggerService _logger;
 
@@ -76,7 +83,8 @@ namespace Atune.Services
                 _iniCache = sections;
             }
 
-            if (!sections.TryGetValue("InterfaceDimensions", out List<string>? value))
+            // Загружаем настройки интерфейса
+            if (!sections.TryGetValue("InterfaceDimensions", out List<string>? interfaceSection))
             {
                 _logger.LogWarning("Section [InterfaceDimensions] not found in INI file. Using default interface settings.");
                 SetDefaults();
@@ -84,10 +92,18 @@ namespace Atune.Services
                 return;
             }
 
-            var section = value;
-            // Разбираем секцию в словарь ключ-значение
-            var kv = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-            foreach (var line in section)
+            // Загружаем настройки окна
+            if (!sections.TryGetValue("WindowSettings", out List<string>? windowSection))
+            {
+                _logger.LogWarning("Section [WindowSettings] not found in INI file. Using default window settings.");
+                SetDefaults();
+                SaveSettings();
+                return;
+            }
+
+            // Разбираем секцию интерфейса в словарь ключ-значение
+            var interfaceKv = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var line in interfaceSection)
             {
                 var parts = line.Split('=', 2);
                 if (parts.Length != 2)
@@ -95,41 +111,54 @@ namespace Atune.Services
                     _logger.LogWarning($"Ignoring malformed line in InterfaceDimensions section: '{line}'");
                     continue;
                 }
-                kv[parts[0].Trim()] = parts[1].Trim();
+                interfaceKv[parts[0].Trim()] = parts[1].Trim();
             }
 
-            // Безопасное чтение настроек с проверкой корректности значений
-            if (!kv.TryGetValue("HeaderFontSize", out var headerStr) || !double.TryParse(headerStr, out double headerValue))
+            // Разбираем секцию окна в словарь ключ-значение
+            var windowKv = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var line in windowSection)
+            {
+                var parts = line.Split('=', 2);
+                if (parts.Length != 2)
+                {
+                    _logger.LogWarning($"Ignoring malformed line in WindowSettings section: '{line}'");
+                    continue;
+                }
+                windowKv[parts[0].Trim()] = parts[1].Trim();
+            }
+
+            // Безопасное чтение настроек интерфейса
+            if (!interfaceKv.TryGetValue("HeaderFontSize", out var headerStr) || !double.TryParse(headerStr, out double headerValue))
             {
                 _logger.LogWarning("Invalid or missing HeaderFontSize. Using default.");
                 headerValue = DefaultHeaderFontSize;
             }
-            if (!kv.TryGetValue("NavigationDividerWidth", out var navWidthStr) || !double.TryParse(navWidthStr, out double navWidth))
+            if (!interfaceKv.TryGetValue("NavigationDividerWidth", out var navWidthStr) || !double.TryParse(navWidthStr, out double navWidth))
             {
                 _logger.LogWarning("Invalid or missing NavigationDividerWidth. Using default.");
                 navWidth = DefaultNavigationDividerWidth;
             }
-            if (!kv.TryGetValue("NavigationDividerHeight", out var navHeightStr) || !double.TryParse(navHeightStr, out double navHeight))
+            if (!interfaceKv.TryGetValue("NavigationDividerHeight", out var navHeightStr) || !double.TryParse(navHeightStr, out double navHeight))
             {
                 _logger.LogWarning("Invalid or missing NavigationDividerHeight. Using default.");
                 navHeight = DefaultNavigationDividerHeight;
             }
-            if (!kv.TryGetValue("TopDockHeight", out var topDockStr) || !double.TryParse(topDockStr, out double topDock))
+            if (!interfaceKv.TryGetValue("TopDockHeight", out var topDockStr) || !double.TryParse(topDockStr, out double topDock))
             {
                 _logger.LogWarning("Invalid or missing TopDockHeight. Using default.");
                 topDock = DefaultTopDockHeight;
             }
-            if (!kv.TryGetValue("BarHeight", out var barHeightStr) || !double.TryParse(barHeightStr, out double barHeight))
+            if (!interfaceKv.TryGetValue("BarHeight", out var barHeightStr) || !double.TryParse(barHeightStr, out double barHeight))
             {
                 _logger.LogWarning("Invalid or missing BarHeight. Using default.");
                 barHeight = DefaultBarHeight;
             }
-            if (!kv.TryGetValue("NavigationFontSize", out var navFontStr) || !double.TryParse(navFontStr, out double navFont))
+            if (!interfaceKv.TryGetValue("NavigationFontSize", out var navFontStr) || !double.TryParse(navFontStr, out double navFont))
             {
                 _logger.LogWarning("Invalid or missing NavigationFontSize. Using default.");
                 navFont = DefaultNavigationFontSize;
             }
-            if (!kv.TryGetValue("BarPadding", out var barPaddingStr) || !double.TryParse(barPaddingStr, out double barPadding))
+            if (!interfaceKv.TryGetValue("BarPadding", out var barPaddingStr) || !double.TryParse(barPaddingStr, out double barPadding))
             {
                 _logger.LogWarning("Invalid or missing BarPadding. Using default.");
                 barPadding = DefaultBarPadding;
@@ -147,6 +176,34 @@ namespace Atune.Services
                 navHeight = barHeight;
             }
 
+            // Безопасное чтение настроек окна
+            if (!windowKv.TryGetValue("WindowWidth", out var widthStr) || !double.TryParse(widthStr, out double width))
+            {
+                _logger.LogWarning("Invalid or missing WindowWidth. Using default.");
+                width = DefaultWindowWidth;
+            }
+            if (!windowKv.TryGetValue("WindowHeight", out var heightStr) || !double.TryParse(heightStr, out double height))
+            {
+                _logger.LogWarning("Invalid or missing WindowHeight. Using default.");
+                height = DefaultWindowHeight;
+            }
+            if (!windowKv.TryGetValue("WindowX", out var xStr) || !double.TryParse(xStr, out double x))
+            {
+                _logger.LogWarning("Invalid or missing WindowX. Using default.");
+                x = DefaultWindowX;
+            }
+            if (!windowKv.TryGetValue("WindowY", out var yStr) || !double.TryParse(yStr, out double y))
+            {
+                _logger.LogWarning("Invalid or missing WindowY. Using default.");
+                y = DefaultWindowY;
+            }
+            if (!windowKv.TryGetValue("CurrentPage", out var page))
+            {
+                _logger.LogWarning("Invalid or missing CurrentPage. Using default.");
+                page = DefaultCurrentPage;
+            }
+
+            // Устанавливаем значения
             HeaderFontSize = headerValue;
             NavigationDividerWidth = navWidth;
             NavigationDividerHeight = navHeight;
@@ -167,6 +224,9 @@ namespace Atune.Services
             BarHeight = DefaultBarHeight;
             NavigationFontSize = DefaultNavigationFontSize;
             BarPadding = DefaultBarPadding;
+
+            // Устанавливаем значения по умолчанию для окна
+            SaveSettings();
         }
 
         private static Dictionary<string, string> LoadIniSection(string filePath, string sectionName)
@@ -244,7 +304,7 @@ namespace Atune.Services
             File.WriteAllLines(_iniFilePath, lines);
         }
 
-        // Изменяем метод SaveSettings(), чтобы обновлять только секцию [InterfaceDimensions]
+        // Изменяем метод SaveSettings(), чтобы сохранять также настройки окна
         public void SaveSettings()
         {
             // Готовим содержимое секции для настроек интерфейса
@@ -266,7 +326,7 @@ namespace Atune.Services
                 sections = ParseIniFile();
             }
 
-            // Обновляем (или добавляем) секцию InterfaceDimensions
+            // Обновляем (или добавляем) секцию
             sections["InterfaceDimensions"] = interfaceSection;
 
             // Записываем обновлённый словарь секций обратно в файл
@@ -283,22 +343,20 @@ namespace Atune.Services
             var app = Avalonia.Application.Current;
             if (app != null)
             {
-                // Устанавливаем новые значения в глобальный словарь ресурсов
-                // Sets new values in the global resource dictionary
-                app.Resources["HeaderFontSize"] = HeaderFontSize;
-                app.Resources["NavigationDividerWidth"] = NavigationDividerWidth;
-                app.Resources["NavigationDividerHeight"] = NavigationDividerHeight;
-                app.Resources["TopDockHeight"] = TopDockHeight;
-                app.Resources["BarHeight"] = BarHeight;
-                app.Resources["NavigationFontSize"] = NavigationFontSize;
-                app.Resources["BarPadding"] = BarPadding;
-
-                _logger.LogInformation("Global resources updated");
-
-                // Вызываем InvalidateVisual() для перерисовки главного окна на UI-потоке
-                // Calls InvalidateVisual() to redraw the main window on the UI thread
                 Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
                 {
+                    // Устанавливаем новые значения в глобальный словарь ресурсов
+                    app.Resources["HeaderFontSize"] = HeaderFontSize;
+                    app.Resources["NavigationDividerWidth"] = NavigationDividerWidth;
+                    app.Resources["NavigationDividerHeight"] = NavigationDividerHeight;
+                    app.Resources["TopDockHeight"] = TopDockHeight;
+                    app.Resources["BarHeight"] = BarHeight;
+                    app.Resources["NavigationFontSize"] = NavigationFontSize;
+                    app.Resources["BarPadding"] = BarPadding;
+
+                    _logger.LogInformation("Global resources updated");
+
+                    // Вызываем InvalidateVisual() для перерисовки главного окна
                     if (app.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop)
                     {
                         desktop.MainWindow?.InvalidateVisual();

@@ -123,26 +123,59 @@ public partial class App : Application
                 var mainWindow = Services!.GetRequiredService<MainWindow>();
                 var windowSettingsService = Services!.GetRequiredService<WindowSettingsService>();
                 var settings = windowSettingsService.GetCurrentSettings();
+                var isInitializing = true;
+
+                Log.Information("Restoring window settings: {@Settings}", settings);
 
                 // Применяем сохраненные настройки окна
                 if (settings.IsMaximized)
                 {
+                    Log.Information("Restoring maximized window state");
                     mainWindow.WindowState = WindowState.Maximized;
                 }
                 else
                 {
+                    Log.Information("Restoring window position and size: X={X}, Y={Y}, Width={Width}, Height={Height}", 
+                        settings.X, settings.Y, settings.Width, settings.Height);
                     mainWindow.Position = new PixelPoint((int)settings.X, (int)settings.Y);
                     mainWindow.Width = settings.Width;
                     mainWindow.Height = settings.Height;
                 }
 
+                // Устанавливаем текущую страницу
+                if (mainWindow.DataContext is MainViewModel mainVm)
+                {
+                    if (Enum.TryParse<MainViewModel.SectionType>(settings.CurrentPage, out var section))
+                    {
+                        Log.Information("Restoring current page: {Page}", settings.CurrentPage);
+                        mainVm.SelectedSection = section;
+                    }
+                    else
+                    {
+                        Log.Warning("Failed to parse current page: {Page}", settings.CurrentPage);
+                    }
+                }
+
                 // Сохраняем изменения положения окна
                 mainWindow.PositionChanged += (s, e) =>
                 {
-                    if (mainWindow.WindowState != WindowState.Maximized)
+                    if (!isInitializing && mainWindow.WindowState != WindowState.Maximized)
                     {
-                        settings.X = mainWindow.Position.X;
-                        settings.Y = mainWindow.Position.Y;
+                        var (validatedX, validatedY) = windowSettingsService.ValidateWindowPosition(
+                            mainWindow.Position.X,
+                            mainWindow.Position.Y,
+                            mainWindow.Width,
+                            mainWindow.Height
+                        );
+
+                        // Применяем валидированную позицию
+                        if (validatedX != mainWindow.Position.X || validatedY != mainWindow.Position.Y)
+                        {
+                            mainWindow.Position = new PixelPoint((int)validatedX, (int)validatedY);
+                        }
+
+                        settings.X = validatedX;
+                        settings.Y = validatedY;
                         windowSettingsService.SaveSettingsAsync(settings).ConfigureAwait(false);
                     }
                 };
@@ -150,10 +183,22 @@ public partial class App : Application
                 // Сохраняем изменения размера окна
                 mainWindow.SizeChanged += (s, e) =>
                 {
-                    if (mainWindow.WindowState != WindowState.Maximized)
+                    if (!isInitializing && mainWindow.WindowState != WindowState.Maximized)
                     {
-                        settings.Width = mainWindow.Width;
-                        settings.Height = mainWindow.Height;
+                        var (validatedWidth, validatedHeight) = windowSettingsService.ValidateWindowSize(
+                            mainWindow.Width,
+                            mainWindow.Height
+                        );
+
+                        // Применяем валидированные размеры
+                        if (validatedWidth != mainWindow.Width || validatedHeight != mainWindow.Height)
+                        {
+                            mainWindow.Width = validatedWidth;
+                            mainWindow.Height = validatedHeight;
+                        }
+
+                        settings.Width = validatedWidth;
+                        settings.Height = validatedHeight;
                         windowSettingsService.SaveSettingsAsync(settings).ConfigureAwait(false);
                     }
                 };
@@ -161,25 +206,48 @@ public partial class App : Application
                 // Сохраняем состояние максимизации
                 mainWindow.PropertyChanged += (s, e) =>
                 {
-                    if (e.Property == Window.WindowStateProperty)
+                    if (!isInitializing && e.Property == Window.WindowStateProperty)
                     {
                         settings.IsMaximized = mainWindow.WindowState == WindowState.Maximized;
                         windowSettingsService.SaveSettingsAsync(settings).ConfigureAwait(false);
                     }
                 };
 
-                // Сохраняем состояние при закрытии
+                // Отключаем флаг инициализации после загрузки окна
+                mainWindow.Loaded += (s, e) =>
+                {
+                    isInitializing = false;
+                };
+
+                // Сохраняем настройки при закрытии окна
                 mainWindow.Closing += async (s, e) =>
                 {
+                    Log.Information("Window is closing, saving settings");
+                    if (mainWindow.DataContext is MainViewModel mainVm)
+                    {
+                        settings.CurrentPage = mainVm.SelectedSection.ToString();
+                        Log.Information("Current page before closing: {Page}", settings.CurrentPage);
+                    }
                     if (mainWindow.WindowState != WindowState.Maximized)
                     {
                         settings.X = mainWindow.Position.X;
                         settings.Y = mainWindow.Position.Y;
                         settings.Width = mainWindow.Width;
                         settings.Height = mainWindow.Height;
+                        Log.Information("Window position and size before closing: X={X}, Y={Y}, Width={Width}, Height={Height}", 
+                            settings.X, settings.Y, settings.Width, settings.Height);
                     }
                     settings.IsMaximized = mainWindow.WindowState == WindowState.Maximized;
+                    Log.Information("Window maximized state before closing: {IsMaximized}", settings.IsMaximized);
+                    
+                    // Сначала сохраняем настройки окна
                     await windowSettingsService.ForceSaveSettingsAsync();
+                    
+                    // Даем время на сохранение файла
+                    await Task.Delay(100);
+                    
+                    // Затем сохраняем состояние воспроизведения
+                    PlaybackStateManager.SaveState(Services!);
                 };
 
                 // Toggle play/pause on Spacebar for desktop

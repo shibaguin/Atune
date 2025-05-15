@@ -29,6 +29,11 @@ public class WindowSettings
 
 public class WindowSettingsService
 {
+    private const double MIN_WINDOW_WIDTH = 400;
+    private const double MIN_WINDOW_HEIGHT = 300;
+    private const double MAX_WINDOW_WIDTH = 7680;
+    private const double MAX_WINDOW_HEIGHT = 4320;
+
     private readonly string _settingsPath;
     private WindowSettings _currentSettings;
     private readonly System.Timers.Timer _saveTimer;
@@ -61,7 +66,50 @@ public class WindowSettingsService
 
     public WindowSettings GetCurrentSettings()
     {
+        Log.Information("Getting current window settings: {@Settings}", _currentSettings);
         return _currentSettings;
+    }
+
+    public (double Width, double Height) ValidateWindowSize(double width, double height)
+    {
+        var validatedWidth = Math.Max(MIN_WINDOW_WIDTH, Math.Min(width, MAX_WINDOW_WIDTH));
+        var validatedHeight = Math.Max(MIN_WINDOW_HEIGHT, Math.Min(height, MAX_WINDOW_HEIGHT));
+
+        if (validatedWidth != width || validatedHeight != height)
+        {
+            Log.Information("Window size adjusted from {Width}x{Height} to {NewWidth}x{NewHeight}", 
+                width, height, validatedWidth, validatedHeight);
+        }
+
+        return (validatedWidth, validatedHeight);
+    }
+
+    public (double X, double Y) ValidateWindowPosition(double x, double y, double width, double height)
+    {
+        // Получаем размеры рабочей области
+        var screenBounds = GetScreenBounds();
+        
+        // Проверяем, чтобы окно не выходило за пределы экрана
+        var maxX = screenBounds.Width - width;
+        var maxY = screenBounds.Height - height;
+        
+        var validatedX = Math.Max(0, Math.Min(x, maxX));
+        var validatedY = Math.Max(0, Math.Min(y, maxY));
+
+        if (validatedX != x || validatedY != y)
+        {
+            Log.Information("Window position adjusted from ({X}, {Y}) to ({NewX}, {NewY})", 
+                x, y, validatedX, validatedY);
+        }
+
+        return (validatedX, validatedY);
+    }
+
+    private (double Width, double Height) GetScreenBounds()
+    {
+        // В реальном приложении здесь нужно получить размеры экрана
+        // Для примера используем максимальные размеры
+        return (MAX_WINDOW_WIDTH, MAX_WINDOW_HEIGHT);
     }
 
     private WindowSettings LoadSettings()
@@ -73,23 +121,40 @@ public class WindowSettingsService
             {
                 var json = File.ReadAllText(_settingsPath);
                 Log.Information("Read JSON from file: {Json}", json);
-                var settings = JsonSerializer.Deserialize<WindowSettings>(json, WindowSettingsJsonContext.Default.WindowSettings);
-                if (settings != null)
+                
+                try 
                 {
-                    // Проверяем валидность настроек
-                    if (IsValidSettings(settings))
+                    var settings = JsonSerializer.Deserialize<WindowSettings>(json, WindowSettingsJsonContext.Default.WindowSettings);
+                    if (settings != null)
                     {
-                        Log.Information("Window settings loaded successfully: {@Settings}", settings);
-                        return settings;
+                        // Проверяем валидность настроек
+                        if (IsValidSettings(settings))
+                        {
+                            // Валидируем размеры и позицию
+                            var (validatedWidth, validatedHeight) = ValidateWindowSize(settings.Width, settings.Height);
+                            var (validatedX, validatedY) = ValidateWindowPosition(settings.X, settings.Y, validatedWidth, validatedHeight);
+
+                            settings.Width = validatedWidth;
+                            settings.Height = validatedHeight;
+                            settings.X = validatedX;
+                            settings.Y = validatedY;
+
+                            Log.Information("Window settings loaded and validated: {@Settings}", settings);
+                            return settings;
+                        }
+                        else
+                        {
+                            Log.Warning("Invalid window settings detected in file, using defaults");
+                        }
                     }
                     else
                     {
-                        Log.Warning("Invalid window settings detected, using defaults");
+                        Log.Warning("Deserialized settings are null from file");
                     }
                 }
-                else
+                catch (JsonException ex)
                 {
-                    Log.Warning("Deserialized settings are null");
+                    Log.Error(ex, "Failed to deserialize settings from JSON file: {Json}", json);
                 }
             }
             else
@@ -99,11 +164,12 @@ public class WindowSettingsService
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Error loading window settings");
+            Log.Error(ex, "Error loading window settings from {Path}", _settingsPath);
         }
 
-        Log.Information("Using default window settings");
-        return new WindowSettings
+        // Создаем дефолтные настройки только если файл не существует или содержит невалидные данные
+        Log.Information("Creating default window settings");
+        var defaultSettings = new WindowSettings
         {
             X = 100,
             Y = 100,
@@ -112,11 +178,25 @@ public class WindowSettingsService
             IsMaximized = false,
             CurrentPage = "Home"
         };
+        Log.Information("Created default settings: {@Settings}", defaultSettings);
+        
+        // Сохраняем дефолтные настройки только если файл не существует
+        if (!File.Exists(_settingsPath))
+        {
+            Log.Information("Saving default settings to file");
+            SaveSettingsInternalAsync(defaultSettings).Wait();
+        }
+        
+        return defaultSettings;
     }
 
     private bool IsValidSettings(WindowSettings settings)
     {
-        if (settings == null) return false;
+        if (settings == null) 
+        {
+            Log.Warning("Settings object is null");
+            return false;
+        }
 
         // Проверяем, что CurrentPage соответствует одному из допустимых значений
         if (!Enum.TryParse<MainViewModel.SectionType>(settings.CurrentPage, out _))
@@ -125,24 +205,36 @@ public class WindowSettingsService
             return false;
         }
 
-        // Проверяем, что размеры окна в разумных пределах
-        if (settings.Width < 800 || settings.Width > 3840 || settings.Height < 600 || settings.Height > 2160)
-        {
-            Log.Warning("Invalid window dimensions: {Width}x{Height}", settings.Width, settings.Height);
-            return false;
-        }
-
+        Log.Information("Settings validation passed: {@Settings}", settings);
         return true;
     }
 
     public async Task SaveSettingsAsync(WindowSettings settings)
     {
-        var json = JsonSerializer.Serialize(settings);
-        await File.WriteAllTextAsync(_settingsPath, json);
+        Log.Information("Saving window settings: {@Settings}", settings);
+        
+        // Валидируем размеры и позицию перед сохранением
+        if (!settings.IsMaximized)
+        {
+            var (validatedWidth, validatedHeight) = ValidateWindowSize(settings.Width, settings.Height);
+            var (validatedX, validatedY) = ValidateWindowPosition(settings.X, settings.Y, validatedWidth, validatedHeight);
+
+            settings.Width = validatedWidth;
+            settings.Height = validatedHeight;
+            settings.X = validatedX;
+            settings.Y = validatedY;
+        }
+
+        _currentSettings = settings;
+        _isDirty = true;
+        _saveTimer.Stop();
+        _saveTimer.Start();
     }
 
     public async Task ForceSaveSettingsAsync()
     {
+        Log.Information("Force saving window settings: {@Settings}", _currentSettings);
+        _saveTimer.Stop();
         if (_isDirty)
         {
             await SaveSettingsInternalAsync(_currentSettings);
@@ -154,13 +246,21 @@ public class WindowSettingsService
     {
         try
         {
+            Log.Information("Starting to save settings to file: {Path}", _settingsPath);
             var json = JsonSerializer.Serialize(settings, WindowSettingsJsonContext.Default.WindowSettings);
+            Log.Information("Serialized settings: {Json}", json);
             await File.WriteAllTextAsync(_settingsPath, json);
+            Log.Information("Settings file written successfully");
+            
+            // Проверяем, что файл действительно содержит правильные данные
+            var savedContent = await File.ReadAllTextAsync(_settingsPath);
+            Log.Information("Verification - content of saved file: {Content}", savedContent);
+            
             Log.Information("Window settings saved successfully: {@Settings}", settings);
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Error saving window settings");
+            Log.Error(ex, "Error saving window settings to {Path}", _settingsPath);
         }
     }
 }
