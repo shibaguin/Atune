@@ -256,4 +256,19 @@
   <data name="History_Tab_Chart" xml:space="preserve">
     <value>График</value>
   </data>
+  <data name="Home_TopTracks" xml:space="preserve">
+    <value>Популярные треки</value>
+  </data>
+  <data name="Home_TopAlbums" xml:space="preserve">
+    <value>Популярные альбомы</value>
+  </data>
+  <data name="Home_TopArtists" xml:space="preserve">
+    <value>Популярные исполнители</value>
+  </data>
+  <data name="Home_RecentlyPlayed" xml:space="preserve">
+    <value>Недавно прослушанные</value>
+  </data>
+  <data name="Home_TopPlaylists" xml:space="preserve">
+    <value>Популярные плейлисты</value>
+  </data>
 </root> 

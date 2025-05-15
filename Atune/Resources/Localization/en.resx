@@ -261,4 +261,19 @@
   <data name="History_Tab_Chart" xml:space="preserve">
     <value>Chart</value>
   </data>
+  <data name="Home_TopTracks" xml:space="preserve">
+    <value>Top Tracks</value>
+  </data>
+  <data name="Home_TopAlbums" xml:space="preserve">
+    <value>Top Albums</value>
+  </data>
+  <data name="Home_TopArtists" xml:space="preserve">
+    <value>Top Artists</value>
+  </data>
+  <data name="Home_RecentlyPlayed" xml:space="preserve">
+    <value>Recently Played</value>
+  </data>
+  <data name="Home_TopPlaylists" xml:space="preserve">
+    <value>Top Playlists</value>
+  </data>
 </root> 
