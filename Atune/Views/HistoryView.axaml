@@ -5,6 +5,7 @@
              xmlns:conv="clr-namespace:Atune.Converters"
              xmlns:lvc="clr-namespace:LiveChartsCore.SkiaSharpView.Avalonia;assembly=LiveChartsCore.SkiaSharpView.Avalonia"
              xmlns:lcp="clr-namespace:LiveChartsCore.SkiaSharpView.Painting;assembly=LiveChartsCore.SkiaSharpView"
+             xmlns:lca="clr-namespace:LiveChartsCore;assembly=LiveChartsCore"
              xmlns:views="clr-namespace:Atune.Views"
              mc:Ignorable="d"
              d:DesignWidth="800"

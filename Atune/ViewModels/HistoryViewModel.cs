@@ -38,8 +38,10 @@ public partial class HistoryViewModel : ViewModelBase
     // Chart data for LiveChartsCore
     [ObservableProperty]
     private ISeries[] _series;
-    public Axis[] XAxes { get; set; }
-    public Axis[] YAxes { get; set; }
+    [ObservableProperty]
+    private Axis[] _xAxes;
+    [ObservableProperty]
+    private Axis[] _yAxes;
     [ObservableProperty]
     private List<string> _rangeOptions;
     [ObservableProperty]
@@ -94,25 +96,6 @@ public partial class HistoryViewModel : ViewModelBase
         _ = LoadStatsAsync();
         LoadRecentTracksCommand = new AsyncRelayCommand(LoadRecentTracksAsync);
         _ = LoadRecentTracksAsync();
-
-        XAxes = new[]
-        {
-            new Axis
-            {
-                Name = _localizationService["History_AxisDate"],
-                LabelsRotation = 0,
-                Labels = Array.Empty<string>()
-            }
-        };
-        YAxes = new[]
-        {
-            new Axis
-            {
-                Name = _localizationService["History_AxisPlays"],
-                LabelsRotation = 0,
-                Labels = Array.Empty<string>()
-            }
-        };
     }
 
     [ObservableProperty]
@@ -143,111 +126,105 @@ public partial class HistoryViewModel : ViewModelBase
         try
         {
             IsBusy = true;
+            _logger.LogInformation($"[History] Start LoadStatsAsync, SelectedRangeIndex={SelectedRangeIndex}");
             var allHistory = await _unitOfWork.PlayHistory.GetAllAsync();
             var now = DateTime.Now;
             DateTime rangeStart = now;
             var allList = allHistory.ToList();
-            List<DateTimePoint> points;
+            _logger.LogInformation($"[History] allList.Count={allList.Count}");
+            // --- Новый подход: строгое количество точек и подписей по схеме пользователя ---
+            List<(string Label, double Value)> chartPoints = new();
             switch (SelectedRangeIndex)
             {
-                case 0: // Last 24 hours
-                    rangeStart = new DateTime(now.Year, now.Month, now.Day, now.Hour, 0, 0).AddHours(-23);
-                    var hours24 = Enumerable.Range(0, 24).Select(i => rangeStart.AddHours(i)).ToList();
-                    var dictHour24 = allList
-                        .Where(h => h.PlayedAt >= rangeStart)
-                        .GroupBy(h => new DateTime(h.PlayedAt.Year, h.PlayedAt.Month, h.PlayedAt.Day, h.PlayedAt.Hour, 0, 0))
-                        .ToDictionary(g => g.Key, g => g.Count());
-                    points = hours24.Select(dt => new DateTimePoint(dt, (double)(dictHour24.TryGetValue(dt, out var c) ? c : 0))).ToList();
+                case 0: // 24 часа, 24 точки по часу
+                {
+                    var nowHour = DateTime.Now;
+                    var start = nowHour.AddHours(-23).Date.AddHours(nowHour.Hour - 23);
+                    for (int i = 0; i < 24; i++)
+                    {
+                        var hour = start.AddHours(i);
+                        var count = allList.Count(h => h.PlayedAt >= hour && h.PlayedAt < hour.AddHours(1));
+                        chartPoints.Add((hour.ToString("HH:00"), count));
+                    }
                     break;
-                case 1: // Last 3 days
-                    rangeStart = now.AddDays(-3);
-                    var startHour3d = new DateTime(rangeStart.Year, rangeStart.Month, rangeStart.Day, rangeStart.Hour, 0, 0);
-                    var hours72 = Enumerable.Range(0, 72).Select(i => startHour3d.AddHours(i)).ToList();
-                    var dictHour72 = allList
-                        .Where(h => h.PlayedAt >= startHour3d)
-                        .GroupBy(h => new DateTime(h.PlayedAt.Year, h.PlayedAt.Month, h.PlayedAt.Day, h.PlayedAt.Hour, 0, 0))
-                        .ToDictionary(g => g.Key, g => g.Count());
-                    points = hours72.Select(dt => new DateTimePoint(dt, (double)(dictHour72.TryGetValue(dt, out var c) ? c : 0))).ToList();
-                    break;
-                case 2: // Last week
-                    rangeStart = now.Date.AddDays(-6);
-                    var days7 = Enumerable.Range(0, 7).Select(i => rangeStart.AddDays(i)).ToList();
-                    var dictDay7 = allList
-                        .Where(h => h.PlayedAt.Date >= rangeStart)
-                        .GroupBy(h => h.PlayedAt.Date)
-                        .ToDictionary(g => g.Key, g => g.Count());
-                    points = days7.Select(dt => new DateTimePoint(dt, (double)(dictDay7.TryGetValue(dt, out var c) ? c : 0))).ToList();
-                    break;
-                case 3: // Last month
-                    rangeStart = now.Date.AddDays(-29);
-                    var days30 = Enumerable.Range(0, 30).Select(i => rangeStart.AddDays(i)).ToList();
-                    var dictDay30 = allList
-                        .Where(h => h.PlayedAt.Date >= rangeStart)
-                        .GroupBy(h => h.PlayedAt.Date)
-                        .ToDictionary(g => g.Key, g => g.Count());
-                    points = days30.Select(dt => new DateTimePoint(dt, (double)(dictDay30.TryGetValue(dt, out var c) ? c : 0))).ToList();
-                    break;
-                case 4: // Last quarter
-                    rangeStart = now.Date.AddMonths(-3);
-                    var dow = (int)rangeStart.DayOfWeek;
-                    var monday = rangeStart.AddDays(-(dow == 0 ? 6 : dow - 1));
-                    var weeksCount = (int)Math.Ceiling((now.Date - monday).TotalDays / 7) + 1;
-                    var weeks = Enumerable.Range(0, weeksCount).Select(i => monday.AddDays(i * 7)).ToList();
-                    var dictWeek = allList
-                        .Where(h => h.PlayedAt.Date >= monday)
-                        .GroupBy(h =>
+                }
+                case 1: // 3 дня, 12 точек (по 4 периода на день)
+                {
+                    var nowDay = DateTime.Now.Date;
+                    var start = nowDay.AddDays(-2);
+                    string[] slots = { "Night", "Morning", "Day", "Evening" };
+                    int[] slotStarts = { 0, 6, 12, 18 };
+                    for (int d = 0; d < 3; d++)
+                    {
+                        var day = start.AddDays(d);
+                        for (int s = 0; s < 4; s++)
                         {
-                            var d = h.PlayedAt.Date;
-                            var dDow = (int)d.DayOfWeek;
-                            return d.AddDays(-(dDow == 0 ? 6 : dDow - 1));
-                        })
-                        .ToDictionary(g => g.Key, g => g.Count());
-                    points = weeks.Select(dt => new DateTimePoint(dt, (double)(dictWeek.TryGetValue(dt, out var c) ? c : 0))).ToList();
+                            var slotStart = day.AddHours(slotStarts[s]);
+                            var slotEnd = slotStart.AddHours(6);
+                            var count = allList.Count(h => h.PlayedAt >= slotStart && h.PlayedAt < slotEnd);
+                            chartPoints.Add(($"{day:dd.MM} {slots[s]}", count));
+                        }
+                    }
                     break;
-                case 5: // Last year
-                    var startMonth = new DateTime(now.Year, now.Month, 1).AddMonths(-11);
-                    var months = Enumerable.Range(0, 12).Select(i => startMonth.AddMonths(i)).ToList();
-                    var dictMonth = allList
-                        .Where(h => h.PlayedAt.Date >= startMonth)
-                        .GroupBy(h => new DateTime(h.PlayedAt.Year, h.PlayedAt.Month, 1))
-                        .ToDictionary(g => g.Key, g => g.Count());
-                    points = months.Select(dt => new DateTimePoint(dt, (double)(dictMonth.TryGetValue(dt, out var c) ? c : 0))).ToList();
+                }
+                case 2: // Неделя, 7 точек по дням
+                {
+                    var start = DateTime.Now.Date.AddDays(-6);
+                    for (int i = 0; i < 7; i++)
+                    {
+                        var day = start.AddDays(i);
+                        var count = allList.Count(h => h.PlayedAt.Date == day);
+                        chartPoints.Add((day.ToString("dd.MM"), count));
+                    }
                     break;
-                default:
-                    goto case 2;
+                }
+                case 3: // Месяц, 30 точек по дням
+                {
+                    var start = DateTime.Now.Date.AddDays(-29);
+                    for (int i = 0; i < 30; i++)
+                    {
+                        var day = start.AddDays(i);
+                        var count = allList.Count(h => h.PlayedAt.Date == day);
+                        chartPoints.Add((day.ToString("dd.MM"), count));
+                    }
+                    break;
+                }
+                case 4: // Квартал, 12 точек (по неделям, 4 на месяц)
+                {
+                    var nowQ = DateTime.Now.Date;
+                    var start = nowQ.AddMonths(-2).AddDays(-((int)nowQ.DayOfWeek - 1));
+                    for (int i = 0; i < 12; i++)
+                    {
+                        var weekStart = start.AddDays(i * 7);
+                        var weekEnd = weekStart.AddDays(7);
+                        var count = allList.Count(h => h.PlayedAt.Date >= weekStart && h.PlayedAt.Date < weekEnd);
+                        chartPoints.Add(($"{weekStart:dd.MM}-{weekEnd.AddDays(-1):dd.MM}", count));
+                    }
+                    break;
+                }
+                case 5: // Год, 12 точек по месяцам
+                {
+                    var nowY = DateTime.Now;
+                    var start = new DateTime(nowY.Year, nowY.Month, 1).AddMonths(-11);
+                    for (int i = 0; i < 12; i++)
+                    {
+                        var month = start.AddMonths(i);
+                        var count = allList.Count(h => h.PlayedAt.Year == month.Year && h.PlayedAt.Month == month.Month);
+                        chartPoints.Add((month.ToString("MM.yyyy"), count));
+                    }
+                    break;
+                }
             }
-
-            // Фильтрация для статистики: берём записи от rangeStart до now
-            var periodFiltered = allList.Where(h => h.PlayedAt >= rangeStart && h.PlayedAt <= now).ToList();
-            // Общее время воспроизведения
-            AverageDuration = periodFiltered.Any() ? TimeSpan.FromSeconds(periodFiltered.Sum(h => h.DurationSeconds)) : TimeSpan.Zero;
-            TotalPlays = (int)points.Sum(p => p.Value);
-            // Формат меток оси X: время, дни, недели или месяцы
-            var xFormat = SelectedRangeIndex <= 1             // последние 24 часа и 3 дня
-                ? "HH:mm"                                   // показываем только часы и минуты
-                : SelectedRangeIndex <= 3                     // неделя и месяц
-                    ? "dd.MM"                              // день и месяц (например "12.02")
-                    : SelectedRangeIndex == 4                // квартал
-                        ? "dd MMM"                          // день и аббревиатура месяца (например "12 фев")
-                        : "MM.yyyy";                        // год: месяц и год (например "02.2023")
-            // Вычисляем шаг значений для отображения дат/времени на оси X
-            var stepDays = SelectedRangeIndex <= 1
-                ? TimeSpan.FromHours(1).TotalDays       // шаг 1 час
-                : SelectedRangeIndex <= 3
-                    ? TimeSpan.FromDays(1).TotalDays     // шаг 1 день
-                    : SelectedRangeIndex == 4
-                        ? TimeSpan.FromDays(7).TotalDays   // шаг 1 неделя
-                        : TimeSpan.FromDays(30).TotalDays;  // шаг ~1 месяц
-            // Формируем массив строк для оси X и категориальные точки
-            var labels = points.Select(p => p.DateTime.ToString(xFormat)).ToArray();
-
-            // Настраиваем серию с типом DateTimePoint (по умолчанию маппинг берёт дату и значение)
+            _logger.LogInformation($"[History] chartPoints.Count={chartPoints.Count}, labels=[{string.Join(", ", chartPoints.Select(p => p.Label))}]");
+            // Формируем Series и XAxes
+            XAxes = null; // Явный сброс оси X для LiveChartsCore
+            var indexedPoints = chartPoints.Select((p, i) => new ObservablePoint(i, p.Value)).ToList();
             Series = new ISeries[]
             {
-                new LineSeries<DateTimePoint>
+                new LineSeries<ObservablePoint>
                 {
                     Name = _localizationService["History_SeriesPlays"],
-                    Values = points,
+                    Values = indexedPoints,
                     Fill = null,
                     Stroke = new SolidColorPaint(SKColors.CornflowerBlue, 2),
                     GeometryStroke = new SolidColorPaint(SKColors.White),
@@ -255,32 +232,23 @@ public partial class HistoryViewModel : ViewModelBase
                     GeometrySize = 6
                 }
             };
-
-            // Настраиваем категориальную ось X
+            OnPropertyChanged(nameof(Series));
             XAxes = new[]
             {
                 new Axis
                 {
                     Name = _localizationService["History_AxisDate"],
-                    NamePaint = new SolidColorPaint(new SKColor(180, 180, 180)),
-                    LabelsPaint = new SolidColorPaint(new SKColor(180, 180, 180)),
-                    MinLimit = points.First().DateTime.Ticks,
-                    MaxLimit = points.Last().DateTime.Ticks,
-                    MinStep = stepDays * TimeSpan.TicksPerDay,
-                    Labeler = val =>
-                    {
-                        if (double.IsNaN(val) || double.IsInfinity(val)) return string.Empty;
-                        try
-                        {
-                            return new DateTime((long)val).ToString(xFormat);
-                        }
-                        catch
-                        {
-                            return string.Empty;
-                        }
-                    },
+                    NamePaint = new SolidColorPaint(new SKColor(194, 194, 194)),
+                    LabelsPaint = new SolidColorPaint(new SKColor(194, 194, 194)),
+                    TextSize = 12,
+                    SeparatorsPaint = new SolidColorPaint(new SKColor(64, 64, 64)),
+                    LabelsRotation = -45,
+                    Labels = chartPoints.Select(p => p.Label).ToArray(),
+                    MinStep = 1,
+                    ForceStepToMin = true,
                 }
             };
+            OnPropertyChanged(nameof(XAxes));
 
             // Настраиваем ось Y: стандартная конфигурация
             YAxes = new[]
@@ -288,10 +256,13 @@ public partial class HistoryViewModel : ViewModelBase
                 new Axis
                 {
                     Name = _localizationService["History_AxisPlays"],
-                    NamePaint = new SolidColorPaint(new SKColor(200, 200, 200)),
-                    LabelsPaint = new SolidColorPaint(new SKColor(200, 200, 200))
+                    NamePaint = new SolidColorPaint(new SKColor(194, 194, 194)),
+                    LabelsPaint = new SolidColorPaint(new SKColor(194, 194, 194)),
+                    TextSize = 12,
+                    SeparatorsPaint = new SolidColorPaint(new SKColor(64, 64, 64)),
                 }
             };
+            OnPropertyChanged(nameof(YAxes));
 
             if (_playbackService != null)
             {
