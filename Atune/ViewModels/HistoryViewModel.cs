@@ -272,6 +272,78 @@ public partial class HistoryViewModel : ViewModelBase
                     AverageDuration = duration;
                 }
             }
+
+            // Обновляем TotalPlays и AverageDuration только по текущему диапазону
+            TotalPlays = (int)chartPoints.Sum(p => p.Value);
+            // Для длительности: ищем все записи, попавшие в диапазон chartPoints
+            List<DateTime> rangeDates = new();
+            switch (SelectedRangeIndex)
+            {
+                case 0: // 24 часа
+                    var nowHour = DateTime.Now;
+                    var startHour = nowHour.AddHours(-23).Date.AddHours(nowHour.Hour - 23);
+                    rangeDates = Enumerable.Range(0, 24).Select(i => startHour.AddHours(i)).ToList();
+                    break;
+                case 1: // 3 дня
+                    var nowDay = DateTime.Now.Date;
+                    var startDay = nowDay.AddDays(-2);
+                    rangeDates = Enumerable.Range(0, 3).SelectMany(d =>
+                        Enumerable.Range(0, 4).Select(s => startDay.AddDays(d).AddHours(s * 6))).ToList();
+                    break;
+                case 2: // Неделя
+                    var startW = DateTime.Now.Date.AddDays(-6);
+                    rangeDates = Enumerable.Range(0, 7).Select(i => startW.AddDays(i)).ToList();
+                    break;
+                case 3: // Месяц
+                    var startM = DateTime.Now.Date.AddDays(-29);
+                    rangeDates = Enumerable.Range(0, 30).Select(i => startM.AddDays(i)).ToList();
+                    break;
+                case 4: // Квартал
+                    var nowQ = DateTime.Now.Date;
+                    var startQ = nowQ.AddMonths(-2).AddDays(-((int)nowQ.DayOfWeek - 1));
+                    rangeDates = Enumerable.Range(0, 12).Select(i => startQ.AddDays(i * 7)).ToList();
+                    break;
+                case 5: // Год
+                    var nowY = DateTime.Now;
+                    var startY = new DateTime(nowY.Year, nowY.Month, 1).AddMonths(-11);
+                    rangeDates = Enumerable.Range(0, 12).Select(i => startY.AddMonths(i)).ToList();
+                    break;
+            }
+            // Фильтруем только те записи, что попали в диапазон (по PlayedAt)
+            IEnumerable<PlayHistory> filtered = allList;
+            if (SelectedRangeIndex == 0)
+            {
+                var start = rangeDates.First();
+                var end = rangeDates.Last().AddHours(1);
+                filtered = allList.Where(h => h.PlayedAt >= start && h.PlayedAt < end);
+            }
+            else if (SelectedRangeIndex == 1)
+            {
+                var start = rangeDates.First();
+                var end = rangeDates.Last().AddHours(6);
+                filtered = allList.Where(h => h.PlayedAt >= start && h.PlayedAt < end);
+            }
+            else if (SelectedRangeIndex == 2 || SelectedRangeIndex == 3)
+            {
+                var start = rangeDates.First();
+                var end = rangeDates.Last().AddDays(1);
+                filtered = allList.Where(h => h.PlayedAt.Date >= start && h.PlayedAt.Date < end);
+            }
+            else if (SelectedRangeIndex == 4)
+            {
+                var start = rangeDates.First();
+                var end = rangeDates.Last().AddDays(7);
+                filtered = allList.Where(h => h.PlayedAt.Date >= start && h.PlayedAt.Date < end);
+            }
+            else if (SelectedRangeIndex == 5)
+            {
+                var start = rangeDates.First();
+                var end = rangeDates.Last().AddMonths(1);
+                filtered = allList.Where(h => h.PlayedAt >= start && h.PlayedAt < end);
+            }
+            AverageDuration = filtered.Any() ? TimeSpan.FromSeconds(filtered.Sum(h => h.DurationSeconds)) : TimeSpan.Zero;
+            OnPropertyChanged(nameof(TotalPlays));
+            OnPropertyChanged(nameof(AverageDuration));
         }
         finally
         {
