@@ -96,7 +96,7 @@ namespace Atune.Startup
                 }
 
                 var filePath = platformPathService.GetSettingsPath("playbackstate.txt");
-                Log.Information("Restoring playback state from {Path}", filePath);
+                Log.Information("Restoring playback state from file {Path}", filePath);
                 if (!File.Exists(filePath))
                 {
                     Log.Warning("Playback state file not found: {Path}", filePath);
@@ -107,10 +107,11 @@ namespace Atune.Startup
                 try
                 {
                     lines = await File.ReadAllLinesAsync(filePath);
+                    Log.Information("Read {Count} lines from playback state file", lines.Length);
                 }
                 catch (IOException ex)
                 {
-                    Log.Error(ex, "Failed to read playback state file: {Path}", filePath);
+                    Log.Error(ex, "Error reading playback state file: {Path}", filePath);
                     return;
                 }
 
@@ -132,10 +133,12 @@ namespace Atune.Startup
                         else
                             queuePaths.Add(raw.Replace("\\|", "|"));
                     }
+                    Log.Information("Распарсено состояние: индекс={Index}, позиция={Position}с, на паузе={Paused}, треков в очереди={QueueCount}", 
+                        stateIndex, statePos, wasPaused, queuePaths.Count);
                 }
                 catch (Exception ex)
                 {
-                    Log.Error(ex, "Failed to parse playback state file");
+                    Log.Error(ex, "Error parsing playback state file");
                     return;
                 }
 
@@ -153,14 +156,20 @@ namespace Atune.Startup
                     {
                         // Очищаем текущую очередь
                         playbackService.ClearQueue();
+                        Log.Information("Queue cleared");
 
                         // Восстанавливаем очередь
+                        int restoredCount = 0;
                         foreach (var path in queuePaths)
                         {
                             var item = mediaVm.MediaItems.FirstOrDefault(mi => mi.Path == path);
                             if (item != null)
+                            {
                                 playbackService.Enqueue(item);
+                                restoredCount++;
+                            }
                         }
+                        Log.Information("Restored {RestoredCount} tracks from {TotalCount} in queue", restoredCount, queuePaths.Count);
 
                         // Если есть активный трек, восстанавливаем его воспроизведение
                         if (stateIndex >= 0 && stateIndex < queuePaths.Count)
@@ -169,28 +178,44 @@ namespace Atune.Startup
                             {
                                 // Устанавливаем позицию в очереди
                                 await playbackService.PlayAtIndex(stateIndex);
+                                Log.Information("Restored current track: index={Index}", stateIndex);
 
                                 // Даем время на инициализацию воспроизведения
                                 await Task.Delay(500);
 
                                 // Сначала устанавливаем позицию воспроизведения
                                 playbackService.Position = TimeSpan.FromSeconds(statePos);
+                                Log.Information("Restored playback position: {Position}s", statePos);
 
-                                // Если трек был на паузе, ставим на паузу
-                                if (wasPaused)
+                                // Всегда ставим на паузу при восстановлении
+                                playbackService.Pause();
+                                Log.Information("Restored playback paused");
+
+                                // Логируем информацию о текущем треке
+                                var currentTrack = playbackService.CurrentTrack;
+                                if (currentTrack != null)
                                 {
-                                    playbackService.Pause();
+                                    Log.Information("Current track: Title={Title}, Artist={Artist}, Album={Album}, Queue position={QueuePosition}/{QueueSize}", 
+                                        currentTrack.Title,
+                                        currentTrack.TrackArtists.FirstOrDefault()?.Artist.Name ?? "Unknown artist",
+                                        currentTrack.Album.Title,
+                                        stateIndex + 1,
+                                        queuePaths.Count);
                                 }
                             }
                             catch (Exception ex)
                             {
-                                Log.Error(ex, "Failed to restore playback position and state");
+                                Log.Error(ex, "Error restoring playback position and state");
                             }
+                        }
+                        else
+                        {
+                            Log.Warning("Invalid current track index: {Index}", stateIndex);
                         }
                     }
                     catch (Exception ex)
                     {
-                        Log.Error(ex, "Failed to restore playback queue");
+                        Log.Error(ex, "Error restoring playback queue");
                     }
                 }
             }
