@@ -20,5 +20,87 @@
         <Style Selector="ListBoxItem:pressed">
             <Setter Property="Background" Value="{DynamicResource AccentBrush}"/>
         </Style>
+        <Style Selector="TabItem">
+            <Setter Property="Padding" Value="10,5"/>
+            <Setter Property="Margin" Value="0,0,2,0"/>
+            <Setter Property="Background" Value="{DynamicResource TabItemBackgroundBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TabItemForegroundBrush}"/>
+            <Setter Property="BorderThickness" Value="0,0,0,3"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border Background="{TemplateBinding Background}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            Padding="{TemplateBinding Padding}">
+                        <ContentPresenter
+                            Content="{TemplateBinding Header}"
+                            HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                            VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                            Foreground="{TemplateBinding Foreground}" />
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+        </Style>
+        <Style Selector="TabItem:selected">
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TabItemForegroundBrush}"/>
+            <Setter Property="Opacity" Value="1"/>
+        </Style>
+        <Style Selector="TabItem:pointerover">
+            <Setter Property="Background" Value="{DynamicResource TabItemPointerOverBackgroundBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TabItemForegroundBrush}"/>
+            <Setter Property="Opacity" Value="0.7"/>
+        </Style>
+        <Style Selector="TabControl">
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <DockPanel>
+                        <ScrollViewer DockPanel.Dock="Top"
+                                      HorizontalScrollBarVisibility="Auto"
+                                      VerticalScrollBarVisibility="Disabled"
+                                      Margin="0,0,0,4">
+                            <ItemsPresenter x:Name="PART_TabStrip">
+                                <ItemsPresenter.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <StackPanel Orientation="Horizontal" />
+                                    </ItemsPanelTemplate>
+                                </ItemsPresenter.ItemsPanel>
+                            </ItemsPresenter>
+                        </ScrollViewer>
+                        <ContentPresenter x:Name="PART_SelectedContentHost"
+                                          Content="{TemplateBinding SelectedContent}"
+                                          ContentTemplate="{TemplateBinding SelectedContentTemplate}"
+                                          Margin="0"
+                                          HorizontalAlignment="Stretch"
+                                          VerticalAlignment="Stretch"/>
+                    </DockPanel>
+                </ControlTemplate>
+            </Setter>
+        </Style>
     </Application.Styles>
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.ThemeDictionaries>
+                <ResourceDictionary x:Key="Light">
+                    <Color x:Key="TabItemBackgroundColor">#00FFFFFF</Color>
+                    <Color x:Key="TabItemForegroundColor">#FF222222</Color>
+                    <Color x:Key="TabItemSelectedBackgroundColor">#FFE0E0E0</Color>
+                    <Color x:Key="TabItemPointerOverBackgroundColor">#FFD0D0D0</Color>
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="Dark">
+                    <Color x:Key="TabItemBackgroundColor">#00222222</Color>
+                    <Color x:Key="TabItemForegroundColor">#FFFFFFFF</Color>
+                    <Color x:Key="TabItemSelectedBackgroundColor">#FF444444</Color>
+                    <Color x:Key="TabItemPointerOverBackgroundColor">#FF333333</Color>
+                </ResourceDictionary>
+            </ResourceDictionary.ThemeDictionaries>
+            <SolidColorBrush x:Key="TabItemBackgroundBrush" Color="{DynamicResource TabItemBackgroundColor}"/>
+            <SolidColorBrush x:Key="TabItemForegroundBrush" Color="{DynamicResource TabItemForegroundColor}"/>
+            <SolidColorBrush x:Key="TabItemSelectedBackgroundBrush" Color="{DynamicResource TabItemSelectedBackgroundColor}"/>
+            <SolidColorBrush x:Key="TabItemPointerOverBackgroundBrush" Color="{DynamicResource TabItemPointerOverBackgroundColor}"/>
+        </ResourceDictionary>
+    </Application.Resources>
 </Application>
