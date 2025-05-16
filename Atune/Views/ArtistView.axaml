@@ -25,7 +25,7 @@
     <Grid Grid.Row="0" ColumnDefinitions="Auto,*,2*" Margin="0,0,0,10">
       <!-- Back button -->
       <Button Grid.Column="0" Click="GoBack_Click" Background="Transparent" BorderThickness="0" HorizontalAlignment="Left" VerticalAlignment="Center">
-        <PathIcon Data="M15.707 4.293a1 1 0 0 1 0 1.414L9.414 12l6.293 6.293a1 1 0 0 1-1.414 1.414l-7-7a1 1 0 0 1 0-1.414l7-7a1 1 0 0 1 1.414 0Z" Width="24" Height="24" Foreground="{DynamicResource PrimaryContentBrush}"/>
+        <PathIcon Data="M15.707 4.293a1 1 0 0 1 0 1.414L9.414 12l6.293 6.293a1 1 0 0 1-1.414 1.414l-7-7a1 1 0 0 1 0-1.414l7-7a1 1 0 0 1 1.414 0Z" Width="24" Height="24" Foreground="{DynamicResource SecondaryContentBrush}" Opacity="0.7"/>
       </Button>
       <Grid Grid.Column="1">
         <Image Source="{Binding Artist.CoverArt, Converter={StaticResource CoverArtConverter}}"
@@ -40,8 +40,8 @@
                   VerticalAlignment="Center"
                   Spacing="5"
                   Margin="10,0,0,0">
-        <TextBlock Text="{Binding Artist.ArtistName}" FontSize="24" FontWeight="Bold" Foreground="{DynamicResource PrimaryContentBrush}"/>
-        <TextBlock FontSize="16" Foreground="{DynamicResource PrimaryContentBrush}">
+        <TextBlock Text="{Binding Artist.ArtistName}" FontSize="24" FontWeight="Bold" Foreground="{DynamicResource SecondaryContentBrush}" Opacity="0.7"/>
+        <TextBlock FontSize="16" Foreground="{DynamicResource SecondaryContentBrush}" Opacity="0.7">
           <TextBlock.Inlines>
             <Run Text="{DynamicResource Artist_TrackCountLabel}"/>
             <Run Text="{Binding Artist.TrackCount}"/>
@@ -50,7 +50,7 @@
             <Run Text=")"/>
           </TextBlock.Inlines>
         </TextBlock>
-        <TextBlock FontSize="16" Foreground="{DynamicResource PrimaryContentBrush}">
+        <TextBlock FontSize="16" Foreground="{DynamicResource SecondaryContentBrush}" Opacity="0.7">
           <TextBlock.Inlines>
             <Run Text="{DynamicResource Artist_AlbumCountLabel}"/>
             <Run Text="{Binding Artist.AlbumCount}"/>
@@ -67,8 +67,8 @@
             Margin="10,5,5,10">
       <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Spacing="8">
         <PathIcon Data="M2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10S2 17.523 2 12Zm8.856-3.845A1.25 1.25 0 0 0 9 9.248v5.504a1.25 1.25 0 0 0 1.856 1.093l5.757-3.189a.75.75 0 0 0 0-1.312l-5.757-3.189Z"
-                  Width="24" Height="24" Foreground="{DynamicResource PrimaryContentBrush}"/>
-        <TextBlock Text="{DynamicResource Artist_PlayAll}" VerticalAlignment="Center" Foreground="{DynamicResource PrimaryContentBrush}"/>
+                  Width="24" Height="24" Foreground="{DynamicResource SecondaryContentBrush}" Opacity="0.7"/>
+        <TextBlock Text="{DynamicResource Artist_PlayAll}" VerticalAlignment="Center" Foreground="{DynamicResource SecondaryContentBrush}" Opacity="0.7"/>
       </StackPanel>
     </Button>
     <!-- Track list -->
