@@ -39,9 +39,9 @@ public partial class HistoryViewModel : ViewModelBase
     [ObservableProperty]
     private ISeries[] _series;
     [ObservableProperty]
-    private Axis[] _xAxes;
+    private Axis[]? _xAxes;
     [ObservableProperty]
-    private Axis[] _yAxes;
+    private Axis[]? _yAxes;
     [ObservableProperty]
     private List<string> _rangeOptions;
     [ObservableProperty]
@@ -91,7 +91,8 @@ public partial class HistoryViewModel : ViewModelBase
         // Initialize axes for date vs plays
         // Axes will be initialized dynamically in LoadStatsAsync based on selection
         Series = Array.Empty<ISeries>();
-
+        XAxes = Array.Empty<Axis>();
+        YAxes = Array.Empty<Axis>();
         LoadStatsCommand = new AsyncRelayCommand(LoadStatsAsync);
         _ = LoadStatsAsync();
         LoadRecentTracksCommand = new AsyncRelayCommand(LoadRecentTracksAsync);

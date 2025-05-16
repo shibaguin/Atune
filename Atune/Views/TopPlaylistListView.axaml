@@ -28,7 +28,7 @@
                    IsHitTestVisible="False"/>
         <TextBlock x:Name="PlayIcon"
                    Text="▶"
-                   Foreground="White"
+                   Foreground="{DynamicResource PrimaryContentBrush}"
                    Opacity="0"
                    HorizontalAlignment="Center"
                    VerticalAlignment="Center"

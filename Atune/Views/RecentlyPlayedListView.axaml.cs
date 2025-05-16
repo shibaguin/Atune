@@ -40,13 +40,17 @@ namespace Atune.Views
                 {
                     playBtn.PointerEntered += (_, __) =>
                     {
-                        overlay.Opacity = 0.8;
-                        playIcon.Opacity = 1;
+                        if (overlay is not null && Application.Current?.Resources["HoverOpacity"] is double hoverOpacity)
+                            overlay.Opacity = hoverOpacity;
+                        if (playIcon is not null && Application.Current?.Resources["FullOpacity"] is double fullOpacity)
+                            playIcon.Opacity = fullOpacity;
                     };
                     playBtn.PointerExited += (_, __) =>
                     {
-                        overlay.Opacity = 0;
-                        playIcon.Opacity = 0;
+                        if (overlay is not null && Application.Current?.Resources["NoOpacity"] is double noOpacity)
+                            overlay.Opacity = noOpacity;
+                        if (playIcon is not null && Application.Current?.Resources["NoOpacity"] is double noOpacity2)
+                            playIcon.Opacity = noOpacity2;
                     };
                 }
             }

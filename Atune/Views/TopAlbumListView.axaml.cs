@@ -39,7 +39,7 @@ namespace Atune.Views
             var playIcon = this.FindControl<TextBlock>("PlayIcon");
             var openBtn = this.FindControl<Button>("OpenButton");
 
-            if (playBtn != null)
+            if (playBtn != null && overlay != null && playIcon != null)
             {
                 playBtn.Click += (_, __) =>
                 {
@@ -47,19 +47,20 @@ namespace Atune.Views
                         PlayCommand?.Execute(dto);
                 };
 
-                if (overlay != null && playIcon != null)
+                playBtn.PointerEntered += (_, __) =>
                 {
-                    playBtn.PointerEntered += (_, __) =>
-                    {
-                        overlay.Opacity = 0.8;
-                        playIcon.Opacity = 1;
-                    };
-                    playBtn.PointerExited += (_, __) =>
-                    {
-                        overlay.Opacity = 0;
-                        playIcon.Opacity = 0;
-                    };
-                }
+                    if (overlay is not null && Application.Current?.Resources["HoverOpacity"] is double hoverOpacity)
+                        overlay.Opacity = hoverOpacity;
+                    if (playIcon is not null && Application.Current?.Resources["FullOpacity"] is double fullOpacity)
+                        playIcon.Opacity = fullOpacity;
+                };
+                playBtn.PointerExited += (_, __) =>
+                {
+                    if (overlay is not null && Application.Current?.Resources["NoOpacity"] is double noOpacity)
+                        overlay.Opacity = noOpacity;
+                    if (playIcon is not null && Application.Current?.Resources["NoOpacity"] is double noOpacity2)
+                        playIcon.Opacity = noOpacity2;
+                };
             }
             if (openBtn != null)
             {

@@ -10,14 +10,14 @@ namespace Atune.Converters
         {
             if (value is bool b)
                 return !b;
-            return value;
+            return false;
         }
 
         public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
         {
             if (value is bool b)
                 return !b;
-            return value;
+            return false;
         }
     }
 } 

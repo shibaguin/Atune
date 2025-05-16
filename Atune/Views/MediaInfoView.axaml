@@ -9,13 +9,13 @@
              x:Class="Atune.Views.MediaInfoView"
              x:DataType="vm:MediaItem">
     <StackPanel Margin="10" Spacing="10">
-        <TextBlock Text="Test Title" FontWeight="Bold" FontSize="16" Foreground="White"/>
-        <TextBlock Text="Test Artist" Foreground="White"/>
-        <TextBlock Text="Test Album" Foreground="White"/>
-        <TextBlock Text="Test Year" Foreground="White"/>
-        <TextBlock Text="Test Path" Foreground="White"/>
-        <TextBlock Text="Test Rating" Foreground="White"/>
-        <TextBlock Text="Test ReleaseDate" Foreground="White"/>
+        <TextBlock Text="Test Title" FontWeight="Bold" FontSize="16" Foreground="{DynamicResource PrimaryContentBrush}"/>
+        <TextBlock Text="Test Artist" Foreground="{DynamicResource PrimaryContentBrush}"/>
+        <TextBlock Text="Test Album" Foreground="{DynamicResource PrimaryContentBrush}"/>
+        <TextBlock Text="Test Year" Foreground="{DynamicResource PrimaryContentBrush}"/>
+        <TextBlock Text="Test Path" Foreground="{DynamicResource PrimaryContentBrush}"/>
+        <TextBlock Text="Test Rating" Foreground="{DynamicResource PrimaryContentBrush}"/>
+        <TextBlock Text="Test ReleaseDate" Foreground="{DynamicResource PrimaryContentBrush}"/>
         <!--
         <TextBlock Text="{Binding Title}" FontWeight="Bold" FontSize="16"/>
         <TextBlock Text="{Binding Artist}"/>

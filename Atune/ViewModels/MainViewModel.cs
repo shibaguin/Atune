@@ -192,16 +192,28 @@ public partial class MainViewModel : ViewModelBase
         // Subscribe to playback service events
         _playbackService.TrackChanged += (_, item) =>
         {
-            CurrentMediaItem = item;
-            // Update total duration when track changes
-            Duration = _playbackService.Duration;
+            Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+            {
+                CurrentMediaItem = item;
+                // Update total duration when track changes
+                Duration = _playbackService.Duration;
+            });
         };
-        _playbackService.PlaybackStateChanged += (_, playing) => IsPlaying = playing;
+        _playbackService.PlaybackStateChanged += (_, playing) =>
+        {
+            Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+            {
+                IsPlaying = playing;
+            });
+        };
         _playbackService.PositionChanged += (_, pos) =>
         {
-            CurrentPosition = pos;
-            // Refresh duration in case metadata loaded or track changed
-            Duration = _playbackService.Duration;
+            Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+            {
+                CurrentPosition = pos;
+                // Refresh duration in case metadata loaded or track changed
+                Duration = _playbackService.Duration;
+            });
         };
 
         // Обновляем при смене языка
@@ -744,10 +756,10 @@ public partial class MainViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    private Task LoadStatsAsync()
+    private async Task LoadStatsAsync()
     {
         // Implementation of LoadStatsAsync method
-        return Task.CompletedTask;
+        await Task.CompletedTask;
     }
 
     public void OpenVolumePopup()

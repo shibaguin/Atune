@@ -5,11 +5,12 @@
 
     <Application.Styles>
         <FluentTheme />
+        <StyleInclude Source="/Styles/CommonStyles.axaml"/>
         <Style Selector="TextBlock">
-            <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryContentBrush}"/>
         </Style>
         <Style Selector="Button">
-            <Setter Property="Foreground" Value="{DynamicResource ButtonForeground}"/>
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryContentBrush}"/>
         </Style>
         <Style Selector="ListBoxItem">
             <Setter Property="Background" Value="Transparent"/>
@@ -91,6 +92,7 @@
                     <Color x:Key="TabItemPointerOverBackgroundColor">#FFD0D0D0</Color>
                     <Color x:Key="IconColor">#FF222222</Color>
                     <Color x:Key="ButtonForegroundColor">#FF444444</Color>
+                    <Color x:Key="PrimaryContentColor">#FF000000</Color>
                 </ResourceDictionary>
                 <ResourceDictionary x:Key="Dark">
                     <Color x:Key="TabItemBackgroundColor">#00222222</Color>
@@ -99,6 +101,7 @@
                     <Color x:Key="TabItemPointerOverBackgroundColor">#FF333333</Color>
                     <Color x:Key="IconColor">#FFFFFFFF</Color>
                     <Color x:Key="ButtonForegroundColor">#FFB0B0B0</Color>
+                    <Color x:Key="PrimaryContentColor">#FFFFFFFF</Color>
                 </ResourceDictionary>
             </ResourceDictionary.ThemeDictionaries>
             <SolidColorBrush x:Key="TabItemBackgroundBrush" Color="{DynamicResource TabItemBackgroundColor}"/>
@@ -107,6 +110,7 @@
             <SolidColorBrush x:Key="TabItemPointerOverBackgroundBrush" Color="{DynamicResource TabItemPointerOverBackgroundColor}"/>
             <SolidColorBrush x:Key="IconBrush" Color="{DynamicResource IconColor}"/>
             <SolidColorBrush x:Key="ButtonForeground" Color="{DynamicResource ButtonForegroundColor}"/>
+            <SolidColorBrush x:Key="PrimaryContentBrush" Color="{DynamicResource PrimaryContentColor}" Opacity="0.7"/>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

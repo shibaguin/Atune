@@ -14,7 +14,7 @@
       <Grid>
         <Image Source="{Binding CoverArtPath, Converter={StaticResource CoverArtConverter}}" Stretch="UniformToFill" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
         <Rectangle x:Name="Overlay" Fill="Black" Opacity="0" IsHitTestVisible="False"/>
-        <TextBlock x:Name="PlayIcon" Text="▶" Foreground="White" Opacity="0" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="16"/>
+        <TextBlock x:Name="PlayIcon" Text="▶" Foreground="{DynamicResource PrimaryContentBrush}" Opacity="0" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="16"/>
       </Grid>
     </Button>
     <StackPanel Grid.Column="1" Spacing="2">

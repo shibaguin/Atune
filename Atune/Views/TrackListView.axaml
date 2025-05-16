@@ -17,7 +17,7 @@
       <Grid>
         <Image Source="{Binding CoverArt, Converter={StaticResource CoverArtConverter}}" Stretch="UniformToFill" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
         <Rectangle x:Name="Overlay" Fill="Black" Opacity="0" IsHitTestVisible="False"/>
-        <TextBlock x:Name="PlayIcon" Text="▶" Foreground="White" Opacity="0" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="16"/>
+        <TextBlock x:Name="PlayIcon" Text="▶" Foreground="{DynamicResource PrimaryContentBrush}" Opacity="0" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="16"/>
       </Grid>
     </Button>
     <!-- Track info -->
