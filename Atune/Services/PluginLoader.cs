@@ -22,6 +22,7 @@ public class PluginLoader : IHostedService
     private readonly ILoggerService _logger;
     private readonly List<Assembly> _loadedAssemblies = new();
     private readonly List<IPlugin> _initializedPlugins = new();
+    private readonly List<IThemePlugin> _themePlugins = new();
 
     public PluginLoader(IPlatformPathService pathService, ILoggerService logger)
     {
@@ -113,6 +114,10 @@ public class PluginLoader : IHostedService
                 plugin.Initialize();
                 _initializedPlugins.Add(plugin);
                 _logger.LogInformation($"Initialized plugin {lazy.Metadata.Id}");
+                if (plugin is IThemePlugin themePlugin)
+                {
+                    _themePlugins.Add(themePlugin);
+                }
             }
             catch (Exception ex)
             {
@@ -137,6 +142,15 @@ public class PluginLoader : IHostedService
         }
         return Task.CompletedTask;
     }
+
+    public IEnumerable<IThemePlugin> LoadThemePlugins()
+    {
+        return LoadPlugins()
+            .Select(lazy => lazy.Value)
+            .OfType<IThemePlugin>();
+    }
+
+    public IEnumerable<IThemePlugin> GetRegisteredThemePlugins() => _themePlugins;
 }
 
 public class PluginManifest

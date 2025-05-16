@@ -17,11 +17,11 @@ using System.Threading.Tasks;
 using Atune.Converters;
 using Atune.Extensions;
 using Atune.Startup;
-using ThemeVariant = Atune.Models.ThemeVariant;
 using Atune.ViewModels;
 using Atune.Views;
 using Atune.Services;
 using Atune.Services.Interfaces;
+using Atune.Plugins.Abstractions;
 
 namespace Atune;
 
@@ -80,9 +80,9 @@ public partial class App : Application
         if (settingsService == null) return;
 
         var settings = settingsService.LoadSettings();
-        if (settings.ThemeVariant == ThemeVariant.System)
+        if (settings.ThemeId == "System")
         {
-            UpdateTheme(settings.ThemeVariant);
+            UpdateTheme(settings.ThemeId);
         }
     }
 
@@ -287,7 +287,7 @@ public partial class App : Application
             if (settingsService != null)
             {
                 var settings = settingsService.LoadSettings();
-                UpdateTheme(settings.ThemeVariant);
+                UpdateTheme(settings.ThemeId);
             }
         }
         catch (Exception ex)
@@ -310,28 +310,43 @@ public partial class App : Application
         Log.CloseAndFlush();
     }
 
-    public void UpdateTheme(ThemeVariant theme)
+    public void UpdateTheme(string themeId)
     {
         Dispatcher.UIThread.Post(() =>
         {
-            var actualTheme = theme switch
+            if (themeId == "System" || themeId == "Light" || themeId == "Dark")
             {
-                ThemeVariant.System => Application.Current?.PlatformSettings?.GetColorValues()?.ThemeVariant
-                    == PlatformThemeVariant.Dark
-                    ? ThemeVariant.Dark
-                    : ThemeVariant.Light,
-                _ => theme
-            };
-
-            this.RequestedThemeVariant = actualTheme switch
+                var actualTheme = themeId switch
+                {
+                    "System" => Application.Current?.PlatformSettings?.GetColorValues()?.ThemeVariant == PlatformThemeVariant.Dark ? "Dark" : "Light",
+                    _ => themeId
+                };
+                this.RequestedThemeVariant = actualTheme switch
+                {
+                    "Light" => Avalonia.Styling.ThemeVariant.Light,
+                    "Dark" => Avalonia.Styling.ThemeVariant.Dark,
+                    _ => Avalonia.Styling.ThemeVariant.Default
+                };
+            }
+            else
             {
-                ThemeVariant.Light => Avalonia.Styling.ThemeVariant.Light,
-                ThemeVariant.Dark => Avalonia.Styling.ThemeVariant.Dark,
-                _ => Avalonia.Styling.ThemeVariant.Default
-            };
-
+                // Плагин-тема
+                var pluginLoader = (Services?.GetService(typeof(PluginLoader))) as PluginLoader;
+                var themePlugin = pluginLoader?.GetRegisteredThemePlugins().FirstOrDefault(t => t.ThemeId == themeId);
+                if (themePlugin != null)
+                {
+                    // Удаляем старые словари темы
+                    var dicts = Application.Current?.Resources?.MergedDictionaries;
+                    if (dicts != null)
+                    {
+                        dicts.Clear();
+                        var pluginDict = themePlugin.GetResourceDictionary();
+                        if (pluginDict is ResourceDictionary rd)
+                            dicts.Add(rd);
+                    }
+                }
+            }
             // Принудительно обновляем все окна
-            // Forcefully update all windows
             if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
             {
                 desktop.MainWindow?.InvalidateVisual();

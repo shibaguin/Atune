@@ -3,18 +3,20 @@ using CommunityToolkit.Mvvm.Input;
 using Atune.Models;
 using Atune.Services;
 using Atune.Views;
-using ThemeVariant = Atune.Models.ThemeVariant;
 using System.Collections.Generic;
 using System.Timers;
 using System.Threading.Tasks;
 using System;
+using System.Linq;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
 
 namespace Atune.ViewModels;
 
 public partial class SettingsViewModel : ViewModelBase
 {
     [ObservableProperty]
-    private int selectedThemeIndex;
+    private string selectedThemeId = "System";
 
     // Default value - displayed language name
     // Значение по умолчанию - отображаемое название языка
@@ -33,6 +35,11 @@ public partial class SettingsViewModel : ViewModelBase
     // New field for debounce timer
     private System.Timers.Timer? _autoSaveTimer;
 
+    public ObservableCollection<ThemeItem> ThemeItems { get; } = new();
+
+    [ObservableProperty]
+    private ThemeItem? selectedThemeItem;
+
     public SettingsViewModel(ISettingsService settingsService,
                              IInterfaceSettingsService interfaceSettingsService,
                              IUtilityService utilityService)
@@ -46,12 +53,10 @@ public partial class SettingsViewModel : ViewModelBase
         _interfaceSettingsService.LoadSettings();
 
         // Загружаем общие пользовательские настройки
-        // Load general user settings
         var settings = _settingsService.LoadSettings();
-        SelectedThemeIndex = (int)settings.ThemeVariant;
+        SelectedThemeId = settings.ThemeId;
 
         // Преобразуем сохранённый языковой код в отображаемое название
-        // Convert saved language code to display name
         SelectedLanguage = Atune.Utils.LanguageConverter.CodeToDisplay(settings.Language);
 
         // Загружаем настройки интерфейса (из settings.ini) в свойства модели представления
@@ -63,6 +68,12 @@ public partial class SettingsViewModel : ViewModelBase
         BarHeight = _interfaceSettingsService.BarHeight;
         NavigationFontSize = _interfaceSettingsService.NavigationFontSize;
         BarPadding = _interfaceSettingsService.BarPadding;
+
+        // TODO: Заполнить ThemeItems всеми доступными темами (встроенными и плагинами)
+        // ThemeItems.Add(new ThemeItem { Id = "System", DisplayName = "Системная" });
+        // ...
+
+        SelectedThemeItem = ThemeItems.FirstOrDefault(x => x.Id == SelectedThemeId);
     }
 
     // Новые свойства для настроек интерфейса
@@ -91,13 +102,10 @@ public partial class SettingsViewModel : ViewModelBase
     [RelayCommand]
     private void SaveSettings()
     {
-        // Преобразуем выбранное отображаемое название в код языка для сохранения
-        // Convert selected display name to language code for saving
         string languageCode = Atune.Utils.LanguageConverter.DisplayToCode(SelectedLanguage);
-
         _settingsService.SaveSettings(new AppSettings
         {
-            ThemeVariant = (ThemeVariant)SelectedThemeIndex,
+            ThemeId = SelectedThemeId,
             Language = languageCode
         });
     }
@@ -192,4 +200,40 @@ public partial class SettingsViewModel : ViewModelBase
 
     [RelayCommand]
     private void ClearQueue() => _utilityService.ClearQueue();
+
+    partial void OnSelectedThemeItemChanged(ThemeItem? oldValue, ThemeItem? newValue)
+    {
+        if (newValue != null && SelectedThemeId != newValue.Id)
+            SelectedThemeId = newValue.Id;
+    }
+
+    partial void OnSelectedThemeIdChanged(string oldValue, string newValue)
+    {
+        if (SelectedThemeItem == null || SelectedThemeItem.Id != newValue)
+            SelectedThemeItem = ThemeItems.FirstOrDefault(x => x.Id == newValue);
+    }
+}
+
+public class ThemeItem : INotifyPropertyChanged
+{
+    public string Id { get; set; } = string.Empty;
+
+    private string displayName = string.Empty;
+    public string DisplayName
+    {
+        get => displayName;
+        set
+        {
+            if (displayName != value)
+            {
+                displayName = value;
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(DisplayName)));
+            }
+        }
+    }
+
+    public string? Description { get; set; }
+    public string? PreviewImagePath { get; set; }
+
+    public event PropertyChangedEventHandler? PropertyChanged;
 }

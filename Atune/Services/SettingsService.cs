@@ -121,7 +121,7 @@ public class SettingsService : ISettingsService
                 // Возвращаем старый формат сохранения только с ThemeVariant и Language
                 var lines = new List<string>
                 {
-                    $"ThemeVariant={(int)settings.ThemeVariant}",
+                    $"ThemeId={settings.ThemeId}",
                     $"Language={settings.Language}",
                     $"Volume={settings.Volume}"
                 };
@@ -176,13 +176,16 @@ public class SettingsService : ISettingsService
 
                     switch (parts[0])
                     {
-                        case "ThemeVariant" when int.TryParse(parts[1], out var theme):
-                            settings.ThemeVariant = theme switch
+                        case "ThemeId":
+                            settings.ThemeId = parts[1];
+                            break;
+                        case "ThemeVariant": // поддержка старого формата
+                            settings.ThemeId = parts[1] switch
                             {
-                                0 => ThemeVariant.System,
-                                1 => ThemeVariant.Light,
-                                2 => ThemeVariant.Dark,
-                                _ => ThemeVariant.System
+                                "0" => "System",
+                                "1" => "Light",
+                                "2" => "Dark",
+                                _ => "System"
                             };
                             break;
                         case "Language":

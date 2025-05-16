@@ -15,7 +15,7 @@ namespace Atune.Tests
             var settings = new AppSettings
             {
                 Language = "ru",
-                ThemeVariant = ThemeVariant.System
+                ThemeId = "System"
             };
             var mockSettingsService = new Mock<ISettingsService>();
             mockSettingsService.Setup(s => s.LoadSettings()).Returns(settings);
@@ -29,7 +29,7 @@ namespace Atune.Tests
             // Assert – "ru" должен отображаться как "Русский"
             // Assert – "ru" should display as "Russian"
             Assert.Equal("Русский", viewModel.SelectedLanguage);
-            Assert.Equal((int)ThemeVariant.System, viewModel.SelectedThemeIndex);
+            Assert.Equal("System", viewModel.SelectedThemeId);
         }
         
         [Fact]
@@ -38,7 +38,7 @@ namespace Atune.Tests
             // Arrange
             var settings = new AppSettings
             {
-                ThemeVariant = ThemeVariant.System,
+                ThemeId = "System",
                 Language = "ru"
             };
             var mockSettingsService = new Mock<ISettingsService>();
@@ -48,9 +48,9 @@ namespace Atune.Tests
             var fakeUtilityService = new Mock<IUtilityService>();
             var viewModel = new SettingsViewModel(mockSettingsService.Object, fakeInterfaceSettingsService.Object, fakeUtilityService.Object);
             viewModel.SelectedLanguage = "English";
-            // Допустим, что ThemeVariant.Light имеет числовое значение 1
-            // Assume that ThemeVariant.Light has a numerical value of 1
-            viewModel.SelectedThemeIndex = (int)ThemeVariant.Light;
+            // Допустим, что "Light" имеет строковое значение "Light"
+            // Assume that "Light" has a string value of "Light"
+            viewModel.SelectedThemeId = "Light";
             
             // Act – вызываем команду сохранения
             // Act – call the save settings command
@@ -59,7 +59,7 @@ namespace Atune.Tests
             // Assert – проверяем, что вызывается SaveSettings с корректным кодом языка ("en")
             // Assert – check that SaveSettings is called with the correct language code ("en")
             mockSettingsService.Verify(s => s.SaveSettings(
-                It.Is<AppSettings>(a => a.Language == "en" && a.ThemeVariant == ThemeVariant.Light)
+                It.Is<AppSettings>(a => a.Language == "en" && a.ThemeId == "Light")
             ), Times.Once);
         }
 
@@ -81,7 +81,7 @@ namespace Atune.Tests
             var settings = new AppSettings
             {
                 Language = "ru",
-                ThemeVariant = ThemeVariant.System
+                ThemeId = "System"
             };
 
             var mockSettingsService = new Mock<ISettingsService>();

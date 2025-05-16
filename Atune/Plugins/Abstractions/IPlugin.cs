@@ -21,3 +21,12 @@ public interface IPluginMetadata
     string Name { get; }
     string Version { get; }
 }
+
+public interface IThemePlugin : IPlugin, IPluginMetadata
+{
+    string ThemeId { get; }
+    string DisplayName { get; }
+    string? Description { get; }
+    string? PreviewImagePath { get; }
+    object GetResourceDictionary(); // object для совместимости с Avalonia и загрузкой XAML
+}

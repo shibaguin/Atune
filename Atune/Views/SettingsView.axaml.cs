@@ -4,9 +4,11 @@ using Avalonia.Controls;
 using Avalonia.Controls.Documents;
 using Atune.ViewModels;
 using Atune.Services;
-using ThemeVariant = Atune.Models.ThemeVariant;
 using Atune.Models;
 using Atune.Utils;
+using Atune.Plugins.Abstractions;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Atune.Views
 {
@@ -22,6 +24,7 @@ namespace Atune.Views
             DataContext = viewModel;
             _settingsService = settingsService ?? throw new ArgumentNullException(nameof(settingsService));
             InitializePlatformSpecificSettings();
+            LoadThemes();
         }
 
         // Конструктор для XAML (только для дизайнера)
@@ -44,33 +47,84 @@ namespace Atune.Views
             if (_settingsService == null) return;
 
             var settings = _settingsService.LoadSettings();
-            ApplyTheme(settings.ThemeVariant);
-            ThemeComboBox.SelectedIndex = (int)settings.ThemeVariant;
+            ApplyTheme(settings.ThemeId);
+        }
+
+        private void LoadThemes()
+        {
+            if (DataContext is not SettingsViewModel vm) return;
+
+            // Получаем локализованные строки через LocalizationService
+            var loc = (App.Current?.Services?.GetService(typeof(LocalizationService))) as LocalizationService;
+            string sys = loc != null ? loc["Theme_System"] : "System";
+            string light = loc != null ? loc["Theme_Light"] : "Light";
+            string dark = loc != null ? loc["Theme_Dark"] : "Dark";
+
+            UpdateOrAddTheme(vm, "System", sys);
+            UpdateOrAddTheme(vm, "Light", light);
+            UpdateOrAddTheme(vm, "Dark", dark);
+
+            // Темы-плагины
+            var pluginLoader = (App.Current?.Services?.GetService(typeof(PluginLoader))) as PluginLoader;
+            var validIds = new List<string> { "System", "Light", "Dark" };
+            if (pluginLoader != null)
+            {
+                foreach (var theme in pluginLoader.GetRegisteredThemePlugins())
+                {
+                    string displayName = theme.DisplayName;
+                    if (loc != null && !string.IsNullOrWhiteSpace(displayName) && loc[displayName] != null && !displayName.StartsWith(" "))
+                        displayName = loc[displayName];
+                    UpdateOrAddTheme(vm, theme.ThemeId, displayName, theme.Description, theme.PreviewImagePath);
+                    validIds.Add(theme.ThemeId);
+                }
+            }
+
+            // Удаляем лишние темы
+            for (int i = vm.ThemeItems.Count - 1; i >= 0; i--)
+                if (!validIds.Contains(vm.ThemeItems[i].Id))
+                    vm.ThemeItems.RemoveAt(i);
+
+            // Выставляем выбранную тему
+            vm.SelectedThemeItem = vm.ThemeItems.FirstOrDefault(x => x.Id == vm.SelectedThemeId);
+        }
+
+        private void UpdateOrAddTheme(SettingsViewModel vm, string id, string displayName, string? description = null, string? preview = null)
+        {
+            var theme = vm.ThemeItems.FirstOrDefault(x => x.Id == id);
+            if (theme != null)
+            {
+                theme.DisplayName = displayName;
+                theme.Description = description;
+                theme.PreviewImagePath = preview;
+            }
+            else
+            {
+                vm.ThemeItems.Add(new ThemeItem { Id = id, DisplayName = displayName, Description = description, PreviewImagePath = preview });
+            }
+        }
+
+        private string GetLocalizedThemeName(string key)
+        {
+            // Если есть LocalizationService — используйте его
+            var loc = (App.Current?.Services?.GetService(typeof(LocalizationService))) as LocalizationService;
+            if (loc != null)
+                return loc[key];
+            // Fallback: Properties.Resources.ResourceManager.GetString(key)
+            return key;
         }
 
         private void ThemeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            SaveSettings();
-        }
+            if (DataContext is not SettingsViewModel vm)
+                return;
 
-        private static void ApplyTheme(ThemeVariant theme)
-        {
-            if (Application.Current is App app)
+            // Сохраняем и применяем выбранную тему
+            _settingsService?.SaveSettings(new AppSettings
             {
-                app.UpdateTheme(theme);
-
-                // Для Android, используйте условное компиляцию
-                // For Android, use conditional compilation
-#if ANDROID
-                var window = TopLevel.GetTopLevel(this) as Window;
-                if (window?.PlatformImpl != null)
-                {
-                    // Используйте правильный метод для Android
-                    // Use the correct method for Android
-                    (window.PlatformImpl as Avalonia.Android.AndroidWindow)?.UpdateSystemTheme();
-                }
-#endif
-            }
+                ThemeId = vm.SelectedThemeId,
+                Language = LanguageConverter.DisplayToCode(vm.SelectedLanguage)
+            });
+            ApplyTheme(vm.SelectedThemeId);
         }
 
         private void LanguageComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -78,29 +132,21 @@ namespace Atune.Views
             if (_settingsService == null)
                 return;
 
-            // Получаем VM
-            // Get VM
             if (DataContext is not SettingsViewModel vm)
                 return;
 
-            // Преобразуем выбранное отображаемое название в код языка для сохранения
-            // Convert the selected display name to a language code for saving
             string languageCode = LanguageConverter.DisplayToCode(vm.SelectedLanguage);
 
-            // Сохраняем настройки с текущей темой и выбранным языком
-            // Save settings with the current theme and selected language
             _settingsService.SaveSettings(new AppSettings
             {
-                ThemeVariant = (ThemeVariant)ThemeComboBox.SelectedIndex,
+                ThemeId = vm.SelectedThemeId,
                 Language = languageCode
             });
 
-            // Обновляем локализацию
             (Application.Current as App)?.UpdateLocalization();
 
-            // Перерисовываем выбранный элемент для отображения обновлённых ресурсов
-            // Redraw the selected item to display the updated resources
-            RefreshSelectedTheme();
+            // После смены языка пересоздаём темы с новыми локализациями
+            LoadThemes();
         }
 
         private void ApplySettings_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
@@ -119,41 +165,29 @@ namespace Atune.Views
 
             _settingsService.SaveSettings(new AppSettings
             {
-                ThemeVariant = (ThemeVariant)vm.SelectedThemeIndex,
+                ThemeId = ThemeComboBox.SelectedValue?.ToString() ?? "System",
                 Language = languageCode
             });
         }
 
-        private void SaveSettings()
+        private static void ApplyTheme(string themeId)
         {
-            if (_settingsService == null || ThemeComboBox == null)
-                return;
-
-            if (DataContext is not SettingsViewModel vm)
-                return;
-
-            _settingsService.SaveSettings(new AppSettings
+            if (Application.Current is App app)
             {
-                ThemeVariant = (ThemeVariant)ThemeComboBox.SelectedIndex,
-                Language = LanguageConverter.DisplayToCode(vm.SelectedLanguage)
-            });
+                app.UpdateTheme(themeId);
 
-            // Добавляем вызов ApplyTheme
-            // Add a call to ApplyTheme
-            ApplyTheme((ThemeVariant)ThemeComboBox.SelectedIndex);
-        }
-
-        private void RefreshSelectedTheme()
-        {
-            // Save the current index
-            // Сохраняем текущий индекс
-            int currentIndex = ThemeComboBox.SelectedIndex;
-            // Reset the selection
-            // Сбрасываем выбор
-            ThemeComboBox.SelectedIndex = -1;
-            // Restore the selection, which will trigger a redraw and update the text of the item
-            // Восстанавливаем выбор, который вызовет перерисовку и обновление текста элемента
-            ThemeComboBox.SelectedIndex = currentIndex;
+                // Для Android, используйте условное компиляцию
+                // For Android, use conditional compilation
+#if ANDROID
+                var window = TopLevel.GetTopLevel(this) as Window;
+                if (window?.PlatformImpl != null)
+                {
+                    // Используйте правильный метод для Android
+                    // Use the correct method for Android
+                    (window.PlatformImpl as Avalonia.Android.AndroidWindow)?.UpdateSystemTheme();
+                }
+#endif
+            }
         }
     }
 }

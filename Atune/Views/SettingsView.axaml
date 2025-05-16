@@ -41,17 +41,20 @@
                                        VerticalAlignment="Center"
                                        Margin="0,10,0,0"/>
 
-                            <ComboBox x:Name="ThemeComboBox" 
+                            <ComboBox x:Name="ThemeComboBox"
                                       Grid.Column="1"
-                                      SelectedIndex="{Binding SelectedThemeIndex, Mode=TwoWay}"
+                                      ItemsSource="{Binding ThemeItems}"
+                                      SelectedItem="{Binding SelectedThemeItem, Mode=TwoWay}"
                                       Width="200"
                                       MaxDropDownHeight="300"
                                       HorizontalAlignment="Right"
                                       Margin="0,10,0,0"
                                       SelectionChanged="ThemeComboBox_SelectionChanged">
-                                <ComboBoxItem Content="{DynamicResource Theme_System}" />
-                                <ComboBoxItem Content="{DynamicResource Theme_Light}" />
-                                <ComboBoxItem Content="{DynamicResource Theme_Dark}" />
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding DisplayName}" />
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
                             </ComboBox>
                         </Grid>
                         <Grid HorizontalAlignment="Stretch" Margin="0,20,0,0">

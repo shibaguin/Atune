@@ -1,8 +1,3 @@
 namespace Atune.Models;
 
-public enum ThemeVariant
-{
-    System,
-    Light,
-    Dark
-}
+// Теперь используется string ThemeId для идентификации темы.
