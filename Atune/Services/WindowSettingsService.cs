@@ -77,7 +77,7 @@ public class WindowSettingsService
 
         if (validatedWidth != width || validatedHeight != height)
         {
-            Log.Information("Window size adjusted from {Width}x{Height} to {NewWidth}x{NewHeight}", 
+            Log.Information("Window size adjusted from {Width}x{Height} to {NewWidth}x{NewHeight}",
                 width, height, validatedWidth, validatedHeight);
         }
 
@@ -88,17 +88,17 @@ public class WindowSettingsService
     {
         // Получаем размеры рабочей области
         var screenBounds = GetScreenBounds();
-        
+
         // Проверяем, чтобы окно не выходило за пределы экрана
         var maxX = screenBounds.Width - width;
         var maxY = screenBounds.Height - height;
-        
+
         var validatedX = Math.Max(0, Math.Min(x, maxX));
         var validatedY = Math.Max(0, Math.Min(y, maxY));
 
         if (validatedX != x || validatedY != y)
         {
-            Log.Information("Window position adjusted from ({X}, {Y}) to ({NewX}, {NewY})", 
+            Log.Information("Window position adjusted from ({X}, {Y}) to ({NewX}, {NewY})",
                 x, y, validatedX, validatedY);
         }
 
@@ -121,8 +121,8 @@ public class WindowSettingsService
             {
                 var json = File.ReadAllText(_settingsPath);
                 Log.Information("Read JSON from file: {Json}", json);
-                
-                try 
+
+                try
                 {
                     var settings = JsonSerializer.Deserialize<WindowSettings>(json, WindowSettingsJsonContext.Default.WindowSettings);
                     if (settings != null)
@@ -179,20 +179,20 @@ public class WindowSettingsService
             CurrentPage = "Home"
         };
         Log.Information("Created default settings: {@Settings}", defaultSettings);
-        
+
         // Сохраняем дефолтные настройки только если файл не существует
         if (!File.Exists(_settingsPath))
         {
             Log.Information("Saving default settings to file");
             SaveSettingsInternalAsync(defaultSettings).Wait();
         }
-        
+
         return defaultSettings;
     }
 
     private bool IsValidSettings(WindowSettings settings)
     {
-        if (settings == null) 
+        if (settings == null)
         {
             Log.Warning("Settings object is null");
             return false;
@@ -212,7 +212,7 @@ public class WindowSettingsService
     public async Task SaveSettingsAsync(WindowSettings settings)
     {
         Log.Information("Saving window settings: {@Settings}", settings);
-        
+
         // Валидируем размеры и позицию перед сохранением
         if (!settings.IsMaximized)
         {
@@ -251,11 +251,11 @@ public class WindowSettingsService
             Log.Information("Serialized settings: {Json}", json);
             await File.WriteAllTextAsync(_settingsPath, json);
             Log.Information("Settings file written successfully");
-            
+
             // Проверяем, что файл действительно содержит правильные данные
             var savedContent = await File.ReadAllTextAsync(_settingsPath);
             Log.Information("Verification - content of saved file: {Content}", savedContent);
-            
+
             Log.Information("Window settings saved successfully: {@Settings}", settings);
         }
         catch (Exception ex)

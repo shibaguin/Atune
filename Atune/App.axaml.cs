@@ -135,7 +135,7 @@ public partial class App : Application
                 }
                 else
                 {
-                    Log.Information("Restoring window position and size: X={X}, Y={Y}, Width={Width}, Height={Height}", 
+                    Log.Information("Restoring window position and size: X={X}, Y={Y}, Width={Width}, Height={Height}",
                         settings.X, settings.Y, settings.Width, settings.Height);
                     mainWindow.Position = new PixelPoint((int)settings.X, (int)settings.Y);
                     mainWindow.Width = settings.Width;
@@ -234,18 +234,18 @@ public partial class App : Application
                         settings.Y = mainWindow.Position.Y;
                         settings.Width = mainWindow.Width;
                         settings.Height = mainWindow.Height;
-                        Log.Information("Window position and size before closing: X={X}, Y={Y}, Width={Width}, Height={Height}", 
+                        Log.Information("Window position and size before closing: X={X}, Y={Y}, Width={Width}, Height={Height}",
                             settings.X, settings.Y, settings.Width, settings.Height);
                     }
                     settings.IsMaximized = mainWindow.WindowState == WindowState.Maximized;
                     Log.Information("Window maximized state before closing: {IsMaximized}", settings.IsMaximized);
-                    
+
                     // Сначала сохраняем настройки окна
                     await windowSettingsService.ForceSaveSettingsAsync();
-                    
+
                     // Даем время на сохранение файла
                     await Task.Delay(100);
-                    
+
                     // Затем сохраняем состояние воспроизведения
                     PlaybackStateManager.SaveState(Services!);
                 };

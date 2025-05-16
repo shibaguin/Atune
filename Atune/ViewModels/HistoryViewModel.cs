@@ -138,83 +138,83 @@ public partial class HistoryViewModel : ViewModelBase
             switch (SelectedRangeIndex)
             {
                 case 0: // 24 часа, 24 точки по часу
-                {
-                    var nowHour = DateTime.Now;
-                    var start = nowHour.AddHours(-23).Date.AddHours(nowHour.Hour - 23);
-                    for (int i = 0; i < 24; i++)
                     {
-                        var hour = start.AddHours(i);
-                        var count = allList.Count(h => h.PlayedAt >= hour && h.PlayedAt < hour.AddHours(1));
-                        chartPoints.Add((hour.ToString("HH:00"), count));
-                    }
-                    break;
-                }
-                case 1: // 3 дня, 12 точек (по 4 периода на день)
-                {
-                    var nowDay = DateTime.Now.Date;
-                    var start = nowDay.AddDays(-2);
-                    string[] slots = { "Night", "Morning", "Day", "Evening" };
-                    int[] slotStarts = { 0, 6, 12, 18 };
-                    for (int d = 0; d < 3; d++)
-                    {
-                        var day = start.AddDays(d);
-                        for (int s = 0; s < 4; s++)
+                        var nowHour = DateTime.Now;
+                        var start = nowHour.AddHours(-23).Date.AddHours(nowHour.Hour - 23);
+                        for (int i = 0; i < 24; i++)
                         {
-                            var slotStart = day.AddHours(slotStarts[s]);
-                            var slotEnd = slotStart.AddHours(6);
-                            var count = allList.Count(h => h.PlayedAt >= slotStart && h.PlayedAt < slotEnd);
-                            chartPoints.Add(($"{day:dd.MM} {slots[s]}", count));
+                            var hour = start.AddHours(i);
+                            var count = allList.Count(h => h.PlayedAt >= hour && h.PlayedAt < hour.AddHours(1));
+                            chartPoints.Add((hour.ToString("HH:00"), count));
                         }
+                        break;
                     }
-                    break;
-                }
+                case 1: // 3 дня, 12 точек (по 4 периода на день)
+                    {
+                        var nowDay = DateTime.Now.Date;
+                        var start = nowDay.AddDays(-2);
+                        string[] slots = { "Night", "Morning", "Day", "Evening" };
+                        int[] slotStarts = { 0, 6, 12, 18 };
+                        for (int d = 0; d < 3; d++)
+                        {
+                            var day = start.AddDays(d);
+                            for (int s = 0; s < 4; s++)
+                            {
+                                var slotStart = day.AddHours(slotStarts[s]);
+                                var slotEnd = slotStart.AddHours(6);
+                                var count = allList.Count(h => h.PlayedAt >= slotStart && h.PlayedAt < slotEnd);
+                                chartPoints.Add(($"{day:dd.MM} {slots[s]}", count));
+                            }
+                        }
+                        break;
+                    }
                 case 2: // Неделя, 7 точек по дням
-                {
-                    var start = DateTime.Now.Date.AddDays(-6);
-                    for (int i = 0; i < 7; i++)
                     {
-                        var day = start.AddDays(i);
-                        var count = allList.Count(h => h.PlayedAt.Date == day);
-                        chartPoints.Add((day.ToString("dd.MM"), count));
+                        var start = DateTime.Now.Date.AddDays(-6);
+                        for (int i = 0; i < 7; i++)
+                        {
+                            var day = start.AddDays(i);
+                            var count = allList.Count(h => h.PlayedAt.Date == day);
+                            chartPoints.Add((day.ToString("dd.MM"), count));
+                        }
+                        break;
                     }
-                    break;
-                }
                 case 3: // Месяц, 30 точек по дням
-                {
-                    var start = DateTime.Now.Date.AddDays(-29);
-                    for (int i = 0; i < 30; i++)
                     {
-                        var day = start.AddDays(i);
-                        var count = allList.Count(h => h.PlayedAt.Date == day);
-                        chartPoints.Add((day.ToString("dd.MM"), count));
+                        var start = DateTime.Now.Date.AddDays(-29);
+                        for (int i = 0; i < 30; i++)
+                        {
+                            var day = start.AddDays(i);
+                            var count = allList.Count(h => h.PlayedAt.Date == day);
+                            chartPoints.Add((day.ToString("dd.MM"), count));
+                        }
+                        break;
                     }
-                    break;
-                }
                 case 4: // Квартал, 12 точек (по неделям, 4 на месяц)
-                {
-                    var nowQ = DateTime.Now.Date;
-                    var start = nowQ.AddMonths(-2).AddDays(-((int)nowQ.DayOfWeek - 1));
-                    for (int i = 0; i < 12; i++)
                     {
-                        var weekStart = start.AddDays(i * 7);
-                        var weekEnd = weekStart.AddDays(7);
-                        var count = allList.Count(h => h.PlayedAt.Date >= weekStart && h.PlayedAt.Date < weekEnd);
-                        chartPoints.Add(($"{weekStart:dd.MM}-{weekEnd.AddDays(-1):dd.MM}", count));
+                        var nowQ = DateTime.Now.Date;
+                        var start = nowQ.AddMonths(-2).AddDays(-((int)nowQ.DayOfWeek - 1));
+                        for (int i = 0; i < 12; i++)
+                        {
+                            var weekStart = start.AddDays(i * 7);
+                            var weekEnd = weekStart.AddDays(7);
+                            var count = allList.Count(h => h.PlayedAt.Date >= weekStart && h.PlayedAt.Date < weekEnd);
+                            chartPoints.Add(($"{weekStart:dd.MM}-{weekEnd.AddDays(-1):dd.MM}", count));
+                        }
+                        break;
                     }
-                    break;
-                }
                 case 5: // Год, 12 точек по месяцам
-                {
-                    var nowY = DateTime.Now;
-                    var start = new DateTime(nowY.Year, nowY.Month, 1).AddMonths(-11);
-                    for (int i = 0; i < 12; i++)
                     {
-                        var month = start.AddMonths(i);
-                        var count = allList.Count(h => h.PlayedAt.Year == month.Year && h.PlayedAt.Month == month.Month);
-                        chartPoints.Add((month.ToString("MM.yyyy"), count));
+                        var nowY = DateTime.Now;
+                        var start = new DateTime(nowY.Year, nowY.Month, 1).AddMonths(-11);
+                        for (int i = 0; i < 12; i++)
+                        {
+                            var month = start.AddMonths(i);
+                            var count = allList.Count(h => h.PlayedAt.Year == month.Year && h.PlayedAt.Month == month.Month);
+                            chartPoints.Add((month.ToString("MM.yyyy"), count));
+                        }
+                        break;
                     }
-                    break;
-                }
             }
             _logger.LogInformation($"[History] chartPoints.Count={chartPoints.Count}, labels=[{string.Join(", ", chartPoints.Select(p => p.Label))}]");
             // Формируем Series и XAxes

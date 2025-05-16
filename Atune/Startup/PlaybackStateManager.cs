@@ -133,7 +133,7 @@ namespace Atune.Startup
                         else
                             queuePaths.Add(raw.Replace("\\|", "|"));
                     }
-                    Log.Information("Распарсено состояние: индекс={Index}, позиция={Position}с, на паузе={Paused}, треков в очереди={QueueCount}", 
+                    Log.Information("Распарсено состояние: индекс={Index}, позиция={Position}с, на паузе={Paused}, треков в очереди={QueueCount}",
                         stateIndex, statePos, wasPaused, queuePaths.Count);
                 }
                 catch (Exception ex)
@@ -195,7 +195,7 @@ namespace Atune.Startup
                                 var currentTrack = playbackService.CurrentTrack;
                                 if (currentTrack != null)
                                 {
-                                    Log.Information("Current track: Title={Title}, Artist={Artist}, Album={Album}, Queue position={QueuePosition}/{QueueSize}", 
+                                    Log.Information("Current track: Title={Title}, Artist={Artist}, Album={Album}, Queue position={QueuePosition}/{QueueSize}",
                                         currentTrack.Title,
                                         currentTrack.TrackArtists.FirstOrDefault()?.Artist.Name ?? "Unknown artist",
                                         currentTrack.Album.Title,
