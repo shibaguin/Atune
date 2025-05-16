@@ -14,8 +14,8 @@
   
   <ItemGroup>
     <AvaloniaResource Include="Assets\**" />
-    <AvaloniaResource Include="Resources/Localization/ru.resx" />
-    <AvaloniaResource Include="Resources/Localization/en.resx" />
+    <AvaloniaResource Include="Resources\Localization\ru.resx" />
+    <AvaloniaResource Include="Resources\Localization\en.resx" />
     <AvaloniaResource Include="Assets\default_cover.jpg" />
   </ItemGroup>
 
@@ -27,7 +27,7 @@
     <PackageReference Include="LibVLCSharp" />
     <PackageReference Include="LibVLCSharp.Avalonia" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <IncludeAssets>runtime;build;native;contentfiles;analyzers;buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
