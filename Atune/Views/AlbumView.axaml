@@ -24,17 +24,20 @@
       <RowDefinition Height="*"/>
     </Grid.RowDefinitions>
     <!-- Top region: back, cover, details -->
-    <Grid Grid.Row="0" ColumnDefinitions="*,2*" Margin="0,0,0,10">
-      <!-- Back button and cover art in first column -->
-      <Grid Grid.Column="0">
-        <Button Click="BackButton_Click"
-                Background="Transparent"
-                BorderThickness="0"
-                HorizontalAlignment="Left"
-                VerticalAlignment="Top">
-          <PathIcon Data="M15.707 4.293a1 1 0 0 1 0 1.414L9.414 12l6.293 6.293a1 1 0 0 1-1.414 1.414l-7-7a1 1 0 0 1 0-1.414l7-7a1 1 0 0 1 1.414 0Z"
-                    Width="24" Height="24" Foreground="{DynamicResource SecondaryContentBrush}" Opacity="0.7"/>
-        </Button>
+    <Grid Grid.Row="0" ColumnDefinitions="Auto,*,2*" Margin="0,0,0,10">
+      <!-- Back button -->
+      <Button Grid.Column="0" 
+              Click="GoBack_Click"
+              Background="Transparent"
+              BorderThickness="0"
+              HorizontalAlignment="Left"
+              VerticalAlignment="Center"
+              Margin="0,0,10,0">
+        <PathIcon Data="M15.707 4.293a1 1 0 0 1 0 1.414L9.414 12l6.293 6.293a1 1 0 0 1-1.414 1.414l-7-7a1 1 0 0 1 0-1.414l7-7a1 1 0 0 1 1.414 0Z"
+                  Width="24" Height="24" Foreground="{DynamicResource SecondaryContentBrush}" Opacity="0.7"/>
+      </Button>
+      <!-- Cover art -->
+      <Grid Grid.Column="1">
         <Image Source="{Binding Album.CoverArt, Converter={StaticResource CoverArtConverter}}"
                Stretch="Uniform"
                HorizontalAlignment="Center"
@@ -42,8 +45,8 @@
                Width="200"
                Height="200"/>
       </Grid>
-      <!-- Album details in second column -->
-      <StackPanel Grid.Column="1"
+      <!-- Album details -->
+      <StackPanel Grid.Column="2"
                   Orientation="Vertical"
                   VerticalAlignment="Center"
                   Spacing="5"
@@ -62,7 +65,7 @@
         </TextBlock>
       </StackPanel>
     </Grid>
-    <!-- Play album button centered with minimal padding -->
+    <!-- Play album button -->
     <Button Grid.Row="1"
             Click="PlayAlbumButton_Click"
             Background="Transparent"

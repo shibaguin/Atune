@@ -177,7 +177,12 @@ public partial class MainView : UserControl
                     switch (result.Title)
                     {
                         case "Home": vm.GoHomeCommand.Execute(null); break;
-                        case "Media": vm.GoMediaCommand.Execute(null); break;
+                        case "Media": 
+                            if (vm.CurrentView is not MediaView)
+                            {
+                                vm.GoMediaCommand.Execute(null);
+                            }
+                            break;
                         case "History": vm.GoHistoryCommand.Execute(null); break;
                         case "Settings": vm.GoSettingsCommand.Execute(null); break;
                     }
@@ -187,9 +192,7 @@ public partial class MainView : UserControl
                     if (result.Data is AlbumInfo album)
                     {
                         var view = new AlbumView { DataContext = new AlbumViewModel(album) };
-                        vm.SelectedSection = MainViewModel.SectionType.Media;
-                        vm.CurrentView = view;
-                        vm.HeaderText = album.AlbumName;
+                        vm.NavigateTo(view, album.AlbumName);
                     }
                     break;
 
@@ -249,7 +252,12 @@ public partial class MainView : UserControl
                     switch (result.Title)
                     {
                         case "Home": vm.GoHomeCommand.Execute(null); break;
-                        case "Media": vm.GoMediaCommand.Execute(null); break;
+                        case "Media": 
+                            if (vm.CurrentView is not MediaView)
+                            {
+                                vm.GoMediaCommand.Execute(null);
+                            }
+                            break;
                         case "History": vm.GoHistoryCommand.Execute(null); break;
                         case "Settings": vm.GoSettingsCommand.Execute(null); break;
                     }
@@ -271,9 +279,7 @@ public partial class MainView : UserControl
                     if (albumToShow != null)
                     {
                         var view = new AlbumView { DataContext = new AlbumViewModel(albumToShow) };
-                        vm.SelectedSection = MainViewModel.SectionType.Media;
-                        vm.CurrentView = view;
-                        vm.HeaderText = albumToShow.AlbumName;
+                        vm.NavigateTo(view, albumToShow.AlbumName);
                     }
                     break;
 
@@ -302,7 +308,16 @@ public partial class MainView : UserControl
                             var cached = artistBtnVm.Artists.FirstOrDefault(a => string.Equals(a.ArtistName, artistInfoBtn.ArtistName, StringComparison.OrdinalIgnoreCase))
                                 ?? artistBtnVm.Artists.FirstOrDefault(a => string.Equals(a.ArtistName.Replace('-', '/'), artistInfoBtn.ArtistName, StringComparison.OrdinalIgnoreCase))
                                 ?? artistBtnVm.Artists.FirstOrDefault(a => string.Equals(a.ArtistName, artistInfoBtn.ArtistName.Replace('/', '-'), StringComparison.OrdinalIgnoreCase));
-                            artistBtnVm.OpenArtistCommand.Execute(cached ?? artistInfoBtn);
+                            if (cached != null)
+                            {
+                                var artistView = new ArtistView { DataContext = new ArtistViewModel(cached) };
+                                vm.NavigateTo(artistView, cached.ArtistName);
+                            }
+                            else
+                            {
+                                var artistView = new ArtistView { DataContext = new ArtistViewModel(artistInfoBtn) };
+                                vm.NavigateTo(artistView, artistInfoBtn.ArtistName);
+                            }
                         }
                     }
                     break;

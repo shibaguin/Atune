@@ -95,8 +95,52 @@ public partial class MainViewModel : ViewModelBase
     private readonly IMediaRepository _mediaRepository;
     public SearchViewModel Search => _searchViewModel;
 
+    // Стек навигации для хранения истории переходов
+    private readonly Stack<(Control View, string Header)> _navigationStack = new();
+
     // Expose the MediaViewModel instance for saving and restoring playback state
     public MediaViewModel? MediaViewModelInstance => _views.TryGetValue(SectionType.Media, out var view) ? view.DataContext as MediaViewModel : null;
+
+    // Метод для навигации на новую страницу с сохранением текущей в стеке
+    public void NavigateTo(Control view, string headerText)
+    {
+        if (view == null) return;
+
+        // Если текущее представление не является основным (HomeView, MediaView и т.д.)
+        // и мы переходим к основному представлению, очищаем историю
+        if (CurrentView is not (HomeView or MediaView or HistoryView or SettingsView) &&
+            view is (HomeView or MediaView or HistoryView or SettingsView))
+        {
+            _navigationStack.Clear();
+        }
+        // Если текущее представление является основным, добавляем его в историю
+        else if (CurrentView is (HomeView or MediaView or HistoryView or SettingsView))
+        {
+            _navigationStack.Push((CurrentView, HeaderText));
+        }
+
+        CurrentView = view;
+        HeaderText = headerText;
+    }
+
+    // Метод для навигации назад
+    public void NavigateBack()
+    {
+        if (_navigationStack.Count > 0)
+        {
+            var (previousView, previousHeader) = _navigationStack.Pop();
+            CurrentView = previousView;
+            HeaderText = previousHeader;
+        }
+        else
+        {
+            // Если история пуста, возвращаемся к MediaView
+            GoMedia();
+        }
+    }
+
+    // Метод для проверки возможности навигации назад
+    public bool CanNavigateBack => _navigationStack.Count > 0;
 
     // ????????? ? ?????????? ??????? ??? ??????
     private const string PlayIconPath = "M5 5.274c0-1.707 1.826-2.792 3.325-1.977l12.362 6.726c1.566.853 1.566 3.101 0 3.953L8.325 20.702C6.826 21.518 5 20.432 5 18.726V5.274Z";
@@ -277,25 +321,37 @@ public partial class MainViewModel : ViewModelBase
     [RelayCommand]
     private void GoHome()
     {
-        SelectedSection = SectionType.Home;
+        if (CurrentView is not HomeView)
+        {
+            NavigateTo(_views[SectionType.Home], GetHeaderTextForSection(SectionType.Home));
+        }
     }
 
     [RelayCommand]
     private void GoMedia()
     {
-        SelectedSection = SectionType.Media;
+        if (CurrentView is not MediaView)
+        {
+            NavigateTo(_views[SectionType.Media], GetHeaderTextForSection(SectionType.Media));
+        }
     }
 
     [RelayCommand]
     private void GoHistory()
     {
-        SelectedSection = SectionType.History;
+        if (CurrentView is not HistoryView)
+        {
+            NavigateTo(_views[SectionType.History], GetHeaderTextForSection(SectionType.History));
+        }
     }
 
     [RelayCommand]
     private void GoSettings()
     {
-        SelectedSection = SectionType.Settings;
+        if (CurrentView is not SettingsView)
+        {
+            NavigateTo(_views[SectionType.Settings], GetHeaderTextForSection(SectionType.Settings));
+        }
     }
 
     [RelayCommand]
@@ -750,9 +806,23 @@ public partial class MainViewModel : ViewModelBase
     {
         if (playlist == null) return;
         var playlistControl = new PlaylistView { DataContext = new PlaylistViewModel(playlist) };
-        SelectedSection = SectionType.Media;
-        CurrentView = playlistControl;
-        HeaderText = playlist.Name;
+        NavigateTo(playlistControl, playlist.Name);
+    }
+
+    [RelayCommand]
+    private void GoAlbum(AlbumInfo album)
+    {
+        if (album == null) return;
+        var albumView = new AlbumView { DataContext = new AlbumViewModel(album) };
+        NavigateTo(albumView, album.AlbumName);
+    }
+
+    [RelayCommand]
+    private void GoArtist(ArtistInfo artist)
+    {
+        if (artist == null) return;
+        var artistView = new ArtistView { DataContext = new ArtistViewModel(artist) };
+        NavigateTo(artistView, artist.ArtistName);
     }
 
     [RelayCommand]

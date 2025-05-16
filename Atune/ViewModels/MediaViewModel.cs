@@ -929,8 +929,7 @@ public partial class MediaViewModel : ObservableObject, IDisposable
         if (mainWindow?.DataContext is MainViewModel mainVm)
         {
             var albumControl = new AlbumView { DataContext = new AlbumViewModel(album) };
-            mainVm.CurrentView = albumControl;
-            mainVm.HeaderText = album.AlbumName;
+            mainVm.NavigateTo(albumControl, album.AlbumName);
         }
         else
         {
@@ -1146,7 +1145,11 @@ public partial class MediaViewModel : ObservableObject, IDisposable
         if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             var mainVm = desktop.MainWindow?.DataContext as MainViewModel;
-            mainVm?.GoPlaylistCommand.Execute(playlist);
+            if (mainVm != null && playlist != null)
+            {
+                var playlistView = new PlaylistView { DataContext = new PlaylistViewModel(playlist) };
+                mainVm.NavigateTo(playlistView, playlist.Name);
+            }
         }
         return Task.CompletedTask;
     }
@@ -1219,8 +1222,7 @@ public partial class MediaViewModel : ObservableObject, IDisposable
         if (mainWindow?.DataContext is MainViewModel mainVm)
         {
             var artistControl = new ArtistView { DataContext = new ArtistViewModel(artist) };
-            mainVm.CurrentView = artistControl;
-            mainVm.HeaderText = artist.ArtistName;
+            mainVm.NavigateTo(artistControl, artist.ArtistName);
         }
         else
         {

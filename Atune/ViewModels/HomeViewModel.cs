@@ -226,9 +226,7 @@ public partial class HomeViewModel : ViewModelBase
         if (Avalonia.Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop &&
             desktop.MainWindow?.DataContext is MainViewModel mainVm)
         {
-            mainVm.SelectedSection = MainViewModel.SectionType.Media;
-            mainVm.CurrentView = albumView;
-            mainVm.HeaderText = dto.Title;
+            mainVm.NavigateTo(albumView, dto.Title);
         }
     }
 
@@ -241,9 +239,7 @@ public partial class HomeViewModel : ViewModelBase
         if (Avalonia.Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop &&
             desktop.MainWindow?.DataContext is MainViewModel mainVm)
         {
-            mainVm.SelectedSection = MainViewModel.SectionType.Media;
-            mainVm.CurrentView = playlistView;
-            mainVm.HeaderText = dto.Name;
+            mainVm.NavigateTo(playlistView, dto.Name);
         }
     }
 }

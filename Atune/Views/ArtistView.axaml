@@ -24,9 +24,17 @@
     <!-- Top region: cover and details -->
     <Grid Grid.Row="0" ColumnDefinitions="Auto,*,2*" Margin="0,0,0,10">
       <!-- Back button -->
-      <Button Grid.Column="0" Click="GoBack_Click" Background="Transparent" BorderThickness="0" HorizontalAlignment="Left" VerticalAlignment="Center">
-        <PathIcon Data="M15.707 4.293a1 1 0 0 1 0 1.414L9.414 12l6.293 6.293a1 1 0 0 1-1.414 1.414l-7-7a1 1 0 0 1 0-1.414l7-7a1 1 0 0 1 1.414 0Z" Width="24" Height="24" Foreground="{DynamicResource SecondaryContentBrush}" Opacity="0.7"/>
+      <Button Grid.Column="0" 
+              Click="GoBack_Click" 
+              Background="Transparent" 
+              BorderThickness="0" 
+              HorizontalAlignment="Left" 
+              VerticalAlignment="Center"
+              Margin="0,0,10,0">
+        <PathIcon Data="M15.707 4.293a1 1 0 0 1 0 1.414L9.414 12l6.293 6.293a1 1 0 0 1-1.414 1.414l-7-7a1 1 0 0 1 0-1.414l7-7a1 1 0 0 1 1.414 0Z" 
+                  Width="24" Height="24" Foreground="{DynamicResource SecondaryContentBrush}" Opacity="0.7"/>
       </Button>
+      <!-- Cover art -->
       <Grid Grid.Column="1">
         <Image Source="{Binding Artist.CoverArt, Converter={StaticResource CoverArtConverter}}"
                Stretch="Uniform"
@@ -35,6 +43,7 @@
                Width="200"
                Height="200"/>
       </Grid>
+      <!-- Artist details -->
       <StackPanel Grid.Column="2"
                   Orientation="Vertical"
                   VerticalAlignment="Center"

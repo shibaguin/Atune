@@ -65,12 +65,14 @@ namespace Atune.Views
             AvaloniaXamlLoader.Load(this);
         }
 
-        private void BackButton_Click(object? sender, RoutedEventArgs e)
+        private void GoBack_Click(object? sender, RoutedEventArgs e)
         {
-            // Navigate back to Media view
             var mainVm = (Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)
                 ?.MainWindow?.DataContext as MainViewModel;
-            mainVm?.GoMediaCommand.Execute(null);
+            if (mainVm != null)
+            {
+                mainVm.NavigateBack();
+            }
         }
 
         private async void PlayAlbumButton_Click(object? sender, RoutedEventArgs e)
@@ -90,12 +92,10 @@ namespace Atune.Views
                 ?.MainWindow?.DataContext as MainViewModel;
             if (kind == PointerUpdateKind.XButton1Pressed)
             {
-                mainVm?.GoMediaCommand.Execute(null);
-                e.Handled = true;
-            }
-            else if (kind == PointerUpdateKind.XButton2Pressed)
-            {
-                // Implement Forward navigation if needed
+                if (mainVm != null)
+                {
+                    mainVm.NavigateBack();
+                }
                 e.Handled = true;
             }
         }
@@ -106,12 +106,10 @@ namespace Atune.Views
                 ?.MainWindow?.DataContext as MainViewModel;
             if (e.Key == Key.Escape || e.Key == Key.BrowserBack)
             {
-                mainVm?.GoMediaCommand.Execute(null);
-                e.Handled = true;
-            }
-            else if (e.Key == Key.BrowserForward)
-            {
-                // Forward navigation if needed
+                if (mainVm != null)
+                {
+                    mainVm.NavigateBack();
+                }
                 e.Handled = true;
             }
         }
