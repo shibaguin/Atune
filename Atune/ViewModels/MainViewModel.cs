@@ -109,6 +109,39 @@ public partial class MainViewModel : ViewModelBase
     // Add at class level
     private DateTime _lastToggleTime = DateTime.MinValue;
 
+    private bool _isVolumePopupOpen;
+    public bool IsVolumePopupOpen
+    {
+        get => _isVolumePopupOpen;
+        set => SetProperty(ref _isVolumePopupOpen, value);
+    }
+
+    private double _windowWidth = 800;
+    public double WindowWidth
+    {
+        get => _windowWidth;
+        set
+        {
+            if (SetProperty(ref _windowWidth, value))
+            {
+                OnPropertyChanged(nameof(IsVolumeSliderVisible));
+                OnPropertyChanged(nameof(IsWideEnough));
+                OnPropertyChanged(nameof(IsVolumeControlRightAligned));
+                OnPropertyChanged(nameof(ShowMediaButtonsInVolumePanel));
+                OnPropertyChanged(nameof(ShowMediaButtonsInCenter));
+                OnPropertyChanged(nameof(IsVolumeButtonEnabled));
+            }
+        }
+    }
+
+    public bool IsWideEnough => WindowWidth >= 520;
+    public bool IsVolumeSliderVisible => WindowWidth > 660 && !OperatingSystem.IsAndroid();
+    public bool IsVolumeControlVisible => !OperatingSystem.IsAndroid();
+    public bool IsVolumeControlRightAligned => !IsVolumeSliderVisible;
+    public bool ShowMediaButtonsInVolumePanel => !IsWideEnough;
+    public bool ShowMediaButtonsInCenter => IsWideEnough;
+    public bool IsVolumeButtonEnabled => !IsVolumeSliderVisible;
+
     public MainViewModel(
         ISettingsService settingsService,
         WindowSettingsService windowSettingsService,
@@ -489,10 +522,16 @@ public partial class MainViewModel : ViewModelBase
     // ?????????? ????????????? ??? ????????? Volume; ????????? ???????? ? FFmpegService
     partial void OnVolumeChanged(int value)
     {
+        if (OperatingSystem.IsAndroid())
+        {
+            if (Volume != 100)
+            {
+                Volume = 100;
+            }
+            return;
+        }
         _playbackService.Volume = value;
         _ = UpdateMetadataAsync();
-
-        // Debounce final save after user finishes adjusting
         if (!_isInitializing)
         {
             _volumeSaveCts?.Cancel();
@@ -709,5 +748,14 @@ public partial class MainViewModel : ViewModelBase
     {
         // Implementation of LoadStatsAsync method
         return Task.CompletedTask;
+    }
+
+    public void OpenVolumePopup()
+    {
+        IsVolumePopupOpen = true;
+    }
+    public void CloseVolumePopup()
+    {
+        IsVolumePopupOpen = false;
     }
 }

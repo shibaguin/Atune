@@ -156,9 +156,16 @@ namespace Atune.Services
 
         public int Volume
         {
-            get => _volume;
+            get => OperatingSystem.IsAndroid() ? 100 : _volume;
             set
             {
+                if (OperatingSystem.IsAndroid())
+                {
+                    _volume = 100;
+                    if (_player != null)
+                        _player.Volume = 100;
+                    return;
+                }
                 _volume = value;
                 if (_player != null)
                     _player.Volume = value;

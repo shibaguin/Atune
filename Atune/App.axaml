@@ -89,18 +89,24 @@
                     <Color x:Key="TabItemForegroundColor">#FF222222</Color>
                     <Color x:Key="TabItemSelectedBackgroundColor">#FFE0E0E0</Color>
                     <Color x:Key="TabItemPointerOverBackgroundColor">#FFD0D0D0</Color>
+                    <Color x:Key="IconColor">#FF222222</Color>
+                    <Color x:Key="ButtonForegroundColor">#FF444444</Color>
                 </ResourceDictionary>
                 <ResourceDictionary x:Key="Dark">
                     <Color x:Key="TabItemBackgroundColor">#00222222</Color>
                     <Color x:Key="TabItemForegroundColor">#FFFFFFFF</Color>
                     <Color x:Key="TabItemSelectedBackgroundColor">#FF444444</Color>
                     <Color x:Key="TabItemPointerOverBackgroundColor">#FF333333</Color>
+                    <Color x:Key="IconColor">#FFFFFFFF</Color>
+                    <Color x:Key="ButtonForegroundColor">#FFB0B0B0</Color>
                 </ResourceDictionary>
             </ResourceDictionary.ThemeDictionaries>
             <SolidColorBrush x:Key="TabItemBackgroundBrush" Color="{DynamicResource TabItemBackgroundColor}"/>
             <SolidColorBrush x:Key="TabItemForegroundBrush" Color="{DynamicResource TabItemForegroundColor}"/>
             <SolidColorBrush x:Key="TabItemSelectedBackgroundBrush" Color="{DynamicResource TabItemSelectedBackgroundColor}"/>
             <SolidColorBrush x:Key="TabItemPointerOverBackgroundBrush" Color="{DynamicResource TabItemPointerOverBackgroundColor}"/>
+            <SolidColorBrush x:Key="IconBrush" Color="{DynamicResource IconColor}"/>
+            <SolidColorBrush x:Key="ButtonForeground" Color="{DynamicResource ButtonForegroundColor}"/>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

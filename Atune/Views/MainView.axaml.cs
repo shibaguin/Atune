@@ -49,6 +49,14 @@ public partial class MainView : UserControl
                 UpdateCustomProgressBar();
             }
         };
+        this.AttachedToVisualTree += (s, e) =>
+        {
+            if (VisualRoot is Window window && DataContext is MainViewModel vm)
+            {
+                var observer = new SizeObserver(size => vm.WindowWidth = size.Width);
+                window.GetObservable(Window.ClientSizeProperty).Subscribe(observer);
+            }
+        };
     }
 
     private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -299,6 +307,40 @@ public partial class MainView : UserControl
                     }
                     break;
             }
+        }
+    }
+
+    public void VolumeButton_Click(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is MainViewModel vm)
+        {
+            if (vm.IsVolumePopupOpen)
+            {
+                vm.IsVolumePopupOpen = false;
+                // Открыть снова чуть позже, чтобы Popup гарантированно обновился
+                Avalonia.Threading.Dispatcher.UIThread.Post(() => vm.IsVolumePopupOpen = true, Avalonia.Threading.DispatcherPriority.Background);
+            }
+            else
+            {
+                vm.IsVolumePopupOpen = true;
+            }
+        }
+    }
+
+    private class SizeObserver : IObserver<Size>
+    {
+        private readonly Action<Size> _onNext;
+        public SizeObserver(Action<Size> onNext) => _onNext = onNext;
+        public void OnNext(Size value) => _onNext(value);
+        public void OnError(Exception error) { }
+        public void OnCompleted() { }
+    }
+
+    private void OnSizeChanged(object? sender, SizeChangedEventArgs e)
+    {
+        if (DataContext is MainViewModel vm)
+        {
+            vm.WindowWidth = e.NewSize.Width;
         }
     }
 }
